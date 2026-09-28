@@ -317,3 +317,31 @@ main { padding-left:56px; padding-right:40px; }
 @media (max-width:819px) { main { padding-left:24px; padding-right:24px; } }
 .lead + .film-note { margin-top:20px; }
 .course-film + .announcements { margin-top:28px; }
+
+/* ---- 2026-09-28: page menu moves to the top bar; the left pane shows the page outline ---- */
+.topnav { margin-left:auto; padding-right:32px; }
+.topnav ul { list-style:none; display:flex; gap:26px; margin:0; padding:0; }
+.topnav a { font-size:15px; color:#222; text-decoration:none; padding:6px 0; border-bottom:2px solid transparent; }
+.topnav a:hover { border-bottom-color:var(--line); }
+.topnav a[aria-current="page"] { font-weight:600; border-bottom-color:var(--accent); }
+.site-sidebar { display:flex; flex-direction:column; padding-top:36px; }
+.outline-title { font-size:13px; color:var(--muted); margin:0 0 10px; }
+#outline { list-style:none; margin:0; padding:0; }
+#outline a { display:block; padding:4px 0; font-size:14px; line-height:1.4; color:#444; text-decoration:none; }
+#outline a:hover { color:var(--ink); }
+#outline a.is-current { color:var(--ink); font-weight:600; }
+.sidebar-foot { margin-top:auto; padding-top:24px; }
+.sidebar-resources { margin-top:0; }
+@media (max-width:1180px) and (min-width:820px) { .topnav ul { gap:18px; } .topnav a { font-size:14px; } .topbar .brand-term { display:none; } }
+@media (max-width:819px) {
+  .topnav { display:none; position:fixed; inset:var(--topbar) 0 auto 0; background:#fff; padding:6px 16px 8px; border-bottom:1px solid var(--line); }
+  .topnav ul { flex-direction:column; gap:0; }
+  .topnav a { display:block; padding:10px 0; border-bottom:0; font-size:16px; }
+  .topnav a[aria-current="page"] { border-bottom:0; }
+  .menu-open .topnav { display:block; }
+  .page-outline { display:none; }
+  .site-sidebar, .js .site-sidebar.is-open { display:none; }
+  .menu-open .site-sidebar { display:block; position:fixed; left:0; right:0; bottom:auto; width:100%; padding:0 16px 12px; background:#fff; border-bottom:1px solid var(--line); z-index:9; }
+  .menu-open .sidebar-foot { padding-top:8px; }
+}
+@media (max-width:819px) { .menu-open .sidebar-resources { border-top:0; padding-top:0; } }

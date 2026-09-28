@@ -1,4 +1,4 @@
-<!-- Top bar: school logo and course name, always visible. -->
+<!-- Top bar: school logo, course name, and the page menu. Always visible. -->
 <header class="topbar">
   <!-- Phones show only the CBS mark; wider screens show the full logo. -->
   <picture class="cbs-logo">
@@ -6,18 +6,22 @@
     <img src="{{ '/assets/cbs-logo.png' | relative_url }}" alt="Columbia Business School">
   </picture>
   <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
-  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar-panel"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
+  <nav class="topnav" id="topnav" aria-label="Course pages">
+    <ul>
+      {% for item in site.data.navigation %}
+      <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>
-<!-- Left pane: page links only. -->
+<!-- Left pane: outline of the current page (filled in by site.js), then course links. -->
 <aside class="site-sidebar">
-  <div class="sidebar-panel" id="sidebar-panel">
-    <nav aria-label="Course pages">
-      <ul class="nav-list">
-        {% for item in site.data.navigation %}
-        <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </nav>
+  <nav class="page-outline" aria-label="On this page">
+    <p class="outline-title">On this page</p>
+    <ul id="outline"></ul>
+  </nav>
+  <div class="sidebar-foot">
     <div class="sidebar-resources">
       <!-- TODO: Replace these two URLs when the course links are confirmed. -->
       <a class="resource-link" href="#" data-pending aria-disabled="true" aria-label="Canvas — link to be announced"><span>Canvas</span><span class="link-status">Link TBA</span></a>
