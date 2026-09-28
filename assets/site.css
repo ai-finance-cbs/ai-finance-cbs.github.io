@@ -399,3 +399,9 @@ caption { margin-bottom:6px; }
 .library-index li { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
 .library-index span { color:var(--muted); font-size:14px; }
 @media (min-width:820px) and (max-width:1180px) { body.in-library { --topbar:166px; } }
+
+/* ---- 2026-09-28: weeks are top-level sections on the Syllabus; instructor line in footer ---- */
+.week-block .section-meta h2 { font-size:22px; margin:0; }
+.week-details > div { grid-template-columns:128px 1fr; }
+.page-footer { font-size:12px; letter-spacing:0; color:var(--muted); }
+.page-footer a { font-size:12px; color:var(--muted); }
