@@ -1,0 +1,12 @@
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.DS_Store
+evidence/
+# internal build notes and old versions stay on this computer only
+__archive__/
+SPEC.md
+REVIEW-*.md
+NOTES.md
+LEARN.md
+tools/

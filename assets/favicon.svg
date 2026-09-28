@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-13 -4 34 34" role="img" aria-labelledby="title"><title id="title">Columbia paperclip</title>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9.9 14 L9.3 18 L8.45 25.4 A4.1 4.1 0 0 1 .25 25.4 L0 3.6 A3.6 3.6 0 0 1 7.2 3.6 L7.05 20.3 A2.5 2.5 0 0 1 2.05 20.3 L2.05 14" stroke="#5B93D1" stroke-width="1.1"/>
+</g>
+<circle cx="-1.1" cy="8.5" r="2.6" fill="#fff"/>
+<circle cx="-0.8500000000000001" cy="8.8" r="1.55" fill="#2F6FB8"/>
+<circle cx="-0.8500000000000001" cy="8.8" r=".8" fill="#1B1B1B"/>
+<circle cx="-1.35" cy="8.5" r=".42" fill="#fff"/>
+<circle cx="-1.1" cy="8.5" r="3.65" fill="none" stroke="#1D3A6B" stroke-width=".5"/>
+<circle cx="7.3" cy="9.75" r="2.6" fill="#fff"/>
+<circle cx="7.55" cy="10.05" r="1.55" fill="#2F6FB8"/>
+<circle cx="7.55" cy="10.05" r=".8" fill="#1B1B1B"/>
+<circle cx="7.05" cy="9.75" r=".42" fill="#fff"/>
+<circle cx="7.3" cy="9.75" r="3.65" fill="none" stroke="#1D3A6B" stroke-width=".5"/>
+<path d="M2.3 8.4 L3.1 7.7 L3.9 8.9" fill="none" stroke="#1D3A6B" stroke-width=".8" stroke-linecap="round"/>
+<path d="M-1.4-2.2 H8.6 V-1.1 H5.8 V.6 H1.4 V-1.1 H-1.4 Z" fill="#1D3A6B"/>
+<path d="M8.1-1.6 V1.6" stroke="#F2B134" stroke-width=".9"/>
+</svg>

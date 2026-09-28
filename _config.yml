@@ -1,0 +1,24 @@
+title: "B8403: Finance in the Age of AI (Spring 2027)"
+description: "B8403: Finance in the Age of AI. Columbia Business School, Spring 2027 (Term A)."
+url: ""
+baseurl: ""
+markdown: kramdown
+plugins: []
+exclude:
+  - SPEC.md
+  - "REVIEW-*.md"
+  - NOTES.md
+  - LEARN.md
+  - README.md
+  - tools
+  - evidence
+  - __archive__
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - node_modules
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

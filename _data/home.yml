@@ -1,0 +1,7 @@
+# Update the week number and date here. The title and due item come from weeks.yml.
+up_next:
+  week: 1
+  date: TBA
+
+# Add entries with text and an optional date when announcements are ready.
+announcements: []
