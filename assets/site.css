@@ -442,3 +442,9 @@ caption { margin-bottom:6px; }
 .content .material-list li { grid-template-columns:60px 1fr; margin:0 0 10px; }
 .material[hidden] { display:none !important; }
 .content p.material-empty { margin:0 0 8px; }
+
+/* ---- 2026-09-28: Library items as a plain bulleted list ---- */
+.material-list { list-style:disc; padding-left:20px; margin:0; }
+.content .material-list li { display:list-item; margin:0 0 10px; padding-left:2px; }
+.content .material-list li::marker { color:#9aa3ad; }
+.material-source { display:block; font-size:14px; color:var(--muted); margin-top:1px; }
