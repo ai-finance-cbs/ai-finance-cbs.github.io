@@ -1,15 +1,26 @@
 # Library materials. One entry per item.
 #   week:  1-6 (matches _data/weeks.yml)
-#   topic: must match a topic name in _data/weeks.yml exactly
+#   topic: must match a topic name in _data/library.yml exactly
 #   level: required | optional
 #   kind:  Writing | Podcast | Video
-#   title, source (author / outlet, year), url, note (optional, e.g. "minutes 0-23")
-# Example:
-# - week: 1
-#   topic: Key Economic Frameworks
-#   level: required
-#   kind: Writing
-#   title: Will AI Soon Lead to Double-Digit Growth?
-#   source: Ben Moll and Alex Imas, Ghosts of Electricity (2026)
-#   url: https://...
-[]
+#   title, source (author / outlet, year), url, note (optional)
+
+# ---- Week 1 ----
+- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "The Simple Economics of Machine Intelligence", source: "Ajay Agrawal, Joshua Gans, and Avi Goldfarb, Harvard Business Review (2016)", url: "https://hbr.org/2016/11/the-simple-economics-of-machine-intelligence"}
+- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "The Task Is Not the Job", source: "Luis Garicano, Silicon Continent (2026)", url: "https://www.siliconcontinent.com/p/why-desk-jobs-survive-and-amodei"}
+- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "Messy Jobs: The Work That AI Cannot Reach", source: "Luis Garicano, Jin Li, and Yanhui Wu (book)", url: "https://messyjobs.ai/"}
+- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "The Simple Macroeconomics of AI", source: "Daron Acemoglu, NBER Working Paper 32487 (2024)", url: "https://www.nber.org/papers/w32487"}
+
+- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Machines of Loving Grace", source: "Dario Amodei (2024)", url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
+- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "The Gentle Singularity", source: "Sam Altman (2025)", url: "https://blog.samaltman.com/the-gentle-singularity"}
+- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", source: "Ben Moll and Alex Imas, Ghosts of Electricity (2026)", url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
+- {week: 1, topic: AI and Growth, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", source: "Leopold Aschenbrenner (2024)", url: "https://situational-awareness.ai/"}
+- {week: 1, topic: AI and Growth, level: optional, kind: Writing, title: "Explosive Growth from AI Automation: A Review of the Arguments", source: "Ege Erdil and Tamay Besiroglu, Epoch AI (2023)", url: "https://epoch.ai/blog/explosive-growth-from-ai-a-review-of-the-arguments"}
+
+- {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "Artificial Intelligence in UK Financial Services", source: "Bank of England and Financial Conduct Authority (2024)", url: "https://www.bankofengland.co.uk/report/2024/artificial-intelligence-in-uk-financial-services-2024"}
+- {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "GDPval: Measuring Model Performance on Real-World Tasks", source: "OpenAI (2025)", url: "https://openai.com/index/gdpval/"}
+- {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "AI in Asset Management: A Live Catalog of Use Cases", source: "Simon Oh, Columbia Business School", url: "https://sangmino.github.io/ai_asset_management.html"}
+- {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "GPTs Are GPTs: Labor Market Impact Potential of LLMs", source: "Tyna Eloundou, Sam Manning, Pamela Mishkin, and Daniel Rock, Science (2024)", url: "https://www.science.org/doi/10.1126/science.adj0998"}
+- {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "15 Times to Use AI, and 5 Not To", source: "Ethan Mollick, One Useful Thing", url: "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to"}
+
+- {week: 1, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Large Language Models, Explained with a Minimum of Math and Jargon", source: "Timothy B. Lee and Sean Trott, Understanding AI (2023)", url: "https://www.understandingai.org/p/large-language-models-explained-with"}
