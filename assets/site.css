@@ -263,3 +263,46 @@ html { scroll-padding-top:calc(var(--topbar) + 24px); }
   .topbar .cbs-logo img { width:30px; }
   .topbar .brand-title { font-size:15px; }
 }
+
+/* ---- 2026-09-28: aligned dividers, instructor in the left pane, tighter vertical spacing ---- */
+:root { --sidebar:240px; }
+@media (min-width:820px) {
+  .topbar { padding:0; gap:0; }
+  .topbar .cbs-logo { width:var(--sidebar); padding-left:32px; box-sizing:border-box; }
+  .topbar .course-brand { padding-left:28px; }
+}
+.sidebar-instructor { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size:13px; }
+.sidebar-instructor p { margin:0 0 4px; font-family:inherit; font-size:13px; color:var(--ink); }
+.sidebar-instructor a { font-size:13px; }
+.nav-list { margin:0 0 20px; }
+.nav-list a { padding-top:5px; padding-bottom:5px; min-height:34px; }
+.resource-link { min-height:30px; }
+main { padding-top:calc(var(--topbar) + 40px); }
+.page-heading { margin-bottom:18px; }
+h1 { margin:0 0 14px; }
+.content p, .content li { margin-bottom:12px; }
+.up-next { margin-top:18px; padding:16px 0 12px; }
+.announcements { padding-top:14px; }
+.announcements h2, .up-next h2 { margin-bottom:6px; }
+.film-note { margin:28px 0 10px; font-size:16px; }
+.course-film { margin-top:0; }
+.home-section { margin-top:36px; }
+h2 { margin-bottom:10px; }
+.week-index { margin-top:10px; }
+.week-index a { min-height:0; padding:8px 0; }
+.facts { margin-top:10px; }
+.facts > div { padding:9px 0; }
+.preclass-note { padding-bottom:14px; }
+.week-block, .project-block { padding:24px 0 22px; }
+.section-meta { margin-bottom:6px; }
+.week-goal { margin-bottom:12px; }
+.week-details > div, .detail-list > div { padding:3px 0; }
+.week-details .due-row { padding:3px 0; margin:0; }
+.policy-section { margin-top:28px; padding-top:22px; }
+table { margin:16px 0 12px; }
+th, td { padding:9px 10px 9px 0; }
+.toolkit-list { margin-top:16px; }
+.toolkit-list > div { padding:16px 0; }
+.staff-block { padding:20px 0 16px; }
+.page-footer { margin-top:48px; }
+@media (max-width:819px) { .nav-list a { min-height:40px; } }
