@@ -306,3 +306,12 @@ th, td { padding:9px 10px 9px 0; }
 .staff-block { padding:20px 0 16px; }
 .page-footer { margin-top:48px; }
 @media (max-width:819px) { .nav-list a { min-height:40px; } }
+
+/* ---- 2026-09-28: content hugs the left pane and is narrower ---- */
+main { padding-left:56px; padding-right:40px; }
+.content { max-width:640px; margin:0; }
+.facts > div { grid-template-columns:112px 1fr; gap:16px; }
+.week-details > div, .detail-list > div { grid-template-columns:112px 1fr; column-gap:16px; }
+.film-note { margin:0 0 10px; }
+.course-film + .lead, .course-film ~ .lead { margin-top:24px; }
+@media (max-width:819px) { main { padding-left:24px; padding-right:24px; } }

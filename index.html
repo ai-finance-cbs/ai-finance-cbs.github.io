@@ -5,13 +5,11 @@ heading: Overview
 eyebrow: The course
 permalink: /
 ---
+<p class="film-note">This one-minute video (vibe-coded using Claude Opus 5.5) previews the six weeks of the course. Press play with sound on.</p>
+<figure class="course-film">
+  <iframe src="{{ '/assets/film.html' | relative_url }}" title="Finance in the Age of AI: six-week course film" allow="autoplay" loading="eager"></iframe>
+</figure>
 <p class="lead">This course is about using AI to do the work of a finance professional. Employers expect new hires to produce financial analysis with AI, know where the tools fail on financial data, and take responsibility for the result.</p>
-{% assign next_week = site.data.weeks | where: 'number', site.data.home.up_next.week | first %}
-<section class="up-next" aria-labelledby="up-next-title">
-  <h2 id="up-next-title">Next class</h2>
-  <p class="next-session">Week {{ next_week.number }} · {{ next_week.title }} · Date {{ site.data.home.up_next.date | escape }}</p>
-  <p class="next-due">Due before class: <a href="{{ '/project/' | relative_url }}#{{ next_week.project_id }}">{{ next_week.milestone }}</a></p>
-</section>
 <section class="announcements" aria-labelledby="announcements-title">
   <h2 id="announcements-title">Announcements</h2>
   {% if site.data.home.announcements.size > 0 %}
@@ -24,10 +22,6 @@ permalink: /
   <p>No announcements yet.</p>
   {% endif %}
 </section>
-<p class="film-note">This one-minute video previews the six weeks of the course. Press play with sound on.</p>
-<figure class="course-film">
-  <iframe src="{{ '/assets/film.html' | relative_url }}" title="Finance in the Age of AI: six-week course film" allow="autoplay" loading="eager"></iframe>
-</figure>
 <section class="home-section" aria-labelledby="six-weeks">
   <h2 id="six-weeks">Schedule</h2>
   <ol class="week-index">
