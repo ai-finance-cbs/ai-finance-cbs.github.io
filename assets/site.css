@@ -345,3 +345,16 @@ main { padding-left:56px; padding-right:40px; }
   .menu-open .sidebar-foot { padding-top:8px; }
 }
 @media (max-width:819px) { .menu-open .sidebar-resources { border-top:0; padding-top:0; } }
+
+/* ---- 2026-09-28: page menu sits under the course title ---- */
+@media (min-width:820px) {
+  :root { --topbar:104px; }
+  .topbar { align-items:center; }
+  .topbar-main { display:flex; flex-direction:column; justify-content:center; gap:10px; border-left:1px solid var(--line); padding-left:28px; align-self:stretch; }
+  .topbar .course-brand { border-left:0; padding-left:0; }
+  .topnav { margin-left:0; padding-right:0; }
+  .topnav ul { gap:24px; }
+  .topnav a { font-size:15px; padding:2px 0 4px; }
+  .topbar .brand-term { display:inline; }
+}
+@media (max-width:819px) { .topbar-main { display:contents; } }

@@ -5,14 +5,16 @@
     <source media="(max-width: 819px)" srcset="{{ '/assets/cbs-mark.png' | relative_url }}">
     <img src="{{ '/assets/cbs-logo.png' | relative_url }}" alt="Columbia Business School">
   </picture>
-  <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
-  <nav class="topnav" id="topnav" aria-label="Course pages">
-    <ul>
-      {% for item in site.data.navigation %}
-      <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
-      {% endfor %}
-    </ul>
-  </nav>
+  <div class="topbar-main">
+    <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
+    <nav class="topnav" id="topnav" aria-label="Course pages">
+      <ul>
+        {% for item in site.data.navigation %}
+        <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>
 <!-- Left pane: outline of the current page (filled in by site.js), then course links. -->
