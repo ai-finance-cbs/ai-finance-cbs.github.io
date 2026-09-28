@@ -5,11 +5,18 @@ heading: Overview
 eyebrow: The course
 permalink: /
 ---
-<p class="lead">This course is about using AI to do the work of a finance professional. Employers expect new hires to produce financial analysis with AI, know where the tools fail on financial data, and take responsibility for the result.</p>
+<p class="lead">This course is about using AI to do the work of a finance professional. It is intended for students who want a career in the financial sector and expect AI to be part of the job from the first day.</p>
 <p class="film-note">This one-minute video (vibe-coded using Claude Opus 5.5) previews the six weeks of the course. Press play with sound on.</p>
 <figure class="course-film">
   <iframe src="{{ '/assets/film.html' | relative_url }}" title="Finance in the Age of AI: six-week course film" allow="autoplay" loading="eager"></iframe>
 </figure>
+<section class="home-section" aria-labelledby="intro-note">
+  <h2 id="intro-note">Should you take this course?</h2>
+  <p>Employers now use these tools in their daily work, and they expect new hires to arrive with practical experience rather than general familiarity. They need someone who can produce financial analysis with AI, who knows where the tools fail on financial data, and who takes responsibility for the result. That expectation falls most directly on the newest members of a team, and this course is designed to help you meet it.</p>
+  <p>At the same time, I hope this course helps you build a “brand” of your own. As AI takes over more of the analysis, the analysis itself will do less to set you apart as the people you compete with will have the same tools. What sets you apart will inevitably have to be harder to copy: a story about what you have done and why, a point of view about where the tools help and where they mislead, and a reputation as someone colleagues want on their team.</p>
+  <p>One idea that has come out of the AI industry is the “builder mindset,” the view that a person with an idea and these tools can now make things that used to require a team. Throughout the course, I will ask you to think about what it would mean to build something in the finance role you are heading toward. The final project gives you a place to develop one idea under your own name, so that you leave with something to talk about that is yours.</p>
+  <p>It is also useful to say what this course is not. It is not a course on any particular AI product. The tools change every few months, so we will use whichever frontier assistant is best when the term begins, and the skills you develop should carry over to whatever replaces it. It is not a course on how AI models are built or on how a firm should deploy AI across an organization. Columbia already offers courses on both. It is not a programming course. No coding background is required, and you will not write code, though you will read and run code that AI writes for you.</p>
+</section>
 <section class="announcements" aria-labelledby="announcements-title">
   <h2 id="announcements-title">Announcements</h2>
   {% if site.data.home.announcements.size > 0 %}
@@ -26,7 +33,7 @@ permalink: /
   <h2 id="six-weeks">Schedule</h2>
   <ol class="week-index">
     {% for week in site.data.weeks %}
-    <li><a href="{{ '/schedule/' | relative_url }}#week-{{ week.number }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
+    <li><a href="{{ '/syllabus/' | relative_url }}#week-{{ week.number }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
     {% endfor %}
   </ol>
 </section>
@@ -39,9 +46,4 @@ permalink: /
     <div><dt>Coding</dt><dd>No coding background required</dd></div>
     <div><dt>You need</dt><dd>A laptop, a paid frontier AI assistant (approximately $20/month), and Microsoft Excel. The specific assistant will be confirmed before term.</dd></div>
   </dl>
-</section>
-<section class="home-section" aria-labelledby="audience">
-  <h2 id="audience">Who should take this course</h2>
-  <p>The course is for students who want a career in the financial sector and expect AI to be part of the job. The final project develops an idea for the finance role you are heading toward.</p>
-  <p>The course does not teach one AI product, how models are built, or how firms deploy AI across an organization. It is not a programming course. You will read and run code that AI writes for you.</p>
 </section>

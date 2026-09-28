@@ -1,12 +1,10 @@
 - title: Home
   url: /
-- title: Schedule
-  url: /schedule/
-- title: Project
-  url: /project/
-- title: Policies
-  url: /policies/
-- title: Toolkit
-  url: /toolkit/
+- title: Syllabus
+  url: /syllabus/
+- title: Class Policy
+  url: /policy/
+- title: Resources
+  url: /resources/
 - title: Staff
   url: /staff/

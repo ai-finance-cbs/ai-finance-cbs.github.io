@@ -1,0 +1,66 @@
+---
+title: Syllabus
+permalink: /syllabus/
+---
+<p>One three-hour session each week: a mix of lecture, class discussion, and in-class exercises. Dates and location TBA.</p>
+<section class="home-section" aria-labelledby="goals">
+  <h2 id="goals">Course goals</h2>
+  <ol class="plain-list">
+    <li><strong>To develop working fluency with AI tools in the context of finance.</strong> We will predominantly focus on producing financial analysis with AI in the formats the financial sector actually uses and requires.</li>
+    <li><strong>To establish what AI can and cannot do reliably in financial work.</strong> We will study where its answers come from, where it fails in ways particular to financial data, and how to test its output rather than take it on faith.</li>
+    <li><strong>To develop the judgment that AI-assisted work still requires.</strong> At least in the current scheme, the burden (and the liability) of the decision still falls on humans. We will practice deciding when AI-assisted analysis supports action and defending that decision under your own name.</li>
+  </ol>
+</section>
+<section class="home-section" aria-labelledby="outcomes">
+  <h2 id="outcomes">Learning outcomes</h2>
+  <p>Upon completion of this course, students will be able to:</p>
+  <ul class="plain-list">
+    <li>Explain where AI answers come from and connect AI tools to financial data</li>
+    <li>Extract structured data from financial documents with AI and verify its accuracy</li>
+    <li>Evaluate AI predictions, accounting for information cutoffs and contamination</li>
+    <li>Build a working prototype of an AI application in finance and make the case for it</li>
+  </ul>
+</section>
+<section class="home-section" aria-labelledby="weekly">
+  <h2 id="weekly">Weekly schedule</h2>
+<div class="preclass-note"><h3>Before the first class</h3><p>The <a href="{{ '/syllabus/' | relative_url }}#milestone-1">Pre-Class Survey (Milestone #1)</a> is due on {% include canvas.html %} before the first session.</p></div>
+{% for week in site.data.weeks %}
+<section class="week-block" id="week-{{ week.number }}" aria-labelledby="week-{{ week.number }}-title">
+  <div class="week-body">
+  <div class="section-meta"><h3 id="week-{{ week.number }}-title">Week {{ week.number }}: {{ week.title }}</h3><span class="date-label">Date TBA</span></div>
+  <p class="week-goal">{{ week.goal }}</p>
+  <dl class="week-details">
+    <div><dt>Topics</dt><dd>{{ week.topics | join: ' · ' }}</dd></div>
+    <div><dt>In class</dt><dd>{{ week.exercises | join: ' · ' }}</dd></div>
+    <div class="due-row"><dt>Due before class</dt><dd><a href="{{ '/syllabus/' | relative_url }}#{{ week.project_id }}">{{ week.milestone }}</a></dd></div>
+    <div><dt>Slides</dt><dd>Posted after class</dd></div>
+    <div><dt>Readings</dt><dd>On {% include canvas.html %}</dd></div>
+  </dl>
+  </div>
+</section>
+{% endfor %}
+</section>
+<section class="home-section" aria-labelledby="milestones">
+  <h2 id="milestones">Milestones and final prototype</h2>
+<p>Weekly milestones build toward a working prototype of an AI tool for the finance role you are heading toward.</p>
+<p>The milestones and final prototype are individual work. Submit them on {% include canvas.html %}.</p>
+{% for milestone in site.data.milestones %}
+<section class="project-block" id="milestone-{{ milestone.number }}" aria-labelledby="milestone-{{ milestone.number }}-title">
+  <div class="section-meta"><span class="eyebrow">Milestone {{ milestone.number }} · 10 points</span><span class="date-label">Before Week {{ milestone.number }}</span></div>
+  <h3 id="milestone-{{ milestone.number }}-title">{{ milestone.title }}</h3>
+  <p>{{ milestone.description }}</p>
+  <dl class="detail-list">
+    <div><dt>Deliverable</dt><dd>{{ milestone.deliverable }}</dd></div>
+    <div><dt>Graded on</dt><dd>{{ milestone.grading }}</dd></div>
+  </dl>
+</section>
+{% endfor %}
+<section class="project-block" id="final-prototype" aria-labelledby="prototype-title">
+  <div class="section-meta"><span class="eyebrow">Final prototype · 25 points</span><span class="date-label">Before Week 6</span></div>
+  <h3 id="prototype-title">Show it working</h3>
+  <p>An AI application in finance that does not yet exist, or one that does an existing job better, built by you and working on real data. A prototype means a working demonstration of whatever you built.</p>
+  <p>Submit a video of no more than five minutes, with you on camera:</p>
+  <ol class="video-outline"><li><strong>About three minutes:</strong> explain what you built, who it is for, and why it is worth building.</li><li><strong>About two minutes:</strong> show it run end to end on a real input.</li></ol>
+  <dl class="detail-list"><div><dt>Deliverable</dt><dd>Maximum 5-minute video</dd></div><div><dt>Graded on</dt><dd>Quality of the idea, clarity of the case, and a demonstration that matches your claims. Production values earn nothing.</dd></div></dl>
+</section>
+</section>

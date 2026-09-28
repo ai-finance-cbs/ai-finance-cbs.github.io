@@ -358,3 +358,12 @@ main { padding-left:56px; padding-right:40px; }
   .topbar .brand-term { display:inline; }
 }
 @media (max-width:819px) { .topbar-main { display:contents; } }
+
+/* ---- 2026-09-28: Syllabus page sub-headings ---- */
+.content h3 { font-family:"Source Serif 4", Georgia, serif; font-size:19px; font-weight:600; color:#222; margin:0; }
+.preclass-note h3 { margin:8px 0 6px; }
+.section-meta h3 { margin:0; }
+.project-block h3 { margin:0 0 8px; }
+.home-section.first-section { margin-top:0; }
+.course-film + .home-section { margin-top:28px; }
+.toolkit-list dt h3 { font-size:17px; margin:0; } .toolkit-list > div { grid-template-columns:180px 1fr; padding:12px 0; }
