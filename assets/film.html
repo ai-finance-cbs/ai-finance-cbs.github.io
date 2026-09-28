@@ -5,6 +5,16 @@
 </script>
 <style>#play{position:fixed;inset:0;margin:auto;width:88px;height:88px;border-radius:50%;border:0;background:rgba(26,26,26,.72);cursor:pointer}#play::after{content:"";position:absolute;left:35px;top:26px;border-left:28px solid #fff;border-top:18px solid transparent;border-bottom:18px solid transparent}#play[hidden]{display:none}</style>
 <button id="play" aria-label="Play the film (sound on)"></button>
+<style>#bar{position:fixed;left:0;right:0;bottom:0;height:26px;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(transparent,rgba(0,0,0,.35));font:12px/1 "Helvetica Neue",Arial,sans-serif;color:#fff;pointer-events:none}#track{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.45);overflow:hidden}#fill{height:100%;width:0;background:#fff}</style>
+<div id="bar" aria-hidden="true"><div id="track"><div id="fill"></div></div><span id="time">0:00 / 1:08</span></div>
+<script>
+// Progress bar: shows how far into the film you are.
+(()=>{const fill=document.getElementById("fill"),time=document.getElementById("time");
+let played=false;const fmt=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+const tick=()=>{if(window.FILM&&FILM.meta){const n=FILM.meta.durationFrames,fr=Math.min(FILM.frame(),n-1),fps=FILM.meta.fps||30;
+if(document.getElementById("play").hidden)played=true;const started=played;const t=started?fr/fps:0;
+fill.style.width=(started?(fr+1)/n*100:0)+"%";time.textContent=fmt(t)+" / "+fmt(n/fps);}requestAnimationFrame(tick)};tick();})();
+</script>
 <script>
 // A plain play button over the poster. The film itself still starts and pauses on a click or the space bar.
 (()=>{const b=document.getElementById("play"),c=document.getElementById("film");let playing=false;

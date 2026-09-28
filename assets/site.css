@@ -367,3 +367,8 @@ main { padding-left:56px; padding-right:40px; }
 .home-section.first-section { margin-top:0; }
 .course-film + .home-section { margin-top:28px; }
 .toolkit-list dt h3 { font-size:17px; margin:0; } .toolkit-list > div { grid-template-columns:180px 1fr; padding:12px 0; }
+
+/* ---- 2026-09-28: merged Syllabus page ---- */
+.home-section + .film-note { margin-top:28px; }
+.sub-block { margin-top:22px; }
+.sub-block h3 { margin-bottom:8px; }
