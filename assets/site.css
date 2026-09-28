@@ -405,3 +405,9 @@ caption { margin-bottom:6px; }
 .week-details > div { grid-template-columns:128px 1fr; }
 .page-footer { font-size:12px; letter-spacing:0; color:var(--muted); }
 .page-footer a { font-size:12px; color:var(--muted); }
+
+/* ---- 2026-09-28: "Contents" reads as its own element: serif title, Columbia Blue marker for the current section ---- */
+.outline-title { font-family:"Source Serif 4", Georgia, serif; font-size:16px; font-weight:600; color:#222; margin:0 0 8px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+#outline a { color:#6b6b6b; font-size:13.5px; }
+#outline a:hover { color:var(--ink); }
+#outline a.is-current { color:#2F6FB8; font-weight:600; }
