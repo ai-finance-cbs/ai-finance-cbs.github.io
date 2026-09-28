@@ -1,19 +1,27 @@
 # Library sections, one per week. "slug" is the web address: /library/<slug>/
+# "topics" are short names for the syllabus topics, in the same order as _data/weeks.yml.
+# In _data/materials.yml, "topic" must match one of these short names.
 - title: Economics of AI
   slug: economics-of-ai
   week: 1
+  topics: [Economic Frameworks, AI Predictions, Kinds of Financial Work, Sources of an AI Answer]
 - title: AI Infrastructure
   slug: ai-infrastructure
   week: 2
+  topics: [Data, Models, Prompts, Context, Tools and Agents, Tokens and Costs]
 - title: Processing Information
   slug: processing-information
   week: 3
+  topics: [Financial Information, Document Pipeline, Structured Extraction, Grounding and Citation, Verification]
 - title: Predicting Outcomes
   slug: predicting-outcomes
   week: 4
+  topics: [Prediction Basics, Predicting Fundamentals, Predicting People, Contamination and Cutoffs, Confidence and Instability]
 - title: Persuading Stakeholders
   slug: persuading-stakeholders
   week: 5
+  topics: [Modes of Communication, AI-Assisted Drafting, Models as Readers, Artifact Handover, Defending the Analysis]
 - title: Future of Finance
   slug: future-of-finance
   week: 6
+  topics: [Markets, People, Firms, Position]

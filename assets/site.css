@@ -429,3 +429,16 @@ caption { margin-bottom:6px; }
 .content p.material-empty { margin:0; color:var(--muted); font-size:15px; }
 .library-index { margin-top:0; }
 @media (max-width:819px) { .material-group { grid-template-columns:1fr; gap:4px; } }
+
+/* ---- 2026-09-28: Required badge + required-only filter ---- */
+.library-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.library-head .lead { margin:0 0 14px; }
+.required-toggle { font:500 13px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; border:1px solid #cfd8e3; border-radius:6px; padding:7px 12px; cursor:pointer; }
+.required-toggle:hover { border-color:var(--accent); }
+.required-toggle[aria-pressed="true"] { background:#eef4fb; border-color:var(--accent); color:#1f4f86; }
+.badge-required { display:inline-block; font:600 11px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; color:#2F6FB8; border:1px solid #9dbfe6; background:#f3f8fd; border-radius:4px; padding:3px 6px; margin-right:8px; vertical-align:2px; }
+.topic-block { padding:14px 0 6px; }
+.topic-block h2 { font-size:20px; margin-bottom:10px; }
+.content .material-list li { grid-template-columns:60px 1fr; margin:0 0 10px; }
+.material[hidden] { display:none !important; }
+.content p.material-empty { margin:0 0 8px; }

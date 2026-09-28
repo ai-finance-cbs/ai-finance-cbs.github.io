@@ -1,24 +1,22 @@
 {% assign s = site.data.library | where: 'slug', include.slug | first %}
 {% assign w = site.data.weeks | where: 'number', s.week | first %}
-<p class="lead">Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a></p>
-{% for topic in w.topics %}
+<div class="library-head">
+  <p class="lead">Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a></p>
+  <!-- Filter: hides optional materials when switched on (site.js) -->
+  <button class="required-toggle" type="button" aria-pressed="false">Show required only</button>
+</div>
+{% for topic in s.topics %}
 {% assign items = site.data.materials | where: 'week', w.number | where: 'topic', topic %}
+{% assign req = items | where: 'level', 'required' %}
+{% assign opt = items | where: 'level', 'optional' %}
 <section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
   <h2 id="topic-{{ forloop.index }}">{{ topic }}</h2>
-  {% for level in site.data.material_levels %}
-  {% assign list = items | where: 'level', level.key %}
-  <div class="material-group">
-    <h3>{{ level.label }}</h3>
-    {% if list.size > 0 %}
-    <ul class="material-list">
-      {% for m in list %}
-      <li><span class="material-kind">{{ m.kind }}</span><span class="material-body">{% if m.url %}<a href="{{ m.url }}">{{ m.title }}</a>{% else %}{{ m.title }}{% endif %}{% if m.source %}<span class="material-source">{{ m.source }}</span>{% endif %}{% if m.note %}<span class="material-note">{{ m.note }}</span>{% endif %}</span></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="material-empty">To be posted.</p>
-    {% endif %}
-  </div>
-  {% endfor %}
+  {% if items.size > 0 %}
+  <ul class="material-list">
+    {% for m in req %}{% include material-item.html m=m %}{% endfor %}
+    {% for m in opt %}{% include material-item.html m=m %}{% endfor %}
+  </ul>
+  {% endif %}
+  <p class="material-empty"{% if req.size > 0 %} data-when-filtered{% endif %}{% if items.size > 0 and req.size > 0 %} hidden{% endif %}>{% if items.size == 0 %}To be posted.{% else %}No required materials.{% endif %}</p>
 </section>
 {% endfor %}
