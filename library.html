@@ -2,7 +2,6 @@
 title: Library
 permalink: /library/
 ---
-<p class="lead">Slides, exercise files, prompts, and tools from each week, posted after class. Readings are on {% include canvas.html %}.</p>
 <ul class="library-index">
   {% for s in site.data.library %}
   <li><a href="{{ '/library/' | append: s.slug | append: '/' | relative_url }}">{{ s.title }}</a><span>Week {{ s.week }}</span></li>

@@ -1,7 +1,24 @@
 {% assign s = site.data.library | where: 'slug', include.slug | first %}
 {% assign w = site.data.weeks | where: 'number', s.week | first %}
-<p class="lead">Materials from Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a>. Readings are on {% include canvas.html %}.</p>
-<section class="home-section" aria-labelledby="slides"><h2 id="slides">Slides</h2><p>Posted after class.</p></section>
-<section class="home-section" aria-labelledby="exercise-files"><h2 id="exercise-files">Exercise files</h2><p>Data, documents, and notebooks from the in-class exercises. Posted after class.</p></section>
-<section class="home-section" aria-labelledby="prompts"><h2 id="prompts">Prompts and setups</h2><p>The instructions and assistant settings used in class, so you can rerun them. Posted after class.</p></section>
-<section class="home-section" aria-labelledby="tools"><h2 id="tools">Tools shown</h2><p>Links to the products and features demonstrated in class. Posted after class.</p></section>
+<p class="lead">Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a></p>
+{% for topic in w.topics %}
+{% assign items = site.data.materials | where: 'week', w.number | where: 'topic', topic %}
+<section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
+  <h2 id="topic-{{ forloop.index }}">{{ topic }}</h2>
+  {% for level in site.data.material_levels %}
+  {% assign list = items | where: 'level', level.key %}
+  <div class="material-group">
+    <h3>{{ level.label }}</h3>
+    {% if list.size > 0 %}
+    <ul class="material-list">
+      {% for m in list %}
+      <li><span class="material-kind">{{ m.kind }}</span><span class="material-body">{% if m.url %}<a href="{{ m.url }}">{{ m.title }}</a>{% else %}{{ m.title }}{% endif %}{% if m.source %}<span class="material-source">{{ m.source }}</span>{% endif %}{% if m.note %}<span class="material-note">{{ m.note }}</span>{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="material-empty">To be posted.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endfor %}

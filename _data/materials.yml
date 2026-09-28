@@ -1,0 +1,15 @@
+# Library materials. One entry per item.
+#   week:  1-6 (matches _data/weeks.yml)
+#   topic: must match a topic name in _data/weeks.yml exactly
+#   level: required | optional
+#   kind:  Writing | Podcast | Video
+#   title, source (author / outlet, year), url, note (optional, e.g. "minutes 0-23")
+# Example:
+# - week: 1
+#   topic: Key Economic Frameworks
+#   level: required
+#   kind: Writing
+#   title: Will AI Soon Lead to Double-Digit Growth?
+#   source: Ben Moll and Alex Imas, Ghosts of Electricity (2026)
+#   url: https://...
+[]

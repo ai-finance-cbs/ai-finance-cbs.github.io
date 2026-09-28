@@ -416,3 +416,16 @@ caption { margin-bottom:6px; }
 .row-list { list-style:none; margin:0; padding:0; }
 .content .row-list li { margin:0 0 2px; font-size:16.5px; line-height:1.45; }
 .week-details > div { padding:4px 0; }
+
+/* ---- 2026-09-28: Library week pages = topics, each with Required and Optional materials ---- */
+.topic-block { border-top:1px solid var(--line); padding:18px 0 8px; }
+.topic-block h2 { margin-bottom:8px; }
+.material-group { display:grid; grid-template-columns:96px 1fr; gap:16px; padding:4px 0; }
+.material-group h3 { font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:13px; font-weight:500; color:var(--muted); margin:3px 0 0; }
+.material-list { list-style:none; margin:0; padding:0; }
+.content .material-list li { display:grid; grid-template-columns:64px 1fr; gap:10px; margin:0 0 8px; }
+.material-kind { font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:12px; color:var(--muted); padding-top:3px; }
+.material-source, .material-note { display:block; font-size:14px; color:var(--muted); }
+.content p.material-empty { margin:0; color:var(--muted); font-size:15px; }
+.library-index { margin-top:0; }
+@media (max-width:819px) { .material-group { grid-template-columns:1fr; gap:4px; } }
