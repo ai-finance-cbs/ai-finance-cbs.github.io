@@ -30,7 +30,7 @@ if (!headings.length) document.querySelector('.page-outline').hidden = true;
 const links = [...outline.querySelectorAll('a')];
 const mark = () => {
   let current = headings[0];
-  for (const h of headings) if (h.getBoundingClientRect().top < 160) current = h;
+  for (const h of headings) if (h.getBoundingClientRect().top < 260) current = h;
   links.forEach(a => a.classList.toggle('is-current', current && a.hash === '#' + current.id));
 };
 addEventListener('scroll', mark, { passive: true });

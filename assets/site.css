@@ -411,3 +411,8 @@ caption { margin-bottom:6px; }
 #outline a { color:#6b6b6b; font-size:13.5px; }
 #outline a:hover { color:var(--ink); }
 #outline a.is-current { color:#2F6FB8; font-weight:600; }
+
+/* one item per line in the Syllabus week rows */
+.row-list { list-style:none; margin:0; padding:0; }
+.content .row-list li { margin:0 0 2px; font-size:16.5px; line-height:1.45; }
+.week-details > div { padding:4px 0; }
