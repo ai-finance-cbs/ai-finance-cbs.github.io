@@ -315,3 +315,5 @@ main { padding-left:56px; padding-right:40px; }
 .film-note { margin:0 0 10px; }
 .course-film + .lead, .course-film ~ .lead { margin-top:24px; }
 @media (max-width:819px) { main { padding-left:24px; padding-right:24px; } }
+.lead + .film-note { margin-top:20px; }
+.course-film + .announcements { margin-top:28px; }
