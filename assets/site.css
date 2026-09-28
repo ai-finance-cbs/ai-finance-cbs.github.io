@@ -448,3 +448,9 @@ caption { margin-bottom:6px; }
 .content .material-list li { display:list-item; margin:0 0 10px; padding-left:2px; }
 .content .material-list li::marker { color:#9aa3ad; }
 .material-source { display:block; font-size:14px; color:var(--muted); margin-top:1px; }
+
+/* ---- 2026-09-28: bullets for Syllabus topics and in-class activities ---- */
+.row-list { list-style:disc; padding-left:18px; }
+.content .row-list li { display:list-item; padding-left:2px; }
+.content .row-list li::marker { color:#9aa3ad; }
+.row-list { padding-left:0; } .content .row-list li { padding-left:0; }
