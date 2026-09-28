@@ -1,0 +1,8 @@
+<nav class="subnav{{ include.where }}" aria-label="Library sections">
+  <ul>
+    {% for s in site.data.library %}
+    {% capture u %}/library/{{ s.slug }}/{% endcapture %}
+    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ s.title }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>

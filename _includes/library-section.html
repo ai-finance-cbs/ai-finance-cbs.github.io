@@ -1,0 +1,7 @@
+{% assign s = site.data.library | where: 'slug', include.slug | first %}
+{% assign w = site.data.weeks | where: 'number', s.week | first %}
+<p class="lead">Materials from Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a>. Readings are on {% include canvas.html %}.</p>
+<section class="home-section" aria-labelledby="slides"><h2 id="slides">Slides</h2><p>Posted after class.</p></section>
+<section class="home-section" aria-labelledby="exercise-files"><h2 id="exercise-files">Exercise files</h2><p>Data, documents, and notebooks from the in-class exercises. Posted after class.</p></section>
+<section class="home-section" aria-labelledby="prompts"><h2 id="prompts">Prompts and setups</h2><p>The instructions and assistant settings used in class, so you can rerun them. Posted after class.</p></section>
+<section class="home-section" aria-labelledby="tools"><h2 id="tools">Tools shown</h2><p>Links to the products and features demonstrated in class. Posted after class.</p></section>

@@ -1,0 +1,19 @@
+# Library sections, one per week. "slug" is the web address: /library/<slug>/
+- title: Economics of AI
+  slug: economics-of-ai
+  week: 1
+- title: AI Infrastructure
+  slug: ai-infrastructure
+  week: 2
+- title: Processing Information
+  slug: processing-information
+  week: 3
+- title: Predicting Outcomes
+  slug: predicting-outcomes
+  week: 4
+- title: Persuading Stakeholders
+  slug: persuading-stakeholders
+  week: 5
+- title: Future of Finance
+  slug: future-of-finance
+  week: 6

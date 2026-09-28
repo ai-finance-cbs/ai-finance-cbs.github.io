@@ -10,10 +10,11 @@
     <nav class="topnav" id="topnav" aria-label="Course pages">
       <ul>
         {% for item in site.data.navigation %}
-        <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
+        <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url == '/library/' and page.url contains '/library/' %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
         {% endfor %}
       </ul>
     </nav>
+    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% endif %}
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>
