@@ -4,39 +4,33 @@
   topics: ["Key Economic Frameworks", "Assessing the Validity of AI-related Predictions", "Different Kinds of Financial Work", "Sources of an AI Answer (Memory + Input + Tools)"]
   exercises: ["10x Richer", "Sort the Work", "Three Answers"]
   milestone: "Milestone #1 · Pre-Class Survey"
-  project_id: milestone-1
 - number: 2
   title: AI Infrastructure
   goal: Learn where AI answers come from and discuss the basics of AI infrastructure.
   topics: ["Data (Files, Databases, APIs)", "Models (Providers, Tiers, and Open Weights)", "Prompts and Standing Instructions", "Context: Connections, Retrieval, and Memory", "Tools, Actions, and Agents", "Tokens and Costs"]
   exercises: ["Rebuild the Chart", "Four Formats", "The Bill"]
   milestone: "Milestone #2 · Proposal and Task Map"
-  project_id: milestone-2
 - number: 3
   title: Processing Information with AI
   goal: Extract structured data from financial documents and learn how to verify AI outputs.
   topics: ["Sources of Financial Information (Filings, Contracts, Transcripts, News)", "Document Pipeline (Scraping, Parsing, OCR, Chunking)", "Structured Extraction (Schemas and Output Format)", "Grounding and Citation", "Verification and Common Failure Modes"]
   exercises: ["Unparsed", "Page 700", "Write the Checks"]
   milestone: "Milestone #3 · Working Setup"
-  project_id: milestone-3
 - number: 4
   title: Predicting Outcomes with AI
   goal: Understand what AI can and cannot predict and learn to evaluate AI predictions honestly.
   topics: ["Prediction Basics (Targets, Error, Benchmarks, Backtesting, Out-of-Sample)", "Predicting Fundamentals", "Predicting People", "Contamination and Knowledge Cutoffs", "Confidence and Instability (Uncalibrated Probability, Repeatability)"]
   exercises: ["Priced In", "The Mirror", "Rank Four"]
   milestone: "Milestone #4 · Personal Benchmark"
-  project_id: milestone-4
 - number: 5
   title: Persuading Stakeholders with AI
   goal: Produce written memos, slides, and presentations with AI, and defend them.
   topics: ["Three Modes of Communication", "AI-Assisted Drafting", "Models as Readers", "Artifact Handover", "Defending the Analysis"]
   exercises: ["Writing Pageant", "Pass It On"]
   milestone: "Milestone #5 · Pitch It"
-  project_id: milestone-5
 - number: 6
   title: The Future of Finance with AI
   goal: Think through what will happen to the financial sector and its jobs.
   topics: ["Markets: Crowding and Reflexivity", "People: The Apprenticeship Problem", "Firms: Where the Value Goes", "Position: Who Signs"]
   exercises: ["Same Trade", "Replace Yourself", "Best Take"]
   milestone: Final Prototype
-  project_id: final-prototype
