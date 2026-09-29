@@ -454,3 +454,4 @@ caption { margin-bottom:6px; }
 .content .row-list li { display:list-item; padding-left:2px; }
 .content .row-list li::marker { color:#9aa3ad; }
 .row-list { padding-left:0; } .content .row-list li { padding-left:0; }
+#outline a.is-current { font-weight:400; color:#2F6FB8; } /* colour only, so the line never re-wraps */
