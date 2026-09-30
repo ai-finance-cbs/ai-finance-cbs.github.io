@@ -17,10 +17,10 @@ permalink: /syllabus/
   <p class="week-goal">{{ week.goal }}</p>
   <dl class="week-details">
     <div><dt>Topics</dt><dd><ul class="row-list">{% for x in week.topics %}<li>{{ x }}</li>{% endfor %}</ul></dd></div>
-    <div><dt>In-Class Activity</dt><dd><ul class="row-list">{% for x in week.exercises %}<li>{{ x }}</li>{% endfor %}</ul></dd></div>
     <div><dt>Due before class</dt><dd>{{ week.milestone }}</dd></div>
     <div><dt>Slides</dt><dd>Posted after class</dd></div>
-    <div><dt>Readings</dt><dd>On {% include canvas.html %}</dd></div>
+    {% assign lib = site.data.library | where: 'week', week.number | first %}
+    <div><dt>Readings</dt><dd><a href="{{ '/library/' | append: lib.slug | append: '/' | relative_url }}">Library: {{ lib.title }}</a></dd></div>
   </dl>
 </section>
 {% endfor %}
