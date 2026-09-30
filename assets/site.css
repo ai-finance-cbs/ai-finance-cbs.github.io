@@ -473,3 +473,11 @@ caption { margin-bottom:6px; }
 }
 @media (min-width:820px) and (max-width:1180px) { .subnav-empty { min-height:37.4px; } }
 @media (min-width:820px) { .topbar-main { justify-content:flex-start; padding-top:14px; } .subnav-empty { min-height:37.4px !important; } }
+
+/* name + email centred under the logo */
+@media (min-width:820px) {
+  .topbar .logo-cell { display:flex; flex-direction:column; align-items:center; padding:0 16px; }
+  .topbar .logo-cell img { width:190px; }
+  .logo-sub { font-size:12px; text-align:center; margin-top:8px; }
+  .logo-sub a { color:var(--muted); text-decoration-color:#c9d6e6; }
+}
