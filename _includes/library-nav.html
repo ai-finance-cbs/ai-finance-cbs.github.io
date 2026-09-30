@@ -2,7 +2,7 @@
   <ul>
     {% for s in site.data.library %}
     {% capture u %}/library/{{ s.slug }}/{% endcapture %}
-    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}><span class="subnav-kicker">{{ s.kicker }}</span><span class="subnav-label">{{ s.title }}</span></a></li>
+    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{% if s.week > 0 and s.week < 99 %}<span class="subnav-kicker">{{ s.kicker }}</span>{% endif %}<span class="subnav-label">{{ s.title }}</span></a></li>
     {% endfor %}
   </ul>
 </nav>
