@@ -524,3 +524,4 @@ caption { margin-bottom:6px; }
   .subnav-top a { font-size:13.5px; }
 }
 .home-section + .home-section, .lead + .home-section { margin-top:32px; }
+.lead + .library-index { margin-top:18px; }
