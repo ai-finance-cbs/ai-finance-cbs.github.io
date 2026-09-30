@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="{{ '/assets/site.css' | relative_url }}">
   <script src="{{ '/assets/site.js' | relative_url }}" defer></script>
 </head>
-<body{% if page.url contains '/library/' %} class="in-library"{% endif %}>
+<body{% if page.url contains '/library/' or page.url contains '/schedule/' %} class="in-library"{% endif %}>
   <a class="skip-link" href="#main">Skip to content</a>
   {% include sidebar.html %}
   <main id="main" tabindex="-1">
@@ -24,7 +24,7 @@
         </div>
         {% if page.subline %}<p class="subline">{{ page.subline }}</p>{% endif %}
       </header>
-      {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-inline' %}{% endif %}
+      {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-inline' %}{% elsif page.url contains '/schedule/' %}{% include schedule-nav.html where=' subnav-inline' %}{% endif %}
       {{ content }}
       <footer class="page-footer"><span>Simon Oh | Assistant Professor of Finance | <a href="mailto:oh@gsb.columbia.edu">oh@gsb.columbia.edu</a></span><span>Columbia Business School · Spring 2027</span></footer>
     </div>

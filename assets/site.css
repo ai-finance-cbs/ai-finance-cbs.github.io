@@ -529,3 +529,4 @@ caption { margin-bottom:6px; }
 /* Required / Optional badges: same width */
 .badge-required { display:inline-block; width:58px; text-align:center; box-sizing:border-box; }
 .badge-optional { color:#6b737c; border-color:#d3d8de; background:#f7f8f9; }
+.in-library .week-details { margin-top:6px; }

@@ -1,7 +1,7 @@
 {% assign s = site.data.library | where: 'slug', include.slug | first %}
 {% assign w = site.data.weeks | where: 'number', s.week | first %}
 <div class="library-head">
-  {% if w %}<p class="lead syllabus-link"><a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">Week {{ w.number }} in the Syllabus</a></p>{% else %}<p class="lead syllabus-link"></p>{% endif %}
+  {% if w %}<p class="lead syllabus-link"><a href="{{ '/schedule/week-' | append: w.number | append: '/' | relative_url }}">Week {{ w.number }} in the Schedule</a></p>{% else %}<p class="lead syllabus-link"></p>{% endif %}
   <!-- Filter: hides optional materials when switched on (site.js) -->
   <p class="icon-key"><span class="material-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5z M9.5 1.5v3h3 M6 8h4.5 M6 10.5h4.5" /></svg></span> Writing <span class="material-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M6.5 6v4l3.5-2z"/></svg></span> Video <span class="material-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10V8a5 5 0 0 1 10 0v2 M3 10h2v3.5H3z M11 10h2v3.5h-2z"/></svg></span> Podcast</p>
   <button class="required-toggle" type="button" aria-pressed="false">Show required only</button>

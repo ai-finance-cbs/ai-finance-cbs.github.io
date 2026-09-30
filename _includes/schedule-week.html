@@ -1,0 +1,10 @@
+{% assign week = site.data.weeks | where: 'number', include.week | first %}
+{% assign lib = site.data.library | where: 'week', week.number | first %}
+<p class="lead">{{ week.goal }}</p>
+<dl class="week-details">
+  <div><dt>Date</dt><dd>TBA</dd></div>
+  <div><dt>Topics</dt><dd><ul class="row-list">{% for x in week.topics %}<li>{{ x }}</li>{% endfor %}</ul></dd></div>
+  <div><dt>Due before class</dt><dd>{{ week.milestone }}</dd></div>
+  <div><dt>Slides</dt><dd>Posted after class</dd></div>
+  <div><dt>Readings</dt><dd><a href="{{ '/library/' | append: lib.slug | append: '/' | relative_url }}">Library: {{ lib.title }}</a></dd></div>
+</dl>
