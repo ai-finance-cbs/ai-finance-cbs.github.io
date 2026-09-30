@@ -7,8 +7,7 @@
 
 # ---- Week 1 ----
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "The Task Is Not the Job", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/why-desk-jobs-survive-and-amodei"}
-- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "GPTs Are GPTs: Labor Market Impact Potential of LLMs", length: "paper", author: "Tyna Eloundou, Sam Manning, Pamela Mishkin, and Daniel Rock", year: 2024, url: "https://www.science.org/doi/10.1126/science.adj0998"}
-- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Automation and New Tasks: How Technology Displaces and Reinstates Labor", length: "paper", author: "Daron Acemoglu and Pascual Restrepo", year: 2019, url: "https://www.aeaweb.org/articles?id=10.1257/jep.33.2.3"}
+- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "A.I. and Our Economic Future", length: "paper", author: "Charles I. Jones", year: 2026, url: "https://www.nber.org/papers/w34779"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Has AI Impacted the Labor Market Yet?", length: "20 min", author: "Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/has-ai-impacted-the-labor-market"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "The Productivity J-Curve: How Intangibles Complement General Purpose Technologies", length: "paper", author: "Erik Brynjolfsson, Daniel Rock, and Chad Syverson", year: 2021, url: "https://www.aeaweb.org/articles?id=10.1257/mac.20180386"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
