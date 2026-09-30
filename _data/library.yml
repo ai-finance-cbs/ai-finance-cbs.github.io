@@ -3,25 +3,31 @@
 # In _data/materials.yml, "topic" must match one of these short names.
 - title: Economics of AI
   slug: economics-of-ai
+  menu: ["Economics", "of AI"]   # two-line label in the Library menu
   week: 1
   topics: [Economic Frameworks for AI, AI and Growth, Nature of Financial Work, Where Do AI Answers Come From?]
 - title: AI Infrastructure
   slug: ai-infrastructure
+  menu: ["AI", "Infrastructure"]   # two-line label in the Library menu
   week: 2
   topics: [Data, Models, Prompts, Context, Tools and Agents, Tokens and Costs]
 - title: Processing Information
   slug: processing-information
+  menu: ["Processing", "Information"]   # two-line label in the Library menu
   week: 3
   topics: [Financial Information, Document Pipeline, Structured Extraction, Grounding and Citation, Verification]
 - title: Predicting Outcomes
   slug: predicting-outcomes
+  menu: ["Predicting", "Outcomes"]   # two-line label in the Library menu
   week: 4
   topics: [Prediction Basics, Predicting Fundamentals, Predicting People, Contamination and Cutoffs, Confidence and Instability]
 - title: Persuading Stakeholders
   slug: persuading-stakeholders
+  menu: ["Persuading", "Stakeholders"]   # two-line label in the Library menu
   week: 5
   topics: [Modes of Communication, AI-Assisted Drafting, Models as Readers, Artifact Handover, Defending the Analysis]
 - title: Future of Finance
   slug: future-of-finance
+  menu: ["Future of", "Finance"]   # two-line label in the Library menu
   week: 6
   topics: [Markets, People, Firms, Position]

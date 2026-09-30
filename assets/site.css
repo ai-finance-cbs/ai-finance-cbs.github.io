@@ -488,3 +488,13 @@ caption { margin-bottom:6px; }
 @media (min-width:820px) { .topbar .course-brand, .topbar .brand-title { line-height:1.2; } .topnav a { padding:0 0 3px; line-height:1.4; } .topnav ul { line-height:1.4; } .subnav-top { padding-top:10px; } .subnav a { line-height:1.4; } .subnav-empty { min-height:31px !important; } }
 @media (min-width:1181px) { .subnav-top { height:38px; } .subnav-empty { min-height:38px !important; } }
 @media (min-width:820px) and (max-width:1180px) { .subnav-top { height:68px; } .subnav-empty { min-height:68px !important; } }
+
+/* ---- 2026-09-30: Library menu labels on two lines ---- */
+@media (min-width:820px) {
+  :root { --topbar:150px; }
+  .subnav ul { flex-wrap:nowrap; gap:0 26px; align-items:flex-end; }
+  .subnav a { display:inline-flex; flex-direction:column; line-height:1.25; padding-bottom:3px; }
+  .subnav-top, .subnav-empty { height:52px !important; min-height:52px !important; }
+}
+@media (min-width:820px) and (max-width:1180px) { :root { --topbar:150px; } .subnav ul { gap:0 18px; } }
+@media (min-width:820px) { body.in-library { --topbar:150px; } }

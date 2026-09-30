@@ -2,7 +2,7 @@
   <ul>
     {% for s in site.data.library %}
     {% capture u %}/library/{{ s.slug }}/{% endcapture %}
-    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ s.title }}</a></li>
+    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}><span>{{ s.menu[0] }}</span><span>{{ s.menu[1] }}</span></a></li>
     {% endfor %}
   </ul>
 </nav>
