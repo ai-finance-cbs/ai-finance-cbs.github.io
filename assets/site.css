@@ -498,3 +498,10 @@ caption { margin-bottom:6px; }
 .topic-block h2 { font-size:18px; margin-bottom:8px; }
 .topic-block { padding:12px 0 4px; }
 .content p.icon-key { margin:0 0 14px auto; margin-right:16px; font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:12.5px; color:var(--muted); }
+
+/* ---- 2026-09-30: thin grey line icons instead of emoji ---- */
+.material-icon svg { width:14px; height:14px; fill:none; stroke:#8a939d; stroke-width:1.2; stroke-linejoin:round; stroke-linecap:round; }
+.content .material-list li .material-icon { top:3px; }
+.icon-key { display:flex; align-items:center; gap:5px; }
+.icon-key .material-icon { position:static; display:inline-flex; margin-left:8px; }
+.icon-key .material-icon:first-child { margin-left:0; }
