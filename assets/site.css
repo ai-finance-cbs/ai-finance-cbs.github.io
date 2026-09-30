@@ -498,3 +498,8 @@ caption { margin-bottom:6px; }
 }
 @media (min-width:820px) and (max-width:1180px) { :root { --topbar:150px; } .subnav ul { gap:0 18px; } }
 @media (min-width:820px) { body.in-library { --topbar:150px; } }
+/* Library menu: centred two-line labels spread across the row */
+@media (min-width:820px) {
+  .subnav-top ul { justify-content:space-between; gap:0 12px; }
+  .subnav a { align-items:center; text-align:center; }
+}

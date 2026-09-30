@@ -1,9 +1,9 @@
 # Library sections, one per week. "slug" is the web address: /library/<slug>/
 # "topics" are short names for the syllabus topics, in the same order as _data/weeks.yml.
 # In _data/materials.yml, "topic" must match one of these short names.
-- title: Economics of AI
+- title: AI Economics
   slug: economics-of-ai
-  menu: ["Economics", "of AI"]   # two-line label in the Library menu
+  menu: ["AI", "Economics"]   # two-line label in the Library menu
   week: 1
   topics: [Economic Frameworks for AI, AI and Growth, Nature of Financial Work, Where Do AI Answers Come From?]
 - title: AI Infrastructure
