@@ -57,8 +57,6 @@ main:focus { outline:none; }
 .announcement-list { padding-left:20px; margin:0; font-size:14px; color:var(--body); }
 .announcement-list li + li { margin-top:12px; }
 .announcement-date { display:block; color:var(--muted); font-size:12px; }
-.course-film { margin:34px 0 0; }
-.course-film iframe { display:block; width:100%; aspect-ratio:16/9; height:auto; border:1px solid var(--line); background:white; }
 figcaption { font-size:12px; color:var(--muted); line-height:1.6; margin-top:12px; }
 .home-section { margin-top:52px; }
 .week-index { list-style:none; padding:0; margin:20px 0 0; border-top:1px solid var(--line); }
@@ -95,8 +93,6 @@ dd { margin:0; color:var(--body); }
 .due-label { color:var(--ink); font-size:10.5px; font-weight:500; letter-spacing:.14em; line-height:1.5; text-transform:uppercase; text-decoration:underline; text-decoration-color:var(--accent); text-decoration-thickness:2px; text-underline-offset:4px; }
 .project-block:first-of-type { margin-top:34px; }
 .project-block p { margin-bottom:22px; }
-.video-outline { padding-left:22px; margin:0 0 26px; color:var(--body); }
-.video-outline li { padding-left:4px; margin-bottom:12px; }
 .policy-section { margin-top:44px; padding-top:34px; border-top:1px solid var(--line); }
 .policy-section.first-section { padding-top:0; margin-top:0; border-top:0; }
 table { border-collapse:collapse; width:100%; margin:28px 0 20px; font-size:14px; line-height:1.55; font-variant-numeric:tabular-nums; table-layout:fixed; }
@@ -147,7 +143,6 @@ th:last-child,td:last-child { padding-right:0; }
   .page-title-row { gap:16px; }
   .page-illustration { width:88px; height:72px; }
   .lead { font-size:16px; }
-  .course-film { margin-top:28px; }
   .home-section { margin-top:40px; }
   .week-index a { grid-template-columns:56px 1fr 14px; gap:10px; min-height:56px; }
   .week-link-title { line-height:1.5; }
@@ -284,8 +279,6 @@ h1 { margin:0 0 14px; }
 .up-next { margin-top:18px; padding:16px 0 12px; }
 .announcements { padding-top:14px; }
 .announcements h2, .up-next h2 { margin-bottom:6px; }
-.film-note { margin:28px 0 10px; font-size:16px; }
-.course-film { margin-top:0; }
 .home-section { margin-top:36px; }
 h2 { margin-bottom:10px; }
 .week-index { margin-top:10px; }
@@ -312,11 +305,7 @@ main { padding-left:56px; padding-right:40px; }
 .content { max-width:640px; margin:0; }
 .facts > div { grid-template-columns:112px 1fr; gap:16px; }
 .week-details > div, .detail-list > div { grid-template-columns:112px 1fr; column-gap:16px; }
-.film-note { margin:0 0 10px; }
-.course-film + .lead, .course-film ~ .lead { margin-top:24px; }
 @media (max-width:819px) { main { padding-left:24px; padding-right:24px; } }
-.lead + .film-note { margin-top:20px; }
-.course-film + .announcements { margin-top:28px; }
 
 /* ---- 2026-09-28: page menu moves to the top bar; the left pane shows the page outline ---- */
 .topnav { margin-left:auto; padding-right:32px; }
@@ -365,11 +354,9 @@ main { padding-left:56px; padding-right:40px; }
 .section-meta h3 { margin:0; }
 .project-block h3 { margin:0 0 8px; }
 .home-section.first-section { margin-top:0; }
-.course-film + .home-section { margin-top:28px; }
 .toolkit-list dt h3 { font-size:17px; margin:0; } .toolkit-list > div { grid-template-columns:180px 1fr; padding:12px 0; }
 
 /* ---- 2026-09-28: merged Syllabus page ---- */
-.home-section + .film-note { margin-top:28px; }
 .sub-block { margin-top:22px; }
 .sub-block h3 { margin-bottom:8px; }
 
@@ -536,3 +523,4 @@ caption { margin-bottom:6px; }
   .subnav-top li { flex-shrink:0; }
   .subnav-top a { font-size:13.5px; }
 }
+.home-section + .home-section, .lead + .home-section { margin-top:32px; }
