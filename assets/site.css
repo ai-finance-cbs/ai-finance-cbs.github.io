@@ -481,3 +481,5 @@ caption { margin-bottom:6px; }
   .logo-sub { font-size:12px; text-align:center; margin-top:8px; }
   .logo-sub a { color:var(--muted); text-decoration-color:#c9d6e6; }
 }
+@media (min-width:820px) { .logo-sub.logo-title { margin-top:2px; } }
+@media (min-width:820px) { .logo-sub { line-height:1.35; } }
