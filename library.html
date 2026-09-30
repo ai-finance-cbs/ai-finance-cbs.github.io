@@ -4,6 +4,6 @@ permalink: /library/
 ---
 <ul class="library-index">
   {% for s in site.data.library %}
-  <li><a href="{{ '/library/' | append: s.slug | append: '/' | relative_url }}">{{ s.title }}</a><span>{% if s.week == 0 %}Before Week 1{% else %}Week {{ s.week }}{% endif %}</span></li>
+  <li><a href="{{ '/library/' | append: s.slug | append: '/' | relative_url }}">{{ s.title }}</a><span>{{ s.kicker }}</span></li>
   {% endfor %}
 </ul>

@@ -1,5 +1,5 @@
 - number: 1
-  title: AI Basics
+  title: AI Economics
   goal: Learn key frameworks for the economics of AI and how its core features interact with finance.
   topics: ["Key Economic Frameworks", "Assessing the Validity of AI-related Predictions", "Different Kinds of Financial Work", "Sources of an AI Answer (Memory + Input + Tools)"]
   exercises: ["10x Richer", "Sort the Work", "Three Answers"]

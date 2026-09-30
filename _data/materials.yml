@@ -13,10 +13,10 @@
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Has AI Impacted the Labor Market Yet?", length: "20 min", author: "Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/has-ai-impacted-the-labor-market"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
 
-- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
-- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
-- {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
-- {week: 1, topic: AI and Growth, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", length: "book-length", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
+- {week: 1, topic: Bulls vs. Skeptics, level: required, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
+- {week: 1, topic: Bulls vs. Skeptics, level: required, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
+- {week: 1, topic: Bulls vs. Skeptics, level: required, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
+- {week: 1, topic: Bulls vs. Skeptics, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", length: "book-length", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
 
 - {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "Artificial Intelligence in UK Financial Services", length: "report", author: "Bank of England and Financial Conduct Authority", year: 2024, url: "https://www.bankofengland.co.uk/report/2024/artificial-intelligence-in-uk-financial-services-2024"}
 - {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "GDPval: Measuring Model Performance on Real-World Tasks", length: "7 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/gdpval/"}
