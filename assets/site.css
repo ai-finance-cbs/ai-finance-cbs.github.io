@@ -488,3 +488,13 @@ caption { margin-bottom:6px; }
 @media (min-width:820px) { .topbar .course-brand, .topbar .brand-title { line-height:1.2; } .topnav a { padding:0 0 3px; line-height:1.4; } .topnav ul { line-height:1.4; } .subnav-top { padding-top:10px; } .subnav a { line-height:1.4; } .subnav-empty { min-height:31px !important; } }
 @media (min-width:1181px) { .subnav-top { height:38px; } .subnav-empty { min-height:38px !important; } }
 @media (min-width:820px) and (max-width:1180px) { .subnav-top { height:68px; } .subnav-empty { min-height:68px !important; } }
+
+/* ---- 2026-09-30: smaller Library type; emoji instead of the type word ---- */
+.material-list { list-style:none; padding-left:0; }
+.content .material-list li { font-size:15px; line-height:1.45; margin:0 0 9px; padding-left:28px; position:relative; }
+.material-icon { position:absolute; left:0; top:0; font-size:15px; line-height:1.45; }
+.material-source, .material-note { font-size:13px; }
+.badge-required { font-size:10.5px; padding:2px 5px; margin-right:7px; vertical-align:1px; }
+.topic-block h2 { font-size:18px; margin-bottom:8px; }
+.topic-block { padding:12px 0 4px; }
+.content p.icon-key { margin:0 0 14px auto; margin-right:16px; font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:12.5px; color:var(--muted); }

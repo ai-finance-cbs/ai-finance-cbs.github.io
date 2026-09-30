@@ -4,7 +4,7 @@
 - title: AI Basics
   slug: ai-basics
   week: 0
-  topics: [How AI Assistants Work, Using an Assistant Well, Setup]
+  topics: ["Where Do AI Answers Come From?", Best Practices]
 - title: AI Economics
   slug: economics-of-ai
   menu: ["AI", "Economics"]   # two-line label in the Library menu
