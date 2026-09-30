@@ -483,3 +483,4 @@ caption { margin-bottom:6px; }
 }
 @media (min-width:820px) { .logo-sub.logo-title { margin-top:2px; } }
 @media (min-width:820px) { .logo-sub { line-height:1.35; } }
+@media (min-width:820px) { .logo-sub { line-height:1.5; margin-top:10px; } .logo-sub.logo-title { margin-top:4px; } }
