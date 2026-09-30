@@ -1,6 +1,10 @@
 # Library sections, one per week. "slug" is the web address: /library/<slug>/
 # "topics" are short names for the syllabus topics, in the same order as _data/weeks.yml.
 # In _data/materials.yml, "topic" must match one of these short names.
+- title: AI Basics
+  slug: ai-basics
+  week: 0
+  topics: [How AI Assistants Work, Using an Assistant Well, Setup]
 - title: AI Economics
   slug: economics-of-ai
   menu: ["AI", "Economics"]   # two-line label in the Library menu

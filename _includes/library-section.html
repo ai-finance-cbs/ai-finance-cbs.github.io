@@ -1,12 +1,12 @@
 {% assign s = site.data.library | where: 'slug', include.slug | first %}
 {% assign w = site.data.weeks | where: 'number', s.week | first %}
 <div class="library-head">
-  <p class="lead">Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a></p>
+  {% if s.week == 0 %}<p class="lead">Before Week 1</p>{% else %}<p class="lead">Week {{ w.number }}: <a href="{{ '/syllabus/' | relative_url }}#week-{{ w.number }}">{{ w.title }}</a></p>{% endif %}
   <!-- Filter: hides optional materials when switched on (site.js) -->
   <button class="required-toggle" type="button" aria-pressed="false">Show required only</button>
 </div>
 {% for topic in s.topics %}
-{% assign items = site.data.materials | where: 'week', w.number | where: 'topic', topic %}
+{% assign items = site.data.materials | where: 'week', s.week | where: 'topic', topic %}
 {% assign req = items | where: 'level', 'required' %}
 {% assign opt = items | where: 'level', 'optional' %}
 <section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
