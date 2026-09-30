@@ -24,16 +24,19 @@
 - {week: 0, topic: "Best Practices", level: optional, kind: Writing, title: "15 Times to Use AI, and 5 Not To", author: "Ethan Mollick", year: 2024, url: "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to"}
 
 - {week: 0, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Large Language Models, Explained with a Minimum of Math and Jargon", author: "Timothy B. Lee and Sean Trott", year: 2023, url: "https://www.understandingai.org/p/large-language-models-explained-with"}
-- {week: 0, topic: "Best Practices", level: required, kind: Video, title: "How I Use LLMs", author: "Andrej Karpathy", year: 2025, url: "https://www.youtube.com/watch?v=EWvNQjAaOHw", note: "About 2 hours: what the assistant does with your message, from model choice to search, tools, files, and memory"}
+- {week: 0, topic: "Best Practices", level: required, kind: Video, title: "How I Use LLMs", length: "2 hr 11 min", author: "Andrej Karpathy", year: 2025, url: "https://www.youtube.com/watch?v=EWvNQjAaOHw"}
 - {week: 1, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Open Source AI Is the Path Forward", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Introducing GPT-5", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/", note: "How a router decides which model answers each query"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Data on AI Data Centers", author: "Epoch AI", year: 2026, note: "Updated continuously", url: "https://epoch.ai/data/data-centers"}
+- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Introducing GPT-5", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
+- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Data on AI Data Centers", author: "Epoch AI", year: 2026, url: "https://epoch.ai/data/data-centers"}
 - {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Energy and AI", author: "International Energy Agency", year: 2025, url: "https://www.iea.org/reports/energy-and-ai"}
 - {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
 - {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
 - {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
 
 # ---- AI Basics (before Week 1) ----
-- {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Video, title: "Large Language Models Explained Briefly", author: "Grant Sanderson, 3Blue1Brown", year: 2024, url: "https://www.youtube.com/watch?v=LPZh9BOjkQs", note: "About 8 minutes"}
+- {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Video, title: "Large Language Models Explained Briefly", length: "8 min", author: "Grant Sanderson, 3Blue1Brown", year: 2024, url: "https://www.youtube.com/watch?v=LPZh9BOjkQs"}
 - {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "What Is ChatGPT Doing … and Why Does It Work?", author: "Stephen Wolfram", year: 2023, url: "https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/"}
-
+- {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "The Non-Technical Technical Dictionary", author: "Cathryn Lavery", year: 2026, url: "https://nontechnical.dev/"}
+- {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "We Did the Math on AI’s Energy Footprint. Here’s the Story You Haven’t Heard.", author: "James O’Donnell and Casey Crownhart", year: 2025, url: "https://www.technologyreview.com/2025/05/20/1116327/ai-energy-usage-climate-footprint-big-tech/"}
+- {week: 0, topic: "Best Practices", level: optional, kind: Writing, title: "AI Hurtles Ahead", author: "Howard Marks", year: 2026, url: "https://www.oaktreecapital.com/insights/memo/ai-hurtles-ahead"}
+- {week: 0, topic: "Best Practices", level: optional, kind: Writing, title: "Beat Your Bot: Building Your Moat Against AI", author: "Aswath Damodaran", year: 2024, url: "https://aswathdamodaran.substack.com/p/beat-your-bot-building-your-moat"}
