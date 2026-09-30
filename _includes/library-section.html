@@ -9,7 +9,7 @@
 {% for topic in s.topics %}
 {% assign items = site.data.materials | where: 'week', s.week | where: 'topic', topic %}
 {% assign req = items | where: 'level', 'required' %}
-{% assign opt = items | where: 'level', 'optional' %}
+{% assign opt = items | where: 'level', 'optional' | sort: 'year' %}
 <section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
   <h2 id="topic-{{ forloop.index }}">{{ topic }}</h2>
   {% if items.size > 0 %}

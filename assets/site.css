@@ -506,3 +506,4 @@ caption { margin-bottom:6px; }
 .icon-key .material-icon { position:static; display:inline-flex; margin-left:8px; }
 .icon-key .material-icon:first-child { margin-left:0; }
 .material-length { color:var(--muted); font-size:13.5px; }
+.material-length { white-space:nowrap; }
