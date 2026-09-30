@@ -19,7 +19,7 @@
     <div class="content">
       <header class="page-heading">
         <div class="page-title-row">
-          <div class="title-stack">
+          <div class="title-stack">{% if page.kicker %}<p class="kicker">{{ page.kicker }}</p>{% endif %}
           <h1>{{ page.heading | default: page.title }}</h1></div>
         </div>
         {% if page.subline %}<p class="subline">{{ page.subline }}</p>{% endif %}
