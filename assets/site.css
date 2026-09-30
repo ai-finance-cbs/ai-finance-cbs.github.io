@@ -513,3 +513,4 @@ caption { margin-bottom:6px; }
 .material-list a:hover { text-decoration-color:var(--accent); }
 .content .material-list li { font-size:14px; }
 .material-length { font-size:12.5px; }
+/* wider column on Library pages so long titles stay on one line */ body.in-library .content { max-width:740px; }
