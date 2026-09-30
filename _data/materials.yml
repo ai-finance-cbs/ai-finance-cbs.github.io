@@ -7,17 +7,16 @@
 
 # ---- Week 1 ----
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "The Task Is Not the Job", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/why-desk-jobs-survive-and-amodei"}
-- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "AI and Our Economic Future", length: "9 min", author: "Sebastian Galiani", year: 2026, url: "https://sebastiangaliani.substack.com/p/from-the-nber-2-ai-and-our-economic"}
-- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "A.I. and Our Economic Future", length: "paper", author: "Charles I. Jones", year: 2026, url: "https://www.nber.org/papers/w34779"}
+- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Podcast, title: "Our AI Future: From Abundance to Apocalypse", length: "45 min", author: "Chad Jones", year: 2026, url: "https://www.gsb.stanford.edu/insights/ai-future-abundance-apocalypse"}
+- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Video, title: "AI and Our Economic Future (lecture)", length: "1 hr", author: "Chad Jones", year: 2026, url: "https://www.youtube.com/watch?v=xBpGn3BDcOY"}
+- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "A.I. and Our Economic Future", length: "paper", author: "Charles I. Jones", year: 2026, url: "https://web.stanford.edu/~chadj/AIandEconomicFuture.pdf"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Has AI Impacted the Labor Market Yet?", length: "20 min", author: "Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/has-ai-impacted-the-labor-market"}
-- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "The Productivity J-Curve: How Intangibles Complement General Purpose Technologies", length: "paper", author: "Erik Brynjolfsson, Daniel Rock, and Chad Syverson", year: 2021, url: "https://www.aeaweb.org/articles?id=10.1257/mac.20180386"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
 
 - {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 - {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
 - {week: 1, topic: AI and Growth, level: required, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
 - {week: 1, topic: AI and Growth, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", length: "book-length", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
-- {week: 1, topic: AI and Growth, level: optional, kind: Writing, title: "Explosive Growth from AI Automation: A Review of the Arguments", length: "15 min", author: "Ege Erdil and Tamay Besiroglu", year: 2023, url: "https://epoch.ai/blog/explosive-growth-from-ai-a-review-of-the-arguments"}
 
 - {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "Artificial Intelligence in UK Financial Services", length: "report", author: "Bank of England and Financial Conduct Authority", year: 2024, url: "https://www.bankofengland.co.uk/report/2024/artificial-intelligence-in-uk-financial-services-2024"}
 - {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "GDPval: Measuring Model Performance on Real-World Tasks", length: "7 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/gdpval/"}
