@@ -484,3 +484,7 @@ caption { margin-bottom:6px; }
 @media (min-width:820px) { .logo-sub.logo-title { margin-top:2px; } }
 @media (min-width:820px) { .logo-sub { line-height:1.35; } }
 @media (min-width:820px) { .logo-sub { line-height:1.5; margin-top:10px; } .logo-sub.logo-title { margin-top:4px; } }
+@media (min-width:820px) { .topbar-main { justify-content:space-evenly; padding-top:0; gap:0; } .subnav-top { padding-top:8px; } }
+@media (min-width:820px) { .topbar .course-brand, .topbar .brand-title { line-height:1.2; } .topnav a { padding:0 0 3px; line-height:1.4; } .topnav ul { line-height:1.4; } .subnav-top { padding-top:10px; } .subnav a { line-height:1.4; } .subnav-empty { min-height:31px !important; } }
+@media (min-width:1181px) { .subnav-top { height:38px; } .subnav-empty { min-height:38px !important; } }
+@media (min-width:820px) and (max-width:1180px) { .subnav-top { height:68px; } .subnav-empty { min-height:68px !important; } }
