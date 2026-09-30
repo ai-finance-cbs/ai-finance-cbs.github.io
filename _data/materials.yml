@@ -29,13 +29,7 @@
 
 - {week: 0, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Large Language Models, Explained with a Minimum of Math and Jargon", length: "30 min", author: "Timothy B. Lee and Sean Trott", year: 2023, url: "https://www.understandingai.org/p/large-language-models-explained-with"}
 - {week: 0, topic: "Best Practices", level: optional, kind: Video, title: "How I Use LLMs", length: "2 hr 11 min", author: "Andrej Karpathy", year: 2025, url: "https://www.youtube.com/watch?v=EWvNQjAaOHw"}
-- {week: 2, topic: "Models", level: required, kind: Writing, title: "Open Source AI Is the Path Forward", length: "10 min", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
-- {week: 2, topic: "Models", level: optional, kind: Writing, title: "Introducing GPT-5", length: "15 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
-- {week: 2, topic: "Tokens and Costs", level: optional, kind: Writing, title: "Data on AI Data Centers", length: "browse", author: "Epoch AI", year: 2026, url: "https://epoch.ai/data/data-centers"}
-- {week: 2, topic: "Tokens and Costs", level: optional, kind: Writing, title: "Energy and AI", length: "report", author: "International Energy Agency", year: 2025, url: "https://www.iea.org/reports/energy-and-ai"}
-- {week: 2, topic: "Tokens and Costs", level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
 - {week: 1, topic: "Economic Frameworks for AI", level: required, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", length: "12 min", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
-- {week: 2, topic: "Models", level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", length: "30 min", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
 
 # ---- AI Basics (before Week 1) ----
 - {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Video, title: "Large Language Models Explained Briefly", length: "8 min", author: "Grant Sanderson, 3Blue1Brown", year: 2024, url: "https://www.youtube.com/watch?v=LPZh9BOjkQs"}
@@ -46,3 +40,28 @@
 - {week: 0, topic: "Best Practices", level: optional, kind: Writing, title: "Beat Your Bot: Building Your Moat Against AI", length: "13 min", author: "Aswath Damodaran", year: 2024, url: "https://aswathdamodaran.substack.com/p/beat-your-bot-building-your-moat"}
 - {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "What Actually Happens When You Press ‘Send’ to ChatGPT", length: "15 min", author: "ByteByteGo", year: 2025, url: "https://blog.bytebytego.com/p/what-actually-happens-when-you-press"}
 - {week: 0, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "How an AI Token Travels Through a Data Center", length: "25 min", author: "Chris Zeoli", year: 2026, url: "https://www.datagravity.dev/p/how-an-ai-token-travels-through-a"}
+
+# ---- Week 2: AI Infrastructure (Compute -> Models -> Data and Context -> Tools and Agents) ----
+- {week: 2, topic: Compute, level: required, kind: Writing, title: "The Plunging Price of Thought", length: "40 min", author: "Epoch AI", year: 2026, url: "https://epoch.ai/publications/the-plunging-price-of-thought"}
+- {week: 2, topic: Compute, level: required, kind: Writing, title: "AI’s $600B Question", length: "6 min", author: "David Cahn", year: 2024, url: "https://www.sequoiacap.com/article/ais-600b-question/"}
+- {week: 2, topic: Compute, level: optional, kind: Writing, title: "LLM Inference Prices Have Fallen Rapidly but Unequally Across Tasks", length: "3 min", author: "Epoch AI", year: 2025, url: "https://epoch.ai/data-insights/llm-inference-price-trends"}
+- {week: 2, topic: Compute, level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", length: "2 hr 31 min", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
+- {week: 2, topic: Compute, level: optional, kind: Writing, title: "Data on AI Data Centers", length: "browse", author: "Epoch AI", year: 2026, url: "https://epoch.ai/data/data-centers"}
+- {week: 2, topic: Compute, level: optional, kind: Writing, title: "Energy and AI", length: "report", author: "International Energy Agency", year: 2025, url: "https://www.iea.org/reports/energy-and-ai"}
+- {week: 2, topic: Compute, level: optional, kind: Writing, title: "Gen AI: Too Much Spend, Too Little Benefit?", length: "report", author: "Goldman Sachs", year: 2024, url: "https://www.goldmansachs.com/insights/top-of-mind/gen-ai-too-much-spend-too-little-benefit"}
+
+- {week: 2, topic: Models, level: required, kind: Writing, title: "DeepSeek FAQ", length: "25 min", author: "Ben Thompson", year: 2025, url: "https://stratechery.com/2025/deepseek-faq/"}
+- {week: 2, topic: Models, level: required, kind: Writing, title: "Open Source AI Is the Path Forward", length: "10 min", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
+- {week: 2, topic: Models, level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", length: "30 min", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
+- {week: 2, topic: Models, level: optional, kind: Writing, title: "Introducing GPT-5", length: "15 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
+
+- {week: 2, topic: Data and Context, level: required, kind: Writing, title: "The Law of Leaky Abstractions", length: "10 min", author: "Joel Spolsky", year: 2002, url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/"}
+- {week: 2, topic: Data and Context, level: required, kind: Writing, title: "Context Engineering", length: "2 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Jun/27/context-engineering/"}
+- {week: 2, topic: Data and Context, level: required, kind: Writing, title: "Letter to Shareholders: “AI, Data and Technology Are Key to the Future”", length: "5 min", author: "Jamie Dimon", year: 2026, url: "https://www.jpmorganchase.com/content/dam/jpmc/jpmorgan-chase-and-co/investor-relations/documents/ceo-letter-to-shareholders-2025.pdf"}
+- {week: 2, topic: Data and Context, level: optional, kind: Writing, title: "Prompt Engineering", length: "guide", author: "Lee Boonstra, Google", year: 2024, url: "https://www.kaggle.com/whitepaper-prompt-engineering"}
+- {week: 2, topic: Data and Context, level: optional, kind: Writing, title: "Effective Context Engineering for AI Agents", length: "14 min", author: "Anthropic", year: 2025, url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"}
+
+- {week: 2, topic: Tools and Agents, level: required, kind: Writing, title: "Building Effective Agents", length: "12 min", author: "Anthropic", year: 2024, url: "https://www.anthropic.com/engineering/building-effective-agents"}
+- {week: 2, topic: Tools and Agents, level: required, kind: Writing, title: "Agentic Design Patterns", length: "3 min", author: "Andrew Ng", year: 2024, url: "https://www.deeplearning.ai/the-batch/how-agents-can-improve-llm-performance"}
+- {week: 2, topic: Tools and Agents, level: optional, kind: Writing, title: "Why Tool AIs Want to Be Agent AIs", length: "45 min", author: "Gwern Branwen", year: 2016, url: "https://gwern.net/tool-ai"}
+- {week: 2, topic: Tools and Agents, level: optional, kind: Writing, title: "Agents", length: "guide", author: "Julia Wiesinger and others, Google", year: 2024, url: "https://www.kaggle.com/whitepaper-agents"}

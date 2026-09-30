@@ -17,7 +17,7 @@
   slug: ai-infrastructure
   week: 2
   kicker: Week 2
-  topics: [Data, Models, Prompts, Context, Tools and Agents, Tokens and Costs]
+  topics: [Compute, Models, Data and Context, Tools and Agents]
 - title: Processing Information
   slug: processing-information
   week: 3
