@@ -507,3 +507,9 @@ caption { margin-bottom:6px; }
 .icon-key .material-icon:first-child { margin-left:0; }
 .material-length { color:var(--muted); font-size:13.5px; }
 .material-length { white-space:nowrap; }
+
+/* ---- 2026-09-30: title style D (bold serif, dark, faint underline), slightly smaller ---- */
+.material-list a { font-weight:600; font-size:14px; color:#1a1a1a; text-decoration:underline; text-decoration-color:#d5dbe2; text-underline-offset:3px; text-decoration-thickness:1px; }
+.material-list a:hover { text-decoration-color:var(--accent); }
+.content .material-list li { font-size:14px; }
+.material-length { font-size:12.5px; }
