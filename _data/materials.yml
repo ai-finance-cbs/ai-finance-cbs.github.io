@@ -29,13 +29,13 @@
 
 - {week: 0, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Large Language Models, Explained with a Minimum of Math and Jargon", length: "30 min", author: "Timothy B. Lee and Sean Trott", year: 2023, url: "https://www.understandingai.org/p/large-language-models-explained-with"}
 - {week: 0, topic: "Best Practices", level: optional, kind: Video, title: "How I Use LLMs", length: "2 hr 11 min", author: "Andrej Karpathy", year: 2025, url: "https://www.youtube.com/watch?v=EWvNQjAaOHw"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: required, kind: Writing, title: "Open Source AI Is the Path Forward", length: "10 min", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Introducing GPT-5", length: "15 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Data on AI Data Centers", length: "browse", author: "Epoch AI", year: 2026, url: "https://epoch.ai/data/data-centers"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Energy and AI", length: "report", author: "International Energy Agency", year: 2025, url: "https://www.iea.org/reports/energy-and-ai"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", length: "12 min", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
-- {week: 1, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", length: "30 min", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
+- {week: 2, topic: "Models", level: required, kind: Writing, title: "Open Source AI Is the Path Forward", length: "10 min", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
+- {week: 2, topic: "Models", level: optional, kind: Writing, title: "Introducing GPT-5", length: "15 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
+- {week: 2, topic: "Tokens and Costs", level: optional, kind: Writing, title: "Data on AI Data Centers", length: "browse", author: "Epoch AI", year: 2026, url: "https://epoch.ai/data/data-centers"}
+- {week: 2, topic: "Tokens and Costs", level: optional, kind: Writing, title: "Energy and AI", length: "report", author: "International Energy Agency", year: 2025, url: "https://www.iea.org/reports/energy-and-ai"}
+- {week: 2, topic: "Tokens and Costs", level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
+- {week: 1, topic: "Economic Frameworks for AI", level: required, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", length: "12 min", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
+- {week: 2, topic: "Models", level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", length: "30 min", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
 
 # ---- AI Basics (before Week 1) ----
 - {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Video, title: "Large Language Models Explained Briefly", length: "8 min", author: "Grant Sanderson, 3Blue1Brown", year: 2024, url: "https://www.youtube.com/watch?v=LPZh9BOjkQs"}
