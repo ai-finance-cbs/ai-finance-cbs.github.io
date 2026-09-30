@@ -1,10 +1,13 @@
 <!-- Top bar: school logo, course name, and the page menu. Always visible. -->
 <header class="topbar">
   <!-- Phones show only the CBS mark; wider screens show the full logo. -->
+  <div class="logo-cell">
   <picture class="cbs-logo">
     <source media="(max-width: 819px)" srcset="{{ '/assets/cbs-mark.png' | relative_url }}">
     <img src="{{ '/assets/cbs-logo.png' | relative_url }}" alt="Columbia Business School">
   </picture>
+  <p class="logo-sub">Simon Oh | Spring 2027</p>
+  </div>
   <div class="topbar-main">
     <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
     <nav class="topnav" id="topnav" aria-label="Course pages">
@@ -14,7 +17,7 @@
         {% endfor %}
       </ul>
     </nav>
-    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% endif %}
+    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>

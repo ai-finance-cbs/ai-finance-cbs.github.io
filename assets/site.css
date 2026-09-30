@@ -455,3 +455,21 @@ caption { margin-bottom:6px; }
 .content .row-list li::marker { color:#9aa3ad; }
 .row-list { padding-left:0; } .content .row-list li { padding-left:0; }
 #outline a.is-current { font-weight:400; color:#2F6FB8; } /* colour only, so the line never re-wraps */
+
+/* ---- 2026-09-29: same three-row top bar on every page; name under the logo ---- */
+@media (min-width:820px) {
+  :root { --topbar:136px; }
+  .subnav-empty { min-height:31px; }
+  .topbar .logo-cell { width:var(--sidebar); padding-left:32px; box-sizing:border-box; flex-shrink:0; }
+  .topbar .logo-cell .cbs-logo { width:auto; padding-left:0; }
+  .logo-sub { margin:10px 0 0; font-size:13px; color:var(--muted); white-space:nowrap; }
+}
+@media (min-width:820px) and (max-width:1180px) { :root { --topbar:166px; } .subnav-empty { min-height:61px; } }
+@media (max-width:819px) { .logo-sub, .subnav-empty { display:none; } .topbar .logo-cell { display:contents; } }
+@media (min-width:820px) {
+  .topbar-main { flex:1; margin-right:32px; }
+  .subnav-top { margin-right:0; }
+  .subnav-empty { min-height:37.4px; }
+}
+@media (min-width:820px) and (max-width:1180px) { .subnav-empty { min-height:37.4px; } }
+@media (min-width:820px) { .topbar-main { justify-content:flex-start; padding-top:14px; } .subnav-empty { min-height:37.4px !important; } }
