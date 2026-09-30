@@ -518,3 +518,21 @@ caption { margin-bottom:6px; }
 /* ---- 2026-09-30: small week label above Library page titles ---- */
 .content p.kicker { font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:13px; font-weight:500; color:#2F6FB8; margin:0 0 4px; }
 .content p.syllabus-link { font-size:15px; }
+
+/* ---- 2026-09-30: week label sits above each Library menu item (not above the page title) ---- */
+.subnav a { display:inline-flex; flex-direction:column; line-height:1.3; }
+.subnav-kicker { font-size:10.5px; font-weight:500; color:#8a939d; letter-spacing:.01em; }
+.subnav a[aria-current="page"] .subnav-kicker { color:#2F6FB8; }
+@media (min-width:820px) {
+  :root, body.in-library { --topbar:150px; }
+  .subnav-top, .subnav-empty { height:52px !important; min-height:52px !important; }
+  .subnav ul { align-items:flex-end; }
+}
+@media (max-width:819px) { .subnav-inline a { margin-bottom:4px; } }
+/* small laptops: keep the Library menu on one row and let it scroll sideways */
+@media (min-width:820px) and (max-width:1300px) {
+  .subnav-top ul { flex-wrap:nowrap; gap:0 16px; overflow-x:auto; scrollbar-width:none; }
+  .subnav-top ul::-webkit-scrollbar { display:none; }
+  .subnav-top li { flex-shrink:0; }
+  .subnav-top a { font-size:13.5px; }
+}
