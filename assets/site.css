@@ -906,3 +906,33 @@ body.full-tools .content { max-width:none; }
   .submit-item .submission-status { grid-column:1; }
   .submit-item .submission-box { grid-column:1/-1; }
 }
+
+/* The instructor workspace uses the same full-width, quiet staff layout. */
+.preparation-nav a { color:#8C2F39; }
+.preparation-nav a[aria-current="page"] .subnav-kicker { color:#8C2F39; }
+.preparation-nav a[aria-current="page"] { border-color:currentColor; }
+.preparation-editor { border-top:1px solid #ececec; padding-top:16px; }
+.class-tools .prep-form { display:block; }
+.class-tools .prep-form textarea { min-height:360px; width:100%; }
+.prep-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0; }
+.prep-controls [role="status"] { color:#666; font-size:12px; }
+.prep-warning { border-bottom:1px solid #ececec; padding:12px 0; margin-bottom:12px; }
+.prep-warning button { margin-left:12px; }
+.prep-markdown { max-width:900px; overflow-wrap:anywhere; white-space:normal; }
+.prep-markdown p { white-space:pre-line; }
+.prep-markdown em { font-style:italic; }
+.class-tools #materials-root .prep-markdown :is(h1,h2,h3,h4,h5,h6) { font-family:inherit; font-weight:600; text-transform:none; letter-spacing:normal; margin:20px 0 10px; }
+.class-tools #materials-root .prep-markdown h1 { font-size:24px; }
+.class-tools #materials-root .prep-markdown h2 { font-size:20px; }
+.class-tools #materials-root .prep-markdown :is(h3,h4,h5,h6) { font-size:16px; }
+.speakers-toolbar { display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+.speakers-toolbar label { flex:1; max-width:340px; }
+.speakers-list { border-bottom:1px solid #ececec; }
+.speaker-row { border-top:1px solid #ececec; padding:18px 0; overflow-wrap:anywhere; }
+.speaker-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 18px; }
+.class-tools #materials-root .speaker-heading h2 { font-size:16px; font-weight:600; margin:0; text-transform:none; letter-spacing:normal; }
+.speaker-heading > span { color:#666; font-size:12px; }
+.class-tools .speaker-row p { margin:6px 0; }
+.speaker-notes { white-space:pre-wrap; }
+.speaker-actions { display:flex; align-items:baseline; gap:12px; margin-top:10px; }
+.speaker-form { padding:12px 0; }

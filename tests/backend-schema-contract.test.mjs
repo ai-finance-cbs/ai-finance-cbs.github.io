@@ -18,6 +18,7 @@ function query(table) {
     eq(k,v){filters.push([k,v]);return this;},
     order(k,options={}){orders.push(`${ident(k)} ${options.ascending===false?'desc':'asc'}`);return this;},
     single(){one=true;return this;},
+    maybeSingle(){one=true;return this;},
     then(resolve,reject){return execute().then(resolve,reject);},
   };
   async function execute() {
@@ -97,4 +98,20 @@ test('Phase C adapter keeps term settings and rollover RPC names aligned with da
   await assert.rejects(backend.closePreviousTerm(TERM),/export before closing/);
   await h.as('service');await h.rpc('record_term_export',TERM,0,0);await h.as('teacher');await backend.closePreviousTerm(TERM);
   assert.equal((await backend.terms()).find(t=>t.id===TERM).status,'closed');
+});
+
+
+test('Phase D adapter reads and saves only global instructor fields under actual SQL grants', async () => {
+  who='teacher'; await h.as('teacher'); await backend.getAccess();
+  assert.equal((await backend.instructorNote(1)).body,'');
+  await backend.saveInstructorNote(1,'Adapter notes'); assert.equal((await backend.instructorNote(1)).body,'Adapter notes');
+  const speaker = await backend.saveSpeaker({name:'Adapter guest',affiliation:'',topic:'',week:null,status:'Idea',contact:'',notes:'',term_id:'forged',created_at:'forged'});
+  assert.equal(speaker.term_id,undefined); assert.notEqual(speaker.created_at,'forged');
+  await backend.saveSpeaker({...speaker,status:'Contacted'}); assert.equal((await backend.speakers())[0].status,'Contacted');
+  await backend.replaceRoster([{uni:'aa1001',name:'Alice'}]);
+  await backend.setPreview('aa1001');
+  assert.equal((await backend.instructorNote(1)).body,''); assert.deepEqual(await backend.speakers(),[]);
+  await assert.rejects(backend.saveInstructorNote(1,'Forbidden'),/read-only/);
+  await assert.rejects(backend.deleteSpeaker(speaker.id),/read-only/);
+  await backend.setPreview(null); await backend.deleteSpeaker(speaker.id); assert.deepEqual(await backend.speakers(),[]);
 });

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const pages = ['/', '/syllabus/', ...Array.from({length:6},(_,i)=>`/syllabus/week-${i+1}/`), '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/materials/',
-  ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit'].map(name => `/materials/${name}/`)];
+  ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 
@@ -17,7 +17,7 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
   test(`top bar keeps fixed title, menu, and submenu positions across pages and roles at ${width}px`, async ({ page }) => {
     test.setTimeout(120000);
     await page.setViewportSize({ width, height: 950 });
-    mkdirSync('evidence/phase-c/topbar', { recursive: true });
+    mkdirSync('evidence/phase-d/topbar', { recursive: true });
     const measurements = [];
     let baseline, submenuBottom;
     let desktopReference;
@@ -116,10 +116,10 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
             (role === 'student' && path === '/materials/week-3/') ||
             (role === 'instructor' && path === '/materials/gradebook/') ||
             (role === 'preview' && path === '/materials/attendance/')) {
-          await page.locator('.topbar').screenshot({ path: `evidence/phase-c/topbar/${role}-${width}.png` });
+          await page.locator('.topbar').screenshot({ path: `evidence/phase-d/topbar/${role}-${width}.png` });
         }
       }
     }
-    writeFileSync(`evidence/phase-c/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
+    writeFileSync(`evidence/phase-d/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
   });
 }

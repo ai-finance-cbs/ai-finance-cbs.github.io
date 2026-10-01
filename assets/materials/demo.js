@@ -1,3 +1,4 @@
+import { extendPrep } from './prep-demo.js';
 import { extendTerms } from './term-demo.js';
 import { announcementText } from './upcoming-core.js';
 import { extendSubmissions, termData, mergeTerm, normalizeTerms } from './submission-demo.js';
@@ -42,6 +43,7 @@ export function createDemo() {
   const visible = row => { const a = requireRole(); return (a.role !== 'auditor' || row.auditor_visible) && (!('storage_path' in row) || ['instructor','grader'].includes(a.role) || row.released || (row.release_at && new Date(row.release_at).getTime() <= Date.now())); };
   return {
     ...extendTerms({ readAll, saveAll, access }),
+    ...extendPrep({ readAll, saveAll, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
     demo: true,

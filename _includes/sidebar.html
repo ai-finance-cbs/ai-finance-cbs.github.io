@@ -37,9 +37,9 @@
         {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
         <li data-grading-member data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
-        {% assign admin_tabs = 'Roster,Settings' | split: ',' %}
+        {% assign admin_tabs = 'Roster,Settings,Preparation,Speakers' | split: ',' %}
         {% for tab in admin_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-materials-admin data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li data-materials-admin data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u or tab == 'Preparation' and page.preparation_week %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
       </ul>
     </nav>

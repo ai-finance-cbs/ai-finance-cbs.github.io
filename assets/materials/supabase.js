@@ -1,3 +1,4 @@
+import { noteValues, speakerValues } from './prep-core.js';
 import { exportTermArchive } from './term-export.js';
 import { checkSubmissionFile, submissionContentType } from './submission-core.js';
 import { isColumbiaEmail } from './core.js';
@@ -30,6 +31,16 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async instructorNote(week) {
+      return checked(await client.from('instructor_notes').select('week,body,updated_at').eq('week', week).maybeSingle()) || { week, body:'', updated_at:null };
+    },
+    async saveInstructorNote(week, body) { noteValues(week, body); return rpc('save_instructor_note', { p_week:week, p_body:body }); },
+    async speakers() { return checked(await client.from('speakers').select('id,name,affiliation,topic,week,status,contact,notes,created_at,updated_at')); },
+    async saveSpeaker(row) {
+      const values = speakerValues(row);
+      return rpc('save_speaker', { p_id:row.id || null, ...Object.fromEntries(Object.entries(values).map(([key,value]) => [`p_${key}`,value])) });
+    },
+    async deleteSpeaker(id) { return rpc('delete_speaker', { p_id:id }); },
     async sessions() { return checked(await client.from('attendance_sessions').select('*').eq('term_id', access.term_id).order('week')); },
     async announcements() { return checked(await client.from('announcements').select('*').eq('term_id', access.term_id).order('created_at', { ascending: false }).order('id')); },
     async saveAnnouncement(row) {

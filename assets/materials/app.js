@@ -1,3 +1,4 @@
+import { renderPreparation, renderSpeakers, leavePreparation } from './prep-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
 import { announcementText } from './upcoming-core.js';
@@ -17,6 +18,7 @@ const message = dialog.querySelector('[data-login-message]');
 const state = { backend: null, access: null, version: 0, selectedTerm: null };
 let previewRoster = [];
 async function startPreview(uni) {
+  if (!await leavePreparation()) { document.querySelector('[data-view-select]').value = ''; return; }
   try { await state.backend.setPreview(uni, state.selectedTerm); if (['gradebook', ...INSTRUCTOR_PAGES].includes(root?.dataset.page)) location.assign(path('attendance')); else await refresh(); }
   catch (error) { const status = el('p',error.message,{role:'status'}); (root || document.querySelector('main')).append(status); }
 }
@@ -147,6 +149,14 @@ async function refresh() {
       if (version !== state.version) return;
       root.replaceChildren();
       renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
+      outlineChanged();
+    } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
+      const prep = root.dataset.page === 'preparation';
+      const data = prep ? await state.backend.instructorNote(Number(root.dataset.week)) : await state.backend.speakers();
+      if (version !== state.version) return;
+      root.replaceChildren();
+      if (prep) renderPreparation({ root, note:data, backend:state.backend });
+      else renderSpeakers({ root, rows:data, backend:state.backend, confirmInline });
       outlineChanged();
     } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
       const page = root.dataset.page;
@@ -486,6 +496,7 @@ dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dia
 document.querySelector('[data-view-select]').addEventListener('change', e => { if (e.target.value) startPreview(e.target.value); });
 document.querySelector('[data-preview-exit]').addEventListener('click', () => startPreview(null));
 document.querySelector('[data-signout]').addEventListener('click', async () => {
+  if (!await leavePreparation()) return;
   ++state.version; state.access = null; showGate(); sessionStorage.removeItem('b8403-return');
   try { await state.backend?.signOut(); await refresh(); }
   catch (error) { openLogin(); showMessage(`Sign out could not finish. ${error.message}`); }

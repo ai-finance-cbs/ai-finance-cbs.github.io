@@ -1,5 +1,5 @@
 import { csvCells, normalizeUni } from './core.js';
-export const INSTRUCTOR_PAGES = ['roster', 'files', 'settings'];
+export const INSTRUCTOR_PAGES = ['roster', 'files', 'settings', 'preparation', 'speakers'];
 export const CLASS_PAGES = ['gradebook', 'attendance', 'grades', 'groups', 'submit'];
 export const GRADE_ITEMS = [
   ...Array.from({ length: 5 }, (_, i) => ({

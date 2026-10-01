@@ -1,4 +1,10 @@
-{% if page.material_week != nil or page.url == '/materials/' %}
+{% if page.preparation_week %}
+<nav class="subnav{{ include.where }} preparation-nav" aria-label="Preparation weeks" data-materials-admin hidden><ul>
+{% for s in site.data.library %}{% if s.week < 1 or s.week > 6 %}{% continue %}{% endif %}
+{% capture u %}/materials/preparation/week-{{ s.week }}/{% endcapture %}
+<li><a href="{{ u | relative_url }}"{% if page.preparation_week == s.week %} aria-current="page"{% endif %}><span class="subnav-kicker">Week {{ s.week }}</span><span class="subnav-label">{{ s.title }}</span></a></li>
+{% endfor %}</ul></nav>
+{% elsif page.material_week != nil or page.url == '/materials/' %}
 <nav class="subnav{{ include.where }}" aria-label="Course materials sections" data-materials-member hidden><ul>
 {% for s in site.data.library %}{% if s.week < 1 or s.week > 6 %}{% continue %}{% endif %}
 {% if s.week == 0 %}{% assign slug = 'prelude' %}{% elsif s.week == 99 %}{% assign slug = 'coda' %}{% else %}{% assign slug = 'week-' | append: s.week %}{% endif %}

@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–009 are live on main at `01b1e4c`. Phase C migrations 010–011 remain local and unapplied.
+Migrations 001–011 are live on main at `941e288`. Phase D migration 012 remains local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -79,11 +79,11 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. Migrations 001–009 are live. A later authorized release must apply 010–011 and publish the updated submission-file function.
+12. Migrations 001–011 are live. A later authorized release must apply 012 before publishing the Preparation and Speakers pages.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply migrations 001–011 in order after review.
+For a fresh database, apply migrations 001–012 in order after review.
 Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
 The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
@@ -171,7 +171,7 @@ The merged `77b18e5` header uses 148px on desktop and 136px on phones.
 Desktop title/menu/submenu start at 15/54/91px. Navigation scrolls internally when necessary.
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
-Migrations 001–009 are now live. Phase C migrations 010–011 remain local and unapplied.
+Migrations 001–011 are now live. Phase D migration 012 remains local and unapplied.
 
 ## Phase A: terms, submissions, and group grades
 
@@ -348,5 +348,38 @@ Preview and all non-Instructor roles are denied. Referenced files always require
 The storage line reports used bytes against 1 GB. It does not create an additional upload quota.
 The public term label remains part of the static site configuration and needs review for each new course offering.
 
-Migrations `010_staff_grading.sql` and `011_term_rollover.sql` require review before a later authorized publication.
+Phase C migrations `010_staff_grading.sql` and `011_term_rollover.sql` are live as of main `941e288`.
 No hosted changes occur during local tests. Test evidence belongs in `evidence/phase-c/`.
+
+
+## Phase D: instructor Preparation and Speakers
+
+Migration `012_instructor_prep.sql` remains local. This phase never edits migrations 001–011.
+An authorized release must apply 012 before publishing these pages. No Edge Function change is needed.
+
+Preparation and Speakers follow Settings in the staff menu. Only Instructors can open them.
+Preview hides both tabs and denies their data. Graders, Students, Auditors, unlisted users, and anonymous users cannot read them.
+
+Preparation has six week pages and uses Week 1 at its root address.
+Select **Edit**, enter notes, and select **Save**. The status records the last save time.
+**View** renders the current draft. It does not save it.
+Site navigation, sign-out, and entering preview warn inline about unsaved notes.
+Reload, browser navigation, and tab closure use the browser's native unsaved-change warning.
+Markdown supports headings, lists, bold, italic, and explicit HTTP/HTTPS/email links.
+HTML displays as text. Images, scripts, and embedded media cannot run.
+
+Speakers supports Add, inline Edit, and Delete with an inline confirmation.
+Rows sort by Idea, Contacted, Confirmed, Declined, then name. Filtering searches every editable field.
+Week is optional. Limits: name 200, affiliation 300, topic 500, contact 2,000, notes 10,000 characters.
+Preparation notes allow 50,000 characters per week.
+
+Both tables are global. Opening, closing, or purging a term does not copy or remove them.
+Authenticated users receive only SELECT column grants, subject to instructor-only row policies.
+The policy helper checks `private.actor_role()='instructor'` and no active preview.
+Writes use `save_instructor_note`, `save_speaker`, and `delete_speaker`, each guarded by `require_instructor()`.
+Preview triggers provide a second write barrier. Audit triggers record the actor and before/after values.
+Timestamps and UUIDs remain server-owned. No browser role can write directly to either table.
+
+Local demo notes and three synthetic speakers are available only through the loopback demo.
+Real notes and contacts never belong in static page files or JavaScript.
+Phase D screenshots and test logs belong in `evidence/phase-d/`.

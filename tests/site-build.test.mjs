@@ -21,7 +21,7 @@ test('private assignment descriptions never enter generated HTML or JS', context
   }
 });
 test('material page source contains gates and no real assignment content', () => {
-  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit']) {
+  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers']) {
     const html = readFileSync(new URL(`materials/${page}/index.html`, output), 'utf8');
     assert.match(html, /Sign in to see course materials/);
     assert.doesNotMatch(html, /<section class="assignment-section"/);
@@ -46,4 +46,22 @@ test('required reading templates use each week’s Library data and show an expl
     const html=readFileSync(new URL(`materials/week-${week}/index.html`,output),'utf8');
     assert.ok(html.includes(title)); assert.ok(html.includes(`/library/${slug}/`));
   }
+});
+
+
+test('instructor pages contain only gates; private prep and speaker canaries never enter public assets', () => {
+  const pages = ['preparation',...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`),'speakers'];
+  for (const page of pages) {
+    const html=readFileSync(new URL(`materials/${page}/index.html`,output),'utf8');
+    const gate=html.match(/<div id="materials-root"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    assert.ok(gate); assert.match(gate,/Sign in to see course materials/);
+    assert.doesNotMatch(gate,/<(?:textarea|input|section|form)\b|Demo preparation|Alex Example/);
+  }
+  // These records live only in the local database fixture, outside the published tree.
+  for (const file of walk(output.pathname).filter(f=>/\.(html|js|json)$/.test(f))) {
+    const text=readFileSync(file,'utf8');
+    for (const secret of ['Private preparation canary e4c159','Private guest canary 9ad682','Private speaker notes canary 85ac17']) assert.ok(!text.includes(secret),file);
+  }
+  const publishedJS=walk(output.pathname).filter(f=>f.endsWith('.js') && !f.endsWith('/prep-demo.js'));
+  for (const file of publishedJS) assert.doesNotMatch(readFileSync(file,'utf8'),/Alex Example|Jordan Sample|Taylor Demo/);
 });
