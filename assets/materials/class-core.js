@@ -19,6 +19,15 @@ export const GRADE_ITEMS = [
     (title, i) => ({ id: 13 + i, title, max_points: i === 3 ? 5 : 10, optional: true }),
   ),
 ].map((i) => ({ optional: false, released: false, ...i }));
+// Codes follow the fixed grading item IDs in migration 003.
+export function gradeCode(item) {
+  const id = Number(item.id);
+  if (id <= 5) return `M${id}`;
+  if (id === 6) return 'FP';
+  if (id <= 11) return `Q${id - 6}`;
+  if (id === 12) return 'PA';
+  return `O${id - 12}`;
+}
 export function zones(access) {
   const role = access?.role;
   return {
@@ -112,7 +121,7 @@ export function parseGradesCsv(text, items, roster) {
   const uniColumn = names.indexOf('uni');
   if (uniColumn < 0) throw new Error('The CSV needs a UNI column.');
   const columns = names.map((h, index) => ({
-    item: items.find((i) => h === i.title.toLowerCase() || h === `item_${i.id}`),
+    item: h === 'score' && items.length === 1 ? items[0] : items.find((i) => h === i.title.toLowerCase() || h === gradeCode(i).toLowerCase() || h === `item_${i.id}`),
     index,
   }));
   for (const [index, h] of names.entries())

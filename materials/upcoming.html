@@ -1,0 +1,29 @@
+---
+title: "Upcoming"
+kicker: Course Materials
+permalink: /materials/upcoming/
+---
+<div id="materials-root" data-page="upcoming" aria-live="polite">
+  <p>Sign in to see course materials.</p>
+  <button class="materials-button" type="button" data-login>Log in</button>
+</div>
+{% for week in site.data.weeks %}
+{% assign library = site.data.library | where: 'week', week.number | first %}
+{% assign readings = site.data.materials | where: 'week', week.number | where: 'level', 'required' %}
+<template data-upcoming-week="{{ week.number }}" data-week-title="{{ week.title | escape }}">
+  <section class="upcoming-block" data-reading-block>
+    <h2>Required Reading</h2>
+    <ul class="upcoming-readings">
+      {% for item in readings %}
+      <li>
+        {% if item.url %}<a href="{{ item.url | escape }}">{{ item.title | escape }}</a>{% else %}{{ item.title | escape }}{% endif %}
+        <span class="upcoming-meta">{{ item.author | escape }}{% if item.year %} ({{ item.year }}){% endif %}{% if item.length %} · <span data-reading-time>{{ item.length | escape }}</span>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="upcoming-meta" data-reading-total></p>
+    <a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Go to Week {{ week.number }} Library →</a>
+  </section>
+</template>
+{% endfor %}
+<noscript><p>Enable JavaScript to sign in and load private course materials.</p></noscript>

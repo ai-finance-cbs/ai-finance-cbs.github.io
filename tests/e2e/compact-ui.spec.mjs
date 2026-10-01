@@ -187,7 +187,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         await grid.evaluate(w => { w.scrollTop = 0; w.scrollLeft = 0; });
       }
       if (section === 'settings') {
-        await expect(page.locator('#materials-root > details')).toHaveCount(4);
+        await expect(page.locator('#materials-root > details')).toHaveCount(5);
         await expect(page.locator('#materials-root > details[open]')).toHaveCount(0);
       }
       await page.screenshot({ path: `evidence/compact-ui/${section}-${width}.png`, fullPage: true });

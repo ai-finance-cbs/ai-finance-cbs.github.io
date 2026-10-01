@@ -27,7 +27,7 @@
                 <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url != '/' and page.url contains item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
         {% endfor %}
         <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
-        <li class="member-only" data-materials-member hidden><a href="{{ '/materials/assignments/' | relative_url }}"{% if page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Course Materials</a></li>
+        <li class="member-only" data-materials-member hidden><a href="{{ '/materials/upcoming/' | relative_url }}"{% if page.url contains '/materials/upcoming/' or page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Course Materials</a></li>
         {% assign class_tabs = 'Attendance,Groups' | split: ',' %}
         {% for tab in class_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
         <li class="member-only" data-class-member hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>

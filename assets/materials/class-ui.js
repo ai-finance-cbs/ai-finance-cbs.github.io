@@ -1,10 +1,10 @@
 import {
   canWrite,
   gradeTotal,
+  gradeCode,
   groupOpen,
   parsePresentCsv,
   parseGradesCsv,
-  parseQuizCsv,
   scoreValue,
   toCsv,
 } from './class-core.js';
@@ -512,8 +512,16 @@ export function renderClassPage(ctx) {
         { class: 'tool-help' },
       ),
     );
+    const legend = disclosure('Legend', 'grade-legend');
+    const legendList = el('ul');
+    for (const item of data.items) {
+      const note = item.optional ? ' · Optional tasks are capped at 15 points total.' : item.quiz_week ? ' · A quiz score marks attendance present.' : '';
+      legendList.append(el('li', `${gradeCode(item)} → ${item.title} → ${item.max_points} points${note}`));
+    }
+    legend.append(legendList);
+    root.append(legend);
     const filter = options(
-      [['all', 'All grading items'], ...data.items.map((i) => [i.id, i.title])],
+      [['all', 'All grading items'], ...data.items.map((i) => [i.id, gradeCode(i)])],
       selectedGradeItem,
       'Gradebook item',
     );
@@ -531,12 +539,17 @@ export function renderClassPage(ctx) {
         single = items.length === 1 ? items[0] : null;
       const { t, body, head } = table([
         'Student',
-        ...items.map((i) => `${i.title} / ${i.max_points}`),
+        ...items.map(gradeCode),
         'Optional capped',
-        'Recorded total',
+        'Total',
       ]);
       t.classList.add('gradebook-grid');
       head.lastElementChild.title = 'Optional points are capped at 15; the course total is capped at 100. Missing scores are not zeros.';
+      items.forEach((item, index) => {
+        const cell = head.children[index + 1];
+        cell.title = item.title;
+        cell.append(el('span', `/${item.max_points}`, { class: 'grade-max' }));
+      });
       if (admin)
         items.forEach((item, index) => {
           const label = el('label', 'Released', { class: 'release-label' }),
@@ -621,7 +634,7 @@ export function renderClassPage(ctx) {
         button(single ? `Export ${single.title} CSV` : 'Export gradebook CSV', () => {
           if (single)
             download(`item-${single.id}.csv`, [
-              ['uni', 'score'],
+              ['UNI', gradeCode(single)],
               ...data.roster.map((r) => [
                 r.uni,
                 data.grades.find((g) => g.uni === r.uni && g.item_id === single.id)?.score ?? '',
@@ -629,7 +642,7 @@ export function renderClassPage(ctx) {
             ]);
           else
             download('gradebook.csv', [
-              ['UNI', 'Name', ...data.items.map((i) => i.title), 'Optional capped', 'Total'],
+              ['UNI', 'Name', ...data.items.map(gradeCode), 'Optional capped', 'Total'],
               ...data.roster.map((r) => {
                 const grades = data.grades.filter((g) => g.uni === r.uni),
                   total = gradeTotal(data.items, grades);
@@ -651,7 +664,7 @@ export function renderClassPage(ctx) {
       file.required = true;
       labeled(
         form,
-        single ? 'CSV with uni,score' : 'Gradebook CSV (export the template first)',
+        single ? `CSV with UNI,${gradeCode(single)} (or uni,score)` : 'Gradebook CSV (export the template first)',
         file,
       );
       form.append(
@@ -668,9 +681,7 @@ export function renderClassPage(ctx) {
         e.preventDefault();
         try {
           const text = await file.files[0].text(),
-            entries = single
-              ? parseQuizCsv(text, single, data.roster)
-              : parseGradesCsv(text, data.items, data.roster);
+            entries = parseGradesCsv(text, single ? [single] : data.items, data.roster);
           preview.replaceChildren(el('p', `${entries.length} scores ready to import.`));
           const { t, body } = table(['UNI', 'Item', 'Score']);
           for (const e of entries) {

@@ -311,6 +311,7 @@ const tables = [
   'grade_items',
   'grades',
   'audit_log',
+  'announcements',
 ];
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
 const fnCases = {
@@ -373,6 +374,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
     "insert into lecture_files(week,title,storage_path,auditor_visible) values(1,'Hidden','hidden.pdf',false),(1,'Shared','shared.pdf',true)",
   );
   const insertSQL = {
+    announcements: "insert into announcements(title,body) values('Denied','Denied')",
     profiles: `insert into profiles(id,email,uni) values('${id('a')}','x@columbia.edu','cd5678')`,
     roster: "insert into roster values('xx5555','Fake')",
     allowlist: "insert into allowlist values('evil@columbia.edu','instructor')",
@@ -397,7 +399,8 @@ test('per-role forbidden reads/writes on every table and direct private helper c
         else if (['assignments', 'lecture_files'].includes(t)) {
           assert.equal(visible.length, who === 'unlisted' ? 0 : who === 'auditor' ? 1 : 2);
           if (who === 'auditor') assert.ok(visible.every((r) => r.auditor_visible));
-        } else if (who === 'a' && ['grades', 'group_memberships'].includes(t))
+        } else if (who === 'auditor' && t === 'attendance_sessions') assert.equal(visible.length, 6);
+        else if (who === 'a' && ['grades', 'group_memberships'].includes(t))
           assert.ok(visible.every((r) => r.uni === 'ab1234'));
         else if (
           who === 'a' &&
@@ -418,7 +421,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       );
       for (const sql of [
         `delete from ${t} returning *`,
-        `update ${t} set ${t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : t === 'assignments' ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : t === 'grades' ? 'score=score' : 'actor_email=actor_email'} returning *`,
+        `update ${t} set ${t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : t === 'grades' ? 'score=score' : 'actor_email=actor_email'} returning *`,
       ]) {
         try {
           assert.equal((await rows(sql)).length, 0, `${who}: ${sql}`);

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   GRADE_ITEMS,
+  gradeCode,
   zones,
   pageAllowed,
   canWrite,
@@ -16,6 +17,7 @@ const roster = [{ uni: 'ab1234' }, { uni: 'cd5678' }];
 test('role pages and preview write controls match the server contract', () => {
   const expected = {
     instructor: [
+      'upcoming',
       'assignments',
       'lecture-notes',
       'attendance',
@@ -25,9 +27,9 @@ test('role pages and preview write controls match the server contract', () => {
       'files',
       'settings',
     ],
-    grader: ['assignments', 'lecture-notes', 'gradebook', 'attendance'],
-    student: ['assignments', 'lecture-notes', 'attendance', 'groups'],
-    auditor: ['assignments', 'lecture-notes'],
+    grader: ['upcoming', 'assignments', 'lecture-notes', 'gradebook', 'attendance'],
+    student: ['upcoming', 'assignments', 'lecture-notes', 'attendance', 'groups'],
+    auditor: ['upcoming', 'assignments', 'lecture-notes'],
     unlisted: [],
   };
   for (const [role, pages] of Object.entries(expected))
@@ -94,4 +96,16 @@ test('group checks respect preview, deadlines, capacity, and own membership', ()
   assert.throws(() => checkGroupChange(data, a, 's', null, 'cd5678'), /not your/);
   data.sets[0].deadline = '2000-01-01';
   assert.throws(() => checkGroupChange(data, a, 's', null), /closed/);
+});
+
+test('grade codes round-trip and old full names remain valid without duplicate aliases', () => {
+  const codes = ['M1','M2','M3','M4','M5','FP','Q1','Q2','Q3','Q4','Q5','PA','O1','O2','O3','O4'];
+  assert.deepEqual(GRADE_ITEMS.map(gradeCode), codes);
+  const expected = GRADE_ITEMS.map(i => ({ uni:'ab1234', item_id:i.id, score:0 }));
+  for (const headers of [codes, GRADE_ITEMS.map(i => i.title)]) {
+    assert.deepEqual(parseGradesCsv(toCsv([['UNI', ...headers], ['ab1234', ...codes.map(() => 0)]]), GRADE_ITEMS, roster), expected);
+  }
+  assert.deepEqual(parseGradesCsv('UNI,q1\nab1234,0', GRADE_ITEMS, roster), [{uni:'ab1234',item_id:7,score:0}]);
+  assert.deepEqual(parseGradesCsv('uni,score\nab1234,0', [GRADE_ITEMS[6]], roster), [{uni:'ab1234',item_id:7,score:0}]);
+  assert.throws(() => parseGradesCsv('UNI,M1,Milestone #1\nab1234,1,2', GRADE_ITEMS, roster), /Duplicate grade/);
 });

@@ -1,3 +1,4 @@
+import { announcementText } from './upcoming-core.js';
 import { classSeed, extendDemo } from './class-demo.js';
 import { OWNER, extractUni, fakeAuthAllowed, resolveRole } from './core.js';
 const KEY = 'b8403-demo-state-v3';
@@ -9,7 +10,7 @@ function seed() {
     roster: [{ uni: 'ab1234', name: 'Demo Student' }, { uni: 'cd5678', name: 'Second Student' }, { uni: 'ef9012', name: 'Third Student' }],
     allowlist: [{ email: OWNER, role: 'instructor' }, { email: 'grader@columbia.edu', role: 'grader' }, { email: 'auditor@columbia.edu', role: 'auditor' }],
     assignments: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, title: i === 5 ? 'Demo final prototype' : `Demo milestone ${i + 1}`, due: `Before Week ${i + 1}`, points: i === 5 ? 25 : 10, description: 'Synthetic local example. Real assignment instructions load only from Supabase.', deliverable: 'Demo submission.', grading: 'Demo criteria.', auditor_visible: i === 0 })),
-    files: [], student_accounts: [],
+    files: [], student_accounts: [], announcements: [],
   };
 }
 export function createDemo() {
@@ -34,6 +35,20 @@ export function createDemo() {
   return {
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     demo: true,
+    async sessions() { requireRole(); return read().sessions; },
+    async announcements() { requireRole(); return (read().announcements || []).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)); },
+    async saveAnnouncement(row) {
+      requireRole(true);
+      const values = announcementText(row), d = read();
+      d.announcements ||= [];
+      if (row.id) {
+        const current = d.announcements.find(a => a.id === row.id);
+        if (!current) throw new Error('Announcement not found.');
+        Object.assign(current, values);
+      } else d.announcements.push({ ...values, id: crypto.randomUUID(), created_at: new Date().toISOString() });
+      save(d);
+    },
+    async deleteAnnouncement(id) { requireRole(true); const d = read(); d.announcements = (d.announcements || []).filter(a => a.id !== id); save(d); },
     async getAccess() { return access(); },
     async pickRole(role) {
       const email = { instructor: OWNER, grader: 'grader@columbia.edu', student: 'ab1234@columbia.edu', auditor: 'auditor@columbia.edu', unlisted: 'zz9999@columbia.edu', gsb: 'demo@gsb.columbia.edu', test: 'teststudent@example.test' }[role];

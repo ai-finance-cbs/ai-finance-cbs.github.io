@@ -28,6 +28,14 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async sessions() { return checked(await client.from('attendance_sessions').select('*').order('week')); },
+    async announcements() { return checked(await client.from('announcements').select('*').order('created_at', { ascending: false }).order('id')); },
+    async saveAnnouncement(row) {
+      const values = { title: row.title, body: row.body };
+      const query = row.id ? client.from('announcements').update(values).eq('id', row.id) : client.from('announcements').insert(values);
+      return checked(await query.select('id').single());
+    },
+    async deleteAnnouncement(id) { return checked(await client.from('announcements').delete().eq('id', id).select('id').single()); },
     async testAccounts() { return rpc('list_test_accounts'); },
     async studentAccounts() { return rpc('list_student_accounts'); },
     async linkStudent(email, uni) { return rpc('link_student_account', { p_email: email, p_uni: uni }); },

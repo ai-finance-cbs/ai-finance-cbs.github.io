@@ -40,7 +40,7 @@ Only an instructor can read the private test-account list. Test emails are never
 5. `uni@columbia.edu` accounts use their verified email UNI automatically.
 6. Self-entered CBS UNIs no longer grant access. Earlier self-claims must receive an instructor-approved account link.
 7. **Files** manages PDF uploads, auditor visibility, and deletion. Maximum PDF size remains 20 MB.
-8. **Settings** has four collapsible sections for access, assignments, CBS links, and read-only test accounts.
+8. **Settings** has five collapsible sections: announcements, access, assignments, CBS links, and read-only test accounts.
 9. **Attendance** edits six session dates and records present, absent, or excused statuses.
 10. Open **Import attendance CSV** for a UNI column or one UNI per line. Imports mark listed students present only.
 11. **Groups** creates sets with a group count, maximum size, optional deadline, and open/closed state.
@@ -55,7 +55,7 @@ Only an instructor can read the private test-account list. Test emails are never
 2. Choose one item from **All grading items**, or keep the full grid.
 3. Enter scores. Enter or Arrow Down moves to the next student; Tab moves across columns.
 4. Select **Save scores**. Blank cells mean ungraded; zero is a recorded score.
-5. Open **Import scores CSV**. For one item, use exactly `uni,score` columns. Preview it, then select **Import scores**.
+5. Open **Import scores CSV**. For one item, use `UNI,Q1` (or the selected item code). Legacy `uni,score` still works. Preview it, then select **Import scores**.
 6. The full-grid export provides a CSV template for multiple items. Unknown or duplicate rows reject the entire import.
 7. Imported blank score cells clear existing scores in those columns.
 8. Quiz 1–5 scores automatically mark Weeks 1–5 present, including scores of zero. Week 6 uses manual attendance.
@@ -83,7 +83,7 @@ Only an instructor can read the private test-account list. Test emails are never
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply `001`, `002`, `003`, then `004`. Existing legacy private seeds use `observer_visible` and belong before `003`.
+For a fresh database, apply `001`, `002`, `003`, `004`, then `005` after review. Existing legacy private seeds use `observer_visible` and belong before `003`.
 New seeds from `tools/create-materials-seed.rb` use `auditor_visible` and belong after `003`.
 Keep seeds and real roster files out of Git and `_site`.
 Named test-account seeding now belongs in the ignored `supabase/private/test-accounts.sql` file, after migration `004`.
@@ -140,3 +140,34 @@ Attendance keeps present, absent, and excused overrides. Quiz scores remain the 
 
 `npm run check` includes the compact UI browser tests. Screenshots are written to `evidence/compact-ui/`.
 They cover 1440px and 390px views with a synthetic class. Evidence remains local and Git-ignored.
+
+## Upcoming and announcements
+
+Course Materials now opens **Upcoming**. The submenu retains Assignments and Lecture Notes.
+Upcoming uses the earliest Attendance date that is today or later, in New York time.
+If no dates are set, it uses Week 1. After all dated classes finish, it shows a finished-course message.
+Only configured date, time, and room details appear. Attendance currently stores dates only.
+
+Required readings come from `_data/materials.yml` at build time. No private assignment text enters generated pages.
+The milestone uses that week's assignment ID, matching the Schedule's existing assignment mapping.
+PDFs obey existing visibility checks. When current notes are absent, Upcoming shows the previous week's available notes.
+Students see open group reminders or their own group and teammates. Auditors see readings, permitted PDFs, and announcements.
+
+1. Apply `005_announcements.sql` after `004`, following review, before publishing this browser version.
+2. Migration 005 adds announcements with role-based reads and Instructor-only writes.
+3. It also grants auditors read access to session dates. Attendance records, grades, and groups remain restricted.
+4. In Settings, open **Announcements**. The title is optional; body text is required.
+5. Use **Post announcement**, or open an existing announcement to edit or delete it.
+6. Dates are automatic and immutable. Title/body limits are 200/2,000 characters. Text is displayed literally.
+7. Preview remains read-only. Every announcement change creates an immutable audit record.
+
+Gradebook headers, the item picker, and CSV exports use M1–M5, FP, Q1–Q5, PA, and O1–O4.
+The closed **Legend** explains names, points, quiz attendance, and the optional-points cap.
+Imports accept these codes, existing full names, and existing `item_N` headers. Duplicate aliases reject the import.
+Student My grades keeps full names.
+
+The header uses the same 136px height on all pages. Desktop title/menu/submenu start at 12/49/78px.
+The submenu list spans 84–122px. Desktop navigation stays on one line and scrolls internally when necessary.
+The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
+Screenshots and check output for this change live in `evidence/upcoming/`.
+Migration 005 is local and unapplied to the hosted database. No push or db push was run.

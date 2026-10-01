@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const pages = ['/', '/schedule/', '/schedule/week-1/', '/library/', '/staff/',
-  ...['assignments', 'lecture-notes', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
+  ...['upcoming', 'assignments', 'lecture-notes', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 
@@ -17,7 +17,7 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
   test(`top bar keeps fixed title, menu, and submenu positions across pages and roles at ${width}px`, async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width, height: 950 });
-    mkdirSync('evidence/compact-ui/topbar', { recursive: true });
+    mkdirSync('evidence/upcoming/topbar', { recursive: true });
     const measurements = [];
     let baseline, submenuBottom;
     let desktopReference;
@@ -83,6 +83,12 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
         const { controls, links, submenuLinks, titleRow, fits, headingTop, titleFont, titleFits, brandRight, brandBottom, accountLeft, ...positions } = geometry;
         baseline ||= positions;
         expect(positions, `${role} ${path} at ${width}`).toEqual(baseline);
+        if (width >= 820) {
+          expect(geometry.height).toBe(136);
+          expect(geometry.titleTop).toBe(12);
+          expect(geometry.navTop).toBe(49);
+          expect(geometry.submenuTop).toBe(78);
+        }
         if (desktopReference) expect({ height: geometry.height, titleTop: geometry.titleTop,
           navTop: geometry.navTop, submenuTop: geometry.submenuTop }).toEqual(desktopReference);
         expect(fits, `${role} ${path} must not overflow`).toBe(true);
@@ -110,10 +116,10 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
             (role === 'student' && path === '/materials/assignments/') ||
             (role === 'instructor' && path === '/materials/gradebook/') ||
             (role === 'preview' && path === '/materials/attendance/')) {
-          await page.locator('.topbar').screenshot({ path: `evidence/compact-ui/topbar/${role}-${width}.png` });
+          await page.locator('.topbar').screenshot({ path: `evidence/upcoming/topbar/${role}-${width}.png` });
         }
       }
     }
-    writeFileSync(`evidence/compact-ui/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
+    writeFileSync(`evidence/upcoming/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
   });
 }

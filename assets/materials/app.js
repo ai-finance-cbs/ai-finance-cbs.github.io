@@ -1,10 +1,12 @@
+import { announcementText } from './upcoming-core.js';
+import { renderUpcoming } from './upcoming-ui.js';
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
 import { renderClassPage, renderRosterTable, table, wrapTable } from './class-ui.js';
 import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, parseRoster, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
-document.body.classList.toggle('class-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
+document.body.classList.toggle('class-tools', !!root && ['upcoming', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
@@ -120,7 +122,17 @@ async function refresh() {
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
   if (root) root.replaceChildren(el('p', 'Loading course materials…'));
   try {
-    if (root?.dataset.page === 'assignments') {
+    if (root?.dataset.page === 'upcoming') {
+      const [sessions, assignments, files, announcements, groups] = await Promise.all([
+        state.backend.sessions(), state.access.role === 'auditor' ? [] : state.backend.assignments(),
+        state.backend.files(), state.backend.announcements(),
+        state.access.role === 'student' ? state.backend.classData() : null,
+      ]);
+      if (version !== state.version) return;
+      root.replaceChildren();
+      renderUpcoming({ root, data: { sessions, assignments, files, announcements, groups }, access: state.access, path, fileLink });
+      outlineChanged();
+    } else if (root?.dataset.page === 'assignments') {
       const rows = await state.backend.assignments(); if (version !== state.version) return;
       root.replaceChildren(); renderAssignments(rows); outlineChanged();
     } else if (root?.dataset.page === 'lecture-notes') {
@@ -142,9 +154,10 @@ async function refresh() {
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
         } else if (page === 'settings') {
-          const [admin, assignments, tests] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts()]);
+          const [admin, assignments, tests, announcements] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts(), state.backend.announcements()]);
           if (version !== state.version) return;
-          root.append(el('p', 'Open a section to manage course access or assignment text.', { class: 'tool-help' }));
+          root.append(el('p', 'Open a section to manage announcements, course access, or assignment text.', { class: 'tool-help' }));
+          renderAnnouncementAdmin(announcements);
           renderAllowlist(admin.allowlist); renderAssignmentAdmin(assignments);
           const links = await state.backend.studentAccounts(); if(version !== state.version) return; renderStudentAccounts(links);
           const testSection = section('Test accounts', 'test-accounts');
@@ -256,6 +269,34 @@ function renderRoster(roster) {
     }, 'Preview ready. Review every flagged row before replacing the roster.');
   });
   s.append(form);
+}
+function renderAnnouncementAdmin(rows) {
+  const s = section('Announcements', 'announcements-editor');
+  const editor = row => {
+    const form = newForm(`announcement-${row?.id || 'new'}`);
+    const title = field(form, 'Title (optional)', 'title', row?.title || ''); title.maxLength = 200;
+    const body = field(form, 'Announcement text', 'body', row?.body || '', 'textarea'); body.maxLength = 2000; body.required = true;
+    const save = button(row ? 'Save announcement' : 'Post announcement'); save.type = 'submit';
+    form.append(save);
+    const status = formStatus(form);
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      runAction(save, status, () => state.backend.saveAnnouncement({ ...announcementText({ title: title.value, body: body.value }), ...(row ? { id: row.id } : {}) }), row ? 'Announcement saved.' : 'Announcement posted.', true);
+    });
+    if (row) {
+      form.append(el('time', new Date(row.created_at).toLocaleDateString('en-US', { timeZone: 'America/New_York' }), { datetime: row.created_at }));
+      const remove = button('Delete announcement', () => {
+        if (confirm('Delete this announcement?')) runAction(remove, status, () => state.backend.deleteAnnouncement(row.id), 'Announcement deleted.', true);
+      });
+      form.append(remove);
+    }
+    return form;
+  };
+  s.append(editor(null));
+  for (const row of rows) {
+    const details = el('details', null, { class: 'announcement-editor' });
+    details.append(el('summary', row.title || row.body.slice(0, 80)), editor(row)); s.append(details);
+  }
 }
 function renderStudentAccounts(rows) {
   const s=section('CBS account links','student-accounts'), form=newForm('student-account-form');

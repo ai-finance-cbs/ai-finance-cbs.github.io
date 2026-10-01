@@ -1,6 +1,7 @@
-{% if page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %}
+{% if page.url contains '/materials/upcoming/' or page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %}
 <nav class="subnav{{ include.where }}" aria-label="Course materials sections" data-materials-member hidden>
   <ul>
+    <li><a href="{{ '/materials/upcoming/' | relative_url }}"{% if page.url == '/materials/upcoming/' %} aria-current="page"{% endif %}>Upcoming</a></li>
     <li><a href="{{ '/materials/assignments/' | relative_url }}"{% if page.url == '/materials/assignments/' %} aria-current="page"{% endif %}>Assignments</a></li>
     <li><a href="{{ '/materials/lecture-notes/' | relative_url }}"{% if page.url == '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Lecture Notes</a></li>
   </ul>
