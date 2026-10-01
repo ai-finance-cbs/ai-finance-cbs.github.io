@@ -14,20 +14,26 @@ window.matchMedia('(max-width: 819px)').addEventListener('change', () => setMenu
 
 // Left pane outline: one link per section heading (h2) on this page.
 const outline = document.getElementById('outline');
-const headings = [...document.querySelectorAll('.content h2')].filter(h => !h.closest('.page-footer'));
-headings.forEach((h, i) => {
-  if (!h.id) h.id = 'section-' + (i + 1);
-  const li = document.createElement('li');
-  const a = document.createElement('a');
-  a.href = '#' + h.id;
-  a.textContent = h.textContent.trim();
-  li.appendChild(a);
-  outline.appendChild(li);
-});
-if (!headings.length) document.querySelector('.page-outline').hidden = true;
+let headings = [], links = [];
+function rebuildOutline() {
+  headings = [...document.querySelectorAll('.content h2')].filter(h => !h.closest('.page-footer'));
+  outline.replaceChildren();
+  headings.forEach((h, i) => {
+    if (!h.id) h.id = 'section-' + (i + 1);
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent.trim();
+    li.appendChild(a);
+    outline.appendChild(li);
+  });
+  links = [...outline.querySelectorAll('a')];
+  document.querySelector('.page-outline').hidden = !headings.length;
+}
+rebuildOutline();
+document.addEventListener('course:content-changed', () => { rebuildOutline(); mark(); });
 
 // Mark the section currently at the top of the screen.
-const links = [...outline.querySelectorAll('a')];
 const mark = () => {
   let current = headings[0];
   for (const h of headings) if (h.getBoundingClientRect().top < 260) current = h;

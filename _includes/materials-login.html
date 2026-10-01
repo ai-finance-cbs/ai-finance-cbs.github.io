@@ -1,0 +1,24 @@
+<dialog id="materials-login" class="login-dialog" aria-labelledby="login-title">
+  <button class="dialog-close" type="button" data-close-login aria-label="Close sign-in">Close</button>
+  <p class="login-course">B8403: Finance in the Age of AI — Spring 2027</p>
+  <h2 id="login-title">Course Materials</h2>
+  <p>Sign in with your Columbia Google account. Only @columbia.edu and @gsb.columbia.edu accounts are accepted.</p>
+  <div data-login-step>
+    <button class="materials-button primary" type="button" data-google>Continue with Columbia Google</button>
+    <p class="uni-note">First time using @gsb.columbia.edu? We will ask for your Columbia UNI and check the class list.</p>
+  </div>
+  <form data-uni-form hidden>
+    <label for="columbia-uni">Your Columbia UNI</label>
+    <input id="columbia-uni" name="uni" autocomplete="username" placeholder="ab1234" maxlength="16" required>
+    <button class="materials-button primary" type="submit">Check class list</button>
+    <p class="uni-note">Enter your own UNI. It can be saved once. Contact the instructor if it needs correction.</p>
+  </form>
+  <p data-login-message role="status" aria-live="polite"></p>
+  <p data-contact hidden>For access, contact <a href="mailto:oh@gsb.columbia.edu">oh@gsb.columbia.edu</a>.</p>
+  <fieldset class="demo-controls" data-demo-controls hidden>
+    <legend>Local demo · synthetic data</legend>
+    <label for="demo-role">Preview role</label>
+    <select id="demo-role"><option value="instructor">Instructor / TA</option><option value="student">Student</option><option value="observer">Observer</option><option value="unlisted">Unlisted</option><option value="gsb">First-time CBS student</option></select>
+    <button type="button" class="materials-button" data-demo-enter>Use demo role</button>
+  </fieldset>
+</dialog>

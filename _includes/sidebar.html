@@ -10,15 +10,26 @@
   <p class="logo-sub logo-title">Assistant Professor of Finance</p>
   </div>
   <div class="topbar-main">
+    <div class="brand-row">
     <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
+      <div class="auth-controls" aria-label="Course account">
+        <button type="button" class="auth-login" data-login><span class="auth-long">Sign in with Columbia UNI</span><span class="auth-short">Sign in</span></button>
+        <span class="role-badge" data-role hidden></span>
+        <button type="button" class="auth-signout" data-signout hidden>Sign out</button>
+      </div>
+    </div>
+    <div class="menu-row">
     <nav class="topnav" id="topnav" aria-label="Course pages">
       <ul>
         {% for item in site.data.navigation %}
-        <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url != '/' and page.url contains item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
+                <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url != '/' and page.url contains item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
         {% endfor %}
+        <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
+        <li class="member-only" data-materials-member hidden><a href="{{ '/materials/assignments/' | relative_url }}"{% if page.url contains '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
       </ul>
     </nav>
-    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% elsif page.url contains '/schedule/' %}{% include schedule-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
+    </div>
+    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% elsif page.url contains '/schedule/' %}{% include schedule-nav.html where=' subnav-top' %}{% elsif page.url contains '/materials/' %}{% include materials-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>
@@ -28,10 +39,4 @@
     <p class="outline-title">Contents</p>
     <ul id="outline"></ul>
   </nav>
-  <div class="sidebar-foot">
-    <div class="sidebar-resources">
-      <!-- TODO: Replace the office-hours URL when it is confirmed. -->
-      <a class="resource-link" href="#" data-pending aria-disabled="true" aria-label="Office hours — link to be announced"><span>Office hours</span><span class="link-status">Link TBA</span></a>
-    </div>
-  </div>
 </aside>

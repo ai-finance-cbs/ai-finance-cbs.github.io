@@ -530,3 +530,110 @@ caption { margin-bottom:6px; }
 .badge-required { display:inline-block; width:58px; text-align:center; box-sizing:border-box; }
 .badge-optional { color:#6b737c; border-color:#d3d8de; background:#f7f8f9; }
 .in-library .week-details { margin-top:6px; }
+
+/* Course materials use the existing serif content and sans-serif navigation. */
+[hidden] { display:none !important; }
+.menu-row { display:flex; align-items:center; justify-content:space-between; gap:18px; min-width:0; }
+.menu-row .topnav { margin-left:0; padding-right:0; }
+.auth-controls { display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink:0; font:13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.auth-controls button { background:white; border:0; padding:5px 0; cursor:pointer; color:#2F6FB8; white-space:nowrap; }
+.role-badge { color:#555; white-space:nowrap; }
+.materials-button { display:inline-block; background:white; border:1px solid #d8d8d8; border-radius:3px; padding:9px 14px; cursor:pointer; color:#1a1a1a; font:14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.materials-button:hover { background:#fafafa; border-color:#2F6FB8; }
+.materials-button.primary { background:#2F6FB8; color:white; border-color:#2F6FB8; }
+.materials-button:disabled { opacity:.55; cursor:wait; }
+.login-dialog { box-sizing:border-box; width:min(510px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:32px; border:1px solid #ECECEC; background:#fff; color:#1a1a1a; }
+.login-dialog::backdrop { background:rgb(0 0 0 / .25); }
+.login-dialog h2 { font:600 30px/1.25 "Source Serif 4",Georgia,serif; margin:28px 0 18px; }
+.login-dialog p { font-family:"Source Serif 4",Georgia,serif; font-size:16px; line-height:1.55; }
+.login-dialog .login-course, .login-dialog .uni-note { font:13px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#666; }
+.login-dialog .login-course { margin-top:22px; }
+.dialog-close { float:right; background:white; border:0; color:#555; padding:0; cursor:pointer; font-size:13px; }
+.login-dialog .uni-note { margin:16px 0 0; }
+.login-dialog [data-login-message]:not(:empty) { margin-top:20px; padding-top:16px; border-top:1px solid #ECECEC; }
+.login-dialog label, .admin-form label { display:block; font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:14px 0 6px; }
+.login-dialog input, .login-dialog select, .admin-form input:not([type=checkbox]), .admin-form textarea, .admin-form select { width:100%; max-width:100%; min-width:0; box-sizing:border-box; border:1px solid #d8d8d8; border-radius:2px; padding:9px; font:15px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#222; background:#fff; }
+.login-dialog input, .login-dialog select { margin-bottom:12px; }
+.admin-form textarea { min-height:100px; resize:vertical; }
+.admin-form .check-label { display:flex; align-items:flex-start; gap:8px; }
+.admin-form .check-label input { flex-shrink:0; margin-top:4px; }
+.admin-form .materials-button { margin:12px 8px 4px 0; }
+.admin-form { margin-bottom:24px; }
+.admin-section, .assignment-section, .lecture-week { border-top:1px solid #ECECEC; padding:22px 0; }
+.assignment-section h2, .lecture-week h2, .admin-section h2 { margin:0 0 14px; }
+.assignment-meta, .file-meta, .materials-status, .demo-notice { font:13px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#666; }
+.content .assignment-meta { margin-bottom:6px; }
+.assignment-copy { white-space:pre-wrap; overflow-wrap:anywhere; }
+.file-list { list-style:none; padding:0; }
+.content .file-list li { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:10px 0; border-bottom:1px solid #ECECEC; margin:0; }
+.file-list a { overflow-wrap:anywhere; }
+.file-list .file-meta { margin-left:auto; }
+.admin-section details { border-bottom:1px solid #ECECEC; padding:12px 0; }
+.admin-section summary { cursor:pointer; font-size:17px; }
+.roster-preview { max-height:320px; overflow:auto; border:1px solid #ECECEC; padding:0 12px; margin:12px 0; }
+.roster-preview table { width:100%; table-layout:fixed; }
+.roster-preview td { overflow-wrap:anywhere; }
+.demo-controls { margin-top:24px; border:1px solid #ECECEC; padding:16px; }
+.demo-controls legend { font:12px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#666; }
+.demo-notice { padding:10px 0; border-bottom:1px solid #ECECEC; margin-bottom:20px; }
+.slides-status { display:block; color:#6b6b6b; font-size:14px; }
+.materials-status:not(:empty) { padding:12px 0; }
+.materials-error { color:#333; border-bottom:1px solid #ECECEC; }
+@media (min-width:820px) { .menu-row { padding-left:28px; } .menu-row .topnav ul { gap:20px; } }
+@media (min-width:820px) and (max-width:1050px) { .menu-row .topnav ul { gap:12px; } .menu-row .topnav a { font-size:13px; } .auth-controls { font-size:12px; gap:8px; } .menu-row { gap:12px; } }
+@media (max-width:819px) {
+  .topbar { height:auto; min-height:84px; flex-wrap:wrap; padding-top:8px; padding-bottom:8px; }
+  :root { --topbar:100px; }
+  .topbar-main { flex:1; min-width:0; }
+  .menu-row { margin:6px 0 0 12px; }
+  .auth-controls { margin-left:0; font-size:12px; }
+  .auth-controls button { min-height:30px; }
+  .menu-row .topnav { padding:6px 16px 8px; }
+  .login-dialog { padding:24px; }
+  .login-dialog h2 { font-size:27px; }
+  .lecture-week h2, .assignment-section h2 { font-size:21px; }
+  .file-list .file-meta { width:100%; margin-left:0; }
+}
+#materials-root { overflow-wrap:anywhere; }
+/* Claude review fixes: main menu starts under the course title; hidden sub-menu keeps its row */
+@media (min-width:820px) {
+  .menu-row { padding-left:0; }
+  .subnav-top[hidden] { display:block !important; visibility:hidden; }
+}
+
+/* sign-in button and role badge sit right after "Spring 2027" */
+.brand-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.brand-row .auth-controls { margin-left:4px; }
+.auth-controls .auth-login { background:#2F6FB8 !important; color:#fff !important; border-radius:999px; padding:4px 12px !important; font:500 12.5px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.auth-controls .auth-login:hover { background:#24599a !important; }
+.auth-controls .role-badge { background:#2F6FB8; color:#fff; border-radius:999px; padding:3px 11px; font:500 12.5px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.auth-controls .auth-signout { font-size:12.5px; color:#6b737c !important; }
+@media (max-width:819px) { .brand-row { gap:8px; } .brand-row .auth-controls { margin-left:0; } }
+.auth-short { display:none; }
+@media (max-width:819px) {
+  .topbar { height:auto; min-height:var(--topbar); }
+  .brand-row { display:contents; }
+  .brand-row .auth-controls { order:2; margin-left:auto; gap:6px; }
+  .menu-toggle, .js .menu-toggle { order:3; position:static; margin-left:6px; }
+  .auth-long { display:none; }
+  .auth-short { display:inline; }
+  .auth-controls .auth-login, .auth-controls .role-badge { font-size:11.5px; padding:3px 9px !important; }
+  .auth-controls .auth-signout { font-size:11.5px; }
+}
+@media (max-width:819px) { :root, body.in-library { --topbar:112px; } .topbar { flex-wrap:wrap; } }
+
+/* login-only tab: separator after Staff and a distinct colour */
+.topnav li.member-sep { width:1px; height:16px; background:#cfd6de; align-self:center; margin:0 -4px; }
+.topnav li.member-only a { color:#2F6FB8; }
+.topnav li.member-only a[aria-current="page"] { color:#2F6FB8; border-bottom-color:#2F6FB8; }
+@media (max-width:819px) { .topnav li.member-sep { width:100%; height:1px; margin:6px 0; } }
+/* Staff */
+.staff-card { display:grid; grid-template-columns:160px 1fr; gap:28px; padding:24px 0; border-top:1px solid var(--line); align-items:start; }
+.staff-card:first-of-type { border-top:0; padding-top:4px; }
+.staff-photo { width:160px; height:160px; border-radius:50%; object-fit:cover; display:block; }
+.staff-photo-empty { background:#f2f4f6; }
+.staff-card h2 { margin:0 0 4px; font-size:22px; }
+.content p.staff-label { font:500 12px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#2F6FB8; margin:0 0 6px; }
+.content p.staff-role { font-size:15px; color:var(--muted); margin:0 0 6px; }
+.content p.staff-links { font-size:15px; margin:0 0 12px; }
+@media (max-width:819px) { .staff-card { grid-template-columns:1fr; gap:14px; } .staff-photo { width:120px; height:120px; } }

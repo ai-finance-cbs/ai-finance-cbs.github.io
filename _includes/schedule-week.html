@@ -4,7 +4,7 @@
 <dl class="week-details">
   <div><dt>Date</dt><dd>TBA</dd></div>
   <div><dt>Topics</dt><dd><ul class="row-list">{% for x in week.topics %}<li>{{ x }}</li>{% endfor %}</ul></dd></div>
-  <div><dt>Due before class</dt><dd>{{ week.milestone }}</dd></div>
-  <div><dt>Slides</dt><dd>Posted after class</dd></div>
+  <div><dt>Due before class</dt><dd><a data-protected-link href="{{ '/materials/assignments/' | relative_url }}#{% if week.number == 6 %}final-prototype{% else %}milestone-{{ week.number }}{% endif %}">{{ week.milestone }}</a></dd></div>
+  <div><dt>Slides</dt><dd><a data-protected-link data-week-slides="{{ week.number }}" href="{{ '/materials/lecture-notes/' | relative_url }}#week-{{ week.number }}">Lecture Notes: Week {{ week.number }}</a><span class="slides-status" data-slides-status="{{ week.number }}"></span></dd></div>
   <div><dt>Readings</dt><dd><a href="{{ '/library/' | append: lib.slug | append: '/' | relative_url }}">Library: {{ lib.title }}</a></dd></div>
 </dl>

@@ -4,7 +4,19 @@ url: ""
 baseurl: ""
 markdown: kramdown
 plugins: []
+# Public browser credentials only. Never paste a service_role or secret key here.
+supabase_url: "https://czamlkthqbnkmwdprlvo.supabase.co"
+supabase_publishable_key: "sb_publishable_yngPiZGAK49IC8HBA9Xrug_-Bsbf38i"
 exclude:
+  - supabase
+  - tests
+  - package.json
+  - package-lock.json
+  - playwright.config.mjs
+  - test-results
+  - playwright-report
+  - SETUP.md
+  - .env.example
   - SPEC.md
   - "REVIEW-*.md"
   - NOTES.md

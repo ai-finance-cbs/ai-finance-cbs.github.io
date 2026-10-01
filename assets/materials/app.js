@@ -1,0 +1,299 @@
+import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, normalizeUni, parseRoster, safeReturnPath, validatePdf } from './core.js';
+
+const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
+const root = document.getElementById('materials-root');
+const dialog = document.getElementById('materials-login');
+const message = dialog.querySelector('[data-login-message]');
+const state = { backend: null, access: null, version: 0 };
+const path = name => `${config.base}/materials/${name}/`;
+const member = () => state.access && state.access.role !== 'unlisted';
+const el = (tag, text, attrs = {}) => {
+  const node = document.createElement(tag);
+  if (text != null) node.textContent = text;
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  return node;
+};
+const button = (label, click, extra = '') => { const b = el('button', label, { type: 'button', class: `materials-button ${extra}` }); if (click) b.addEventListener('click', click); return b; };
+function showMessage(text) { message.textContent = text; }
+function outlineChanged() {
+  document.dispatchEvent(new Event('course:content-changed'));
+  if (location.hash) {
+    try { document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView(); } catch { /* Ignore malformed external anchors. */ }
+  }
+}
+function updateModal() {
+  const needsUni = !!state.access?.needs_uni;
+  dialog.querySelector('[data-uni-form]').hidden = !needsUni;
+  dialog.querySelector('[data-login-step]').hidden = !!state.access;
+  dialog.querySelector('[data-contact]').hidden = state.access?.role !== 'unlisted';
+  if (needsUni) showMessage('Enter your Columbia UNI to check the class list.');
+  else if (state.access?.role === 'unlisted') showMessage('You are not on the class list.');
+}
+function openLogin(destination) {
+  if (destination) sessionStorage.setItem('b8403-return', safeReturnPath(destination, location.origin, `${config.base}/`));
+  showMessage(''); updateModal();
+  if (!dialog.open) dialog.showModal();
+  if (state.access?.needs_uni) dialog.querySelector('input[name=uni]').focus();
+}
+async function finishSignIn() {
+  await refresh();
+  if (member()) {
+    dialog.close();
+    const target = sessionStorage.getItem('b8403-return');
+    sessionStorage.removeItem('b8403-return');
+    if (target) location.assign(safeReturnPath(target, location.origin, `${config.base}/`));
+  } else openLogin();
+}
+function showGate() {
+  if (!root) return;
+  root.replaceChildren();
+  if (!state.access) root.append(el('p', 'Sign in to see course materials.'), button('Sign in with Columbia UNI', () => openLogin()));
+  else if (state.access.role === 'unlisted') {
+    root.append(el('p', 'You are not on the class list.'), el('p', 'For access, contact the instructor.'), el('a', OWNER, { href: `mailto:${OWNER}` }));
+    if (state.access.needs_uni) root.append(el('p'), button('Enter your UNI', () => openLogin()));
+  } else root.append(el('p', 'This page is for instructors and TAs.'));
+  outlineChanged();
+}
+async function refresh() {
+  const version = ++state.version;
+  state.access = state.backend ? await state.backend.getAccess() : null;
+  if (version !== state.version) return;
+  document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !member());
+  document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = state.access?.role !== 'instructor_ta');
+  document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
+  document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
+  const badge = document.querySelector('[data-role]');
+  badge.hidden = !state.access; badge.textContent = ROLE_LABELS[state.access?.role] || '';
+  updateModal();
+  if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
+  if (root?.dataset.page === 'admin' && state.access.role !== 'instructor_ta') { showGate(); return; }
+  if (root) root.replaceChildren(el('p', 'Loading course materials…'));
+  try {
+    if (root?.dataset.page === 'assignments') {
+      const rows = await state.backend.assignments(); if (version !== state.version) return;
+      root.replaceChildren(); addDemoNotice(root); renderAssignments(rows); outlineChanged();
+    } else if (root?.dataset.page === 'lecture-notes') {
+      const rows = await state.backend.files(); if (version !== state.version) return;
+      root.replaceChildren(); addDemoNotice(root); renderLectures(rows); outlineChanged();
+    } else if (root?.dataset.page === 'admin') {
+      const [admin, assignments, files] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.files()]);
+      if (version !== state.version) return;
+      root.replaceChildren(); addDemoNotice(root); renderAdmin(admin, assignments, files); outlineChanged();
+    }
+    if (document.querySelector('[data-week-slides]')) {
+      const rows = await state.backend.files(); if (version !== state.version) return;
+      document.querySelectorAll('[data-slides-status]').forEach(n => { n.textContent = rows.some(f => f.week === Number(n.dataset.slidesStatus)) ? '' : 'Posted after class.'; });
+    }
+  } catch (error) {
+    if (version !== state.version) return;
+    if (root) root.replaceChildren(el('p', `Could not load materials. ${error.message}`), button('Try again', () => refresh()));
+    else console.warn('Course materials could not load.');
+  }
+}
+function addDemoNotice(parent) {
+  if (state.backend?.demo) parent.append(el('p', 'Local demo · synthetic examples only. No course data is connected.', { class: 'demo-notice' }));
+}
+function renderAssignments(rows) {
+  if (!rows.length) root.append(el('p', state.access.role === 'observer' ? 'No assignments have been shared with observers yet.' : 'Assignments have not been posted yet.'));
+  for (const row of rows) {
+    const section = el('section', null, { class: 'assignment-section', id: row.id === 6 ? 'final-prototype' : `milestone-${row.id}` });
+    section.append(el('p', `${row.id === 6 ? 'Final Prototype' : `Milestone #${row.id}`} · ${row.due} · ${row.points} points`, { class: 'assignment-meta' }), el('h2', row.title), el('p', row.description, { class: 'assignment-copy' }));
+    const dl = el('dl', null, { class: 'detail-list' });
+    for (const [label, text] of [['Deliverable', row.deliverable], ['Graded on', row.grading]]) {
+      const div = el('div'); div.append(el('dt', label), el('dd', text, { class: 'assignment-copy' })); dl.append(div);
+    }
+    section.append(dl); root.append(section);
+  }
+}
+function fileLink(file) {
+  const a = el('a', file.title, { href: '#', 'data-file-id': file.id });
+  a.addEventListener('click', async e => {
+    e.preventDefault(); const old = a.textContent; a.textContent = 'Preparing PDF…';
+    try {
+      const url = await state.backend.fileUrl(file.id);
+      const download = el('a', null, { href: url, download: `${file.title}.pdf`, rel: 'noreferrer' });
+      document.body.append(download); download.click(); download.remove();
+    } catch (error) { alert(`Could not open this file. ${error.message}`); }
+    finally { a.textContent = old; }
+  });
+  return a;
+}
+function renderLectures(rows) {
+  WEEK_TITLES.forEach((title, i) => {
+    const section = el('section', null, { class: 'lecture-week', id: `week-${i + 1}` });
+    section.append(el('p', `Week ${i + 1}`, { class: 'assignment-meta' }), el('h2', title));
+    const files = rows.filter(f => f.week === i + 1);
+    if (!files.length) section.append(el('p', 'Posted after class.'));
+    else { const list = el('ul', null, { class: 'file-list' }); for (const f of files) { const li = el('li'); li.append(fileLink(f), el('span', 'PDF', { class: 'file-meta' })); list.append(li); } section.append(list); }
+    root.append(section);
+  });
+}
+function field(form, label, name, value = '', type = 'text') {
+  const id = `${form.id}-${name}`; const l = el('label', label, { for: id });
+  const input = el(type === 'textarea' ? 'textarea' : 'input', null, { id, name });
+  if (type !== 'textarea') input.type = type;
+  if (type === 'checkbox') { l.className = 'check-label'; input.checked = !!value; l.prepend(input); form.append(l); }
+  else { input.value = value; form.append(l, input); }
+  return input;
+}
+function formStatus(form) { const status = el('p', '', { class: 'materials-status', role: 'status' }); form.append(status); return status; }
+async function runAction(control, status, task, success, rerender = false) {
+  control.disabled = true; status.textContent = 'Working…';
+  try { await task(); if (rerender) { await refresh(); const current = root.querySelector('[data-admin-status]'); if (current) current.textContent = success; } else status.textContent = success; }
+  catch (error) { status.textContent = error.message || 'The change could not be saved. Try again.'; }
+  finally { control.disabled = false; }
+}
+function section(title, id) { const s = el('section', null, { class: 'admin-section', id }); s.append(el('h2', title)); root.append(s); return s; }
+function newForm(id) { return el('form', null, { class: 'admin-form', id }); }
+function renderAdmin(admin, assignments, files) {
+  root.append(el('p', 'Manage the class list, access, assignments, and lecture PDFs.'));
+  root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
+  renderRoster(admin.roster); renderAllowlist(admin.allowlist); renderFileAdmin(files); renderAssignmentAdmin(assignments);
+}
+function renderRoster(roster) {
+  const s = section('Class roster', 'class-roster');
+  s.append(el('p', `${roster.length} ${roster.length === 1 ? 'student' : 'students'} on the class list. Upload a Canvas People CSV to replace the roster.`));
+  const form = newForm('roster-form'); const upload = field(form, 'Canvas roster CSV', 'csv', '', 'file'); upload.accept = '.csv,text/csv'; upload.required = true;
+  const previewButton = button('Preview roster'); previewButton.type = 'submit'; const status = formStatus(form); const preview = el('div'); form.append(previewButton, preview);
+  form.addEventListener('submit', e => {
+    e.preventDefault(); runAction(previewButton, status, async () => {
+      preview.replaceChildren();
+      const file = upload.files[0]; if (!file || file.size > 1_000_000) throw new Error('Choose a CSV smaller than 1 MB.');
+      const result = parseRoster(await file.text());
+      preview.append(el('p', `${result.rows.length} valid students. ${result.issues.length} rows need attention.`));
+      const wrap = el('div', null, { class: 'roster-preview' }); const table = el('table'); const head = el('tr'); head.append(el('th', 'Student'), el('th', 'UNI')); const thead = el('thead'); thead.append(head); const body = el('tbody');
+      for (const row of result.rows) { const tr = el('tr'); tr.append(el('td', row.name || '—'), el('td', row.uni)); body.append(tr); }
+      table.append(thead, body); wrap.append(table); preview.append(wrap);
+      for (const issue of result.issues) preview.append(el('p', `Row ${issue.row}: ${issue.name || '(no name)'} — ${issue.reason}`));
+      if (result.errors.length) { preview.append(el('p', result.errors.join(' '))); return; }
+      const acknowledge = el('input', null, { type: 'checkbox', id: 'roster-confirm' }); const label = el('label', `Replace all ${roster.length} current roster entries with these ${result.rows.length} students${result.issues.length ? ' and skip the flagged rows' : ''}.`, { for: 'roster-confirm', class: 'check-label' }); label.prepend(acknowledge); preview.append(label);
+      const save = button('Replace roster', () => runAction(save, status, () => state.backend.replaceRoster(result.rows), `Roster replaced: ${result.rows.length} students.`, true)); save.disabled = true;
+      acknowledge.addEventListener('change', () => save.disabled = !acknowledge.checked); preview.append(save);
+      upload.addEventListener('change', () => preview.replaceChildren(), { once: true });
+    }, 'Preview ready. Review every flagged row before replacing the roster.');
+  });
+  s.append(form);
+  const details = el('details'); details.append(el('summary', 'Current class list')); const list = el('ul'); for (const row of roster) list.append(el('li', `${row.name || 'Student'} · ${row.uni}`)); details.append(list); s.append(details);
+}
+function renderAllowlist(rows) {
+  const s = section('TA and observer access', 'access-lists'); const form = newForm('allowlist-form');
+  const email = field(form, 'Columbia email', 'email', '', 'email'); email.required = true; email.maxLength = 254;
+  const label = el('label', 'Access role', { for: 'allow-role' }); const select = el('select', null, { id: 'allow-role' });
+  select.append(el('option', 'Instructor / TA', { value: 'instructor_ta' }), el('option', 'Observer', { value: 'observer' })); form.append(label, select);
+  const save = button('Save access'); save.type = 'submit'; const status = formStatus(form); form.append(save);
+  form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, async () => {
+    const normalized = normalizeEmail(email.value); if (!isColumbiaEmail(normalized)) throw new Error('Use an @columbia.edu or @gsb.columbia.edu email.');
+    if (normalized === OWNER) throw new Error('The instructor account is fixed.');
+    if (normalized === state.access.email && select.value !== 'instructor_ta' && !confirm('Change your own role to Observer? You will lose admin access.')) throw new Error('Your role was not changed.');
+    await state.backend.saveAllowlist({ email: normalized, role: select.value });
+  }, 'Access saved.', true); });
+  s.append(form); const list = el('ul', null, { class: 'file-list' });
+  for (const row of rows) {
+    const li = el('li'); li.append(el('span', row.email), el('span', ROLE_LABELS[row.role], { class: 'file-meta' }));
+    if (row.email !== OWNER) { const remove = button(`Remove ${row.email}`, () => { if (confirm(`Remove access for ${row.email}?`)) runAction(remove, status, () => state.backend.removeAllowlist(row.email), 'Access removed.', true); }); li.append(remove); }
+    list.append(li);
+  }
+  s.append(list);
+}
+function renderFileAdmin(files) {
+  const s = section('Lecture PDFs', 'lecture-pdfs'); const form = newForm('file-form');
+  const weekLabel = el('label', 'Week', { for: 'upload-week' }); const week = el('select', null, { id: 'upload-week', name: 'week' }); WEEK_TITLES.forEach((title, i) => week.append(el('option', `Week ${i + 1}: ${title}`, { value: i + 1 })));
+  form.append(weekLabel, week);
+  const title = field(form, 'File title', 'title'); title.required = true; title.maxLength = 200;
+  const file = field(form, 'Lecture PDF (maximum 20 MB)', 'pdf', '', 'file'); file.accept = '.pdf,application/pdf'; file.required = true;
+  const visible = field(form, 'Visible to observers', 'observer_visible', false, 'checkbox');
+  const upload = button('Upload PDF'); upload.type = 'submit'; const status = formStatus(form); form.append(upload);
+  form.addEventListener('submit', e => { e.preventDefault(); runAction(upload, status, async () => {
+    await validatePdf(file.files[0]); if (!title.value.trim()) throw new Error('Enter a file title.');
+    await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), observer_visible: visible.checked });
+  }, 'PDF uploaded.', true); });
+  s.append(form); const list = el('ul', null, { class: 'file-list' });
+  for (const row of files) {
+    const li = el('li'); li.append(fileLink(row), el('span', `Week ${row.week} · ${row.observer_visible ? 'Observer visible' : 'Students and instructors'}`, { class: 'file-meta' }));
+    const toggle = button(row.observer_visible ? `Hide ${row.title} from observers` : `Share ${row.title} with observers`, () => runAction(toggle, status, () => state.backend.setFileVisibility(row.id, !row.observer_visible), 'File visibility updated.', true));
+    const remove = button(`Delete ${row.title}`, () => { if (confirm(`Delete ${row.title}? This removes its stored PDF.`)) runAction(remove, status, () => state.backend.deleteFile(row.id), 'PDF deleted.', true); });
+    li.append(toggle, remove); list.append(li);
+  }
+  s.append(list);
+}
+function renderAssignmentAdmin(rows) {
+  const s = section('Assignment text and access', 'assignment-editor');
+  s.append(el('p', 'Plain text only. Line breaks are preserved.'));
+  if (!rows.length) s.append(el('p', 'No assignments found. Load the private seed in Supabase using SETUP.md.'));
+  for (const row of rows) {
+    const details = el('details'); details.append(el('summary', `${row.id === 6 ? 'Final Prototype' : `Milestone #${row.id}`} · ${row.title}`));
+    const form = newForm(`assignment-${row.id}`);
+    const title = field(form, 'Title', 'title', row.title); title.required = true; title.maxLength = 200;
+    const due = field(form, 'Due', 'due', row.due); due.required = true; due.maxLength = 100;
+    const points = field(form, 'Points', 'points', row.points, 'number'); points.required = true; points.min = '0'; points.max = '100'; points.step = '1';
+    const description = field(form, 'Description', 'description', row.description, 'textarea'); description.maxLength = 20000;
+    const deliverable = field(form, 'Deliverable', 'deliverable', row.deliverable, 'textarea'); deliverable.maxLength = 10000;
+    const grading = field(form, 'How it is graded', 'grading', row.grading, 'textarea'); grading.maxLength = 10000;
+    const visible = field(form, 'Visible to observers', 'observer_visible', row.observer_visible, 'checkbox');
+    const save = button('Save assignment'); save.type = 'submit'; const status = formStatus(form); form.append(save);
+    form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, () => state.backend.saveAssignment({ id: row.id, title: title.value.trim(), due: due.value.trim(), points: Number(points.value), description: description.value, deliverable: deliverable.value, grading: grading.value, observer_visible: visible.checked }), 'Assignment saved.'); });
+    details.append(form); s.append(details);
+  }
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-login]')) openLogin();
+  const link = e.target.closest('[data-protected-link]');
+  if (link && !member()) { e.preventDefault(); openLogin(link.href); }
+});
+dialog.querySelector('[data-close-login]').addEventListener('click', () => dialog.close());
+dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+document.querySelector('[data-signout]').addEventListener('click', async () => {
+  ++state.version; state.access = null; showGate(); sessionStorage.removeItem('b8403-return');
+  try { await state.backend?.signOut(); await refresh(); }
+  catch (error) { openLogin(); showMessage(`Sign out could not finish. ${error.message}`); }
+});
+dialog.querySelector('[data-google]').addEventListener('click', async e => {
+  e.target.disabled = true;
+  try {
+    if (state.backend?.demo) { showMessage('Choose a local demo role below. Real Google sign-in is disabled in demo mode.'); return; }
+    if (!state.backend) throw new Error('Course sign-in is not configured yet. Contact oh@gsb.columbia.edu.');
+    const returnTo = location.pathname + location.search + location.hash;
+    if (!sessionStorage.getItem('b8403-return')) sessionStorage.setItem('b8403-return', returnTo);
+    // Google returns to the exact public page. The saved local path restores its anchor.
+    await state.backend.signIn(location.origin + location.pathname);
+  } catch (error) { showMessage(error.message); }
+  finally { e.target.disabled = false; }
+});
+dialog.querySelector('[data-uni-form]').addEventListener('submit', async e => {
+  e.preventDefault(); const b = e.target.querySelector('button'); b.disabled = true;
+  try { const uni = normalizeUni(e.target.elements.uni.value); if (!uni) throw new Error('Enter a UNI such as ab1234.'); await state.backend.claimUni(uni); await finishSignIn(); }
+  catch (error) { showMessage(error.message); }
+  finally { b.disabled = false; }
+});
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const requested = params.get('fakeauth');
+  const localDemo = fakeAuthAllowed(location) && (requested || sessionStorage.getItem('b8403-demo-enabled'));
+  try {
+    if (localDemo) {
+      const { createDemo } = await import('./demo.js'); state.backend = createDemo(); sessionStorage.setItem('b8403-demo-enabled', '1');
+      dialog.querySelector('[data-demo-controls]').hidden = false;
+      if (requested) {
+        await state.backend.pickRole(requested);
+        params.delete('fakeauth'); history.replaceState({}, '', location.pathname + (params.size ? `?${params}` : '') + location.hash);
+      }
+      dialog.querySelector('[data-demo-enter]').addEventListener('click', async () => { await state.backend.pickRole(dialog.querySelector('#demo-role').value); await finishSignIn(); });
+    } else if (config.url && config.key) {
+      const { createBackend } = await import('./supabase.js'); state.backend = await createBackend(config);
+    }
+    await refresh();
+    state.backend?.onSignOut?.(() => {
+      ++state.version; state.access = null; showGate();
+      refresh().catch(() => { state.access = null; showGate(); });
+    });
+    const oauthError = params.get('error_description');
+    if (oauthError) { openLogin(); showMessage('Google sign-in was cancelled or could not finish. Please try again.'); }
+    else if (state.access?.needs_uni) openLogin();
+    else if (params.has('code') || sessionStorage.getItem('b8403-return')) {
+      if (member()) await finishSignIn(); else if (state.access) openLogin();
+    }
+  } catch (error) { state.access = null; showGate(); openLogin(); showMessage(error.message); }
+  finally { document.documentElement.dataset.materialsReady = 'true'; }
+}
+init();

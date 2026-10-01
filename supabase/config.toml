@@ -1,0 +1,2 @@
+[functions.lecture-file]
+verify_jwt = true

@@ -9,5 +9,17 @@ SPEC.md
 REVIEW-*.md
 NOTES.md
 LEARN.md
-tools/
+tools/*
+!tools/build.sh
+!tools/dev.sh
+!tools/create-materials-seed.rb
 README.md
+
+# Local tests and private database seed never go into the public repository.
+node_modules/
+test-results/
+playwright-report/
+supabase/private/
+.env*
+!.env.example
+supabase/.temp/
