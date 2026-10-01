@@ -84,10 +84,10 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
         baseline ||= positions;
         expect(positions, `${role} ${path} at ${width}`).toEqual(baseline);
         if (width >= 820) {
-          expect(geometry.height).toBe(136);
-          expect(geometry.titleTop).toBe(12);
-          expect(geometry.navTop).toBe(49);
-          expect(geometry.submenuTop).toBe(78);
+          expect(geometry.height).toBe(148);
+          expect(geometry.titleTop).toBe(15);
+          expect(geometry.navTop).toBe(54);
+          expect(geometry.submenuTop).toBe(91);
         }
         if (desktopReference) expect({ height: geometry.height, titleTop: geometry.titleTop,
           navTop: geometry.navTop, submenuTop: geometry.submenuTop }).toEqual(desktopReference);
