@@ -1,4 +1,4 @@
-import { checkSubmissionFile } from './submission-core.js';
+import { checkSubmissionFile, submissionContentType } from './submission-core.js';
 import { isColumbiaEmail } from './core.js';
 async function loadClient() {
   if (window.supabase) return window.supabase;
@@ -19,7 +19,7 @@ export async function createBackend(config) {
     if (error) {
       let detail;
       try { detail = await error.context?.json(); } catch { /* A failed gateway may not return JSON. */ }
-      throw new Error(detail?.error || 'File service is unavailable. Check the lecture-file function in Supabase.');
+      throw new Error(detail?.error || `File service is unavailable. Check the ${service} function in Supabase.`);
     }
     return data;
   }
@@ -33,17 +33,17 @@ export async function createBackend(config) {
     async announcements() { return checked(await client.from('announcements').select('*').eq('term_id', access.term_id).order('created_at', { ascending: false }).order('id')); },
     async saveAnnouncement(row) {
       const values = { title: row.title, body: row.body };
-      const query = row.id ? client.from('announcements').update(values).eq('id', row.id) : client.from('announcements').insert(values);
+      const query = row.id ? client.from('announcements').update(values).eq('term_id', access.term_id).eq('id', row.id) : client.from('announcements').insert(values);
       return checked(await query.select('id').single());
     },
-    async deleteAnnouncement(id) { return checked(await client.from('announcements').delete().eq('id', id).select('id').single()); },
+    async deleteAnnouncement(id) { return checked(await client.from('announcements').delete().eq('term_id', access.term_id).eq('id', id).select('id').single()); },
     async terms() { return checked(await client.from('terms').select('*').order('created_at')); },
     async setSessionTimes(week, startsAt, endsAt) { return rpc('set_session_times', { p_week: week, p_start: startsAt, p_end: endsAt }); },
     async configureItem(id, fields) { return rpc('configure_grade_item', { p_item:id, p_kind:fields.kind, p_mode:fields.mode, p_group_set:fields.group_set_id || null, p_due:fields.due_at || null }); },
-    async beginSubmission(item, file) { return rpc('begin_submission', { p_item:item, p_name:file.name, p_size:file.size, p_type:file.type }); },
+    async beginSubmission(item, file) { return rpc('begin_submission', { p_item:item, p_name:file.name, p_size:file.size, p_type:submissionContentType(file) }); },
     async uploadSubmissionFile(pending, file) {
       await checkSubmissionFile(file);
-      checked(await client.storage.from('submissions').upload(pending.storage_path, file, { contentType:file.type, cacheControl:'0', upsert:false }));
+      checked(await client.storage.from('submissions').upload(pending.storage_path, file, { contentType:submissionContentType(file), cacheControl:'0', upsert:false }));
     },
     async finishSubmission(pendingId) { return fileAction({ action:'finish', pending_id:pendingId }, 'submission-file'); },
     async submitFile(item, file) {
@@ -97,11 +97,11 @@ export async function createBackend(config) {
     async replaceRoster(rows) { checked(await client.rpc('replace_roster', { rows })); },
     async saveAllowlist(row) { checked(await client.from('allowlist').upsert(row)); },
     async removeAllowlist(email) { checked(await client.from('allowlist').delete().eq('email', email)); },
-    async saveAssignment(row) { const { id, term_id, ...values } = row; checked(await client.from('assignments').update(values).eq('term_id', access.term_id).eq('id', id)); },
+    async saveAssignment(row) { const values = Object.fromEntries(['title','due','points','description','deliverable','grading','auditor_visible'].filter(key => key in row).map(key => [key, row[key]])); checked(await client.from('assignments').update(values).eq('term_id', access.term_id).eq('id', row.id)); },
     async uploadFile(file, fields) {
       const path = `week-${fields.week}/${crypto.randomUUID()}.pdf`;
       checked(await client.storage.from('lecture-notes').upload(path, file, { contentType: 'application/pdf', cacheControl: '0', upsert: false }));
-      const result = await client.from('lecture_files').insert({ ...fields, storage_path: path });
+      const result = await client.from('lecture_files').insert({ week:fields.week, title:fields.title, auditor_visible:fields.auditor_visible ?? false, ...(fields.released !== undefined ? {released:fields.released} : {}), ...(fields.release_at !== undefined ? {release_at:fields.release_at} : {}), storage_path: path });
       if (result.error) {
         try { await fileAction({ action: 'cleanup', path }); }
         catch { throw new Error(`Upload metadata failed; remove orphan ${path} in Supabase Storage. ${result.error.message}`); }
@@ -109,7 +109,7 @@ export async function createBackend(config) {
       }
     },
     async setFileRelease(id, released, releaseAt = null) { checked(await client.from('lecture_files').update({ released, release_at:releaseAt }).eq('term_id', access.term_id).eq('id', id)); },
-    async setFileVisibility(id, auditor_visible) { checked(await client.from('lecture_files').update({ auditor_visible }).eq('id', id)); },
+    async setFileVisibility(id, auditor_visible) { checked(await client.from('lecture_files').update({ auditor_visible }).eq('term_id', access.term_id).eq('id', id)); },
     async deleteFile(id) { await fileAction({ action: 'delete', id }); },
     async fileUrl(id) { return (await fileAction({ action: 'download', id })).url; },
   };

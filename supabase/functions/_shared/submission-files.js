@@ -30,7 +30,8 @@ function zipNames(bytes) {
 export function validSubmissionBytes(bytes, name, mime) {
   const ext=name.split('.').at(-1).toLowerCase();
   if (!bytes.length || bytes.length>MAX_BYTES || TYPES[ext]!==mime) return false;
-  if (ext==='pdf') return new TextDecoder().decode(bytes.subarray(0,5))==='%PDF-';
+  if (ext==='pdf') return new TextDecoder().decode(bytes.subarray(0,5))==='%PDF-' &&
+    new TextDecoder().decode(bytes.subarray(Math.max(0,bytes.length-1024))).includes('%%EOF');
   if (bytes[0]!==0x50 || bytes[1]!==0x4b) return false;
   const names=zipNames(bytes);
   if (!names) return false;

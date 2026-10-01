@@ -21,7 +21,7 @@ export function createHandler(createClient, env) {
       // Closing/export authorization belongs to migration 009 (Phase C). Fail closed until then.
       if (body.action==='purge') return respond(409,{error:'Term purge requires the export-and-close workflow in Phase C.'});
       const service=admin();
-      const {data:paths,error}=await service.rpc('submission_sweep_candidates');
+      const {data:paths,error}=await service.rpc('submission_sweep_candidates',{p_term:access.term_id});
       if (error) return respond(502,{error:'Could not find expired uploads.'});
       if (paths?.length && (await service.storage.from('submissions').remove(paths)).error) return respond(502,{error:'Could not remove expired uploads. Try again.'});
       return respond(200,{removed:paths?.length || 0});
@@ -32,12 +32,12 @@ export function createHandler(createClient, env) {
     if (pendingError || !pending) return respond(404,{error:'Pending upload unavailable.'});
     const service=admin(), bucket=service.storage.from('submissions');
     const discard = async () => {
-      const {data:paths,error}=await service.rpc('reject_submission_upload',{p_pending:pending.id});
+      const {data:paths,error}=await service.rpc('reject_submission_upload',{p_term:pending.term_id,p_pending:pending.id});
       if (error) return error;
       return paths?.length ? (await bucket.remove(paths)).error : null;
     };
     // Sweep only paths returned by SQL. Browser-supplied paths are never used.
-    const {data:expired,error:sweepError}=await service.rpc('submission_sweep_candidates');
+    const {data:expired,error:sweepError}=await service.rpc('submission_sweep_candidates',{p_term:access.term_id});
     if (sweepError || (expired?.length && (await bucket.remove(expired)).error)) return respond(502,{error:'Could not clean expired uploads. Try again.'});
     if (new Date(pending.expires_at).getTime()<=Date.now()) return respond(409,{error:'Pending upload expired.'});
     const {data:file,error:downloadError}=await bucket.download(pending.storage_path);
@@ -46,7 +46,7 @@ export function createHandler(createClient, env) {
       const error=await discard();
       return respond(error ? 502 : 400,{error:error ? 'File rejected; cleanup failed. Try again.' : 'File contents do not match the allowed type or size. Upload a valid file.'});
     }
-    const {data:receipt,error:verifyError}=await service.rpc('confirm_submission_upload',{p_pending:pending.id,p_size:file.size,p_type:pending.mime_type});
+    const {data:receipt,error:verifyError}=await service.rpc('confirm_submission_upload',{p_term:pending.term_id,p_pending:pending.id,p_size:file.size,p_type:pending.mime_type});
     if (verifyError || !receipt) return respond(409,{error:'Pending upload expired or was replaced. Start again.'});
     const {data:result,error:finishError}=await userClient.rpc('finish_submission',{p_pending:pending.id,p_receipt:receipt});
     if (finishError) {

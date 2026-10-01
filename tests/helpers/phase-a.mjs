@@ -21,7 +21,12 @@ export async function phaseDatabase(db=new PGlite()) {
   const rpc=async(name,...args)=>(await db.query(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) value`,args)).rows[0].value;
   const rows=async(sql,params=[])=>(await db.query(sql,params)).rows;
   const begin=async(who='a',item=1)=>{await as(who);return rpc('begin_submission',item,'work.pdf',10,'application/pdf');};
-  const verify=async p=>{await as('service');return rpc('confirm_submission_upload',p.id,p.file_size,p.mime_type);};
+  const verify=async p=>{
+    // Emulate a completed Storage upload. Explicit test objects retain their chosen creation time.
+    await as('owner');
+    await rows("insert into storage.objects(bucket_id,name,created_at) select 'submissions',storage_path,started_at from pending_uploads where term_id=$1 and id=$2 and not exists(select 1 from storage.objects where bucket_id='submissions' and name=$3)",[p.term_id,p.id,p.storage_path]);
+    await as('service');return rpc('confirm_submission_upload',p.term_id,p.id,p.file_size,p.mime_type);
+  };
   const finish=async(p,who='a')=>{const receipt=await verify(p);await as(who);return rpc('finish_submission',p.id,receipt);};
   return {db,as,rpc,rows,begin,verify,finish};
 }

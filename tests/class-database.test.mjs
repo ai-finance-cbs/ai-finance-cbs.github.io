@@ -321,13 +321,13 @@ const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
 const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates'];
 const fnCases = {
   set_session_times: [1, null, null],
-  begin_submission: [1, 'work.pdf', 10, 'application/pdf'],
+  begin_submission: [4, 'work.pdf', 10, 'application/pdf'],
   finish_submission: ['00000000-0000-0000-0000-000000000099', null],
   submit_link: [6, 'https://example.test/video'],
   configure_grade_item: [1, 'file', 'individual', null, null],
-  confirm_submission_upload: ['00000000-0000-0000-0000-000000000099', 10, 'application/pdf'],
-  reject_submission_upload: ['00000000-0000-0000-0000-000000000099'],
-  submission_sweep_candidates: [],
+  confirm_submission_upload: ['spring-2027', '00000000-0000-0000-0000-000000000099', 10, 'application/pdf'],
+  reject_submission_upload: ['spring-2027', '00000000-0000-0000-0000-000000000099'],
+  submission_sweep_candidates: ['spring-2027'],
   grade_group: [2, '00000000-0000-0000-0000-000000000099', 8, 'Comment'],
   get_access: [],
   replace_roster: ['[{"uni":"ab1234"}]'],

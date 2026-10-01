@@ -14,7 +14,7 @@ create table public.submissions (
   item_id integer not null, owner_uni text, group_id uuid,
   storage_path text, on_time_path text, on_time_started_at timestamptz, on_time_submitted_at timestamptz,
   link text, on_time_link text, file_name text, file_size bigint,
-  started_at timestamptz not null, submitted_at timestamptz not null default clock_timestamp(),
+  started_at timestamptz not null, object_created_at timestamptz, submitted_at timestamptz not null default clock_timestamp(),
   late boolean not null, submitted_by text not null, member_unis text[] not null,
   graded_at timestamptz,
   primary key(term_id,id),
@@ -28,12 +28,12 @@ create unique index one_individual_submission on public.submissions(term_id,item
 create unique index one_group_submission on public.submissions(term_id,item_id,group_id) where group_id is not null;
 create table public.pending_uploads (
   id uuid not null default gen_random_uuid(), term_id text not null references public.terms(id),
-  item_id integer not null, owner_uni text, group_id uuid, uploader_id uuid not null references auth.users(id),
+  item_id integer not null, owner_uni text, group_id uuid, uploader_id uuid not null references auth.users(id) on delete cascade,
   storage_path text not null unique, file_name text not null, file_size bigint not null check(file_size between 1 and 26214400),
   mime_type text not null, started_at timestamptz not null default clock_timestamp(),
-  expires_at timestamptz not null default clock_timestamp()+interval '30 minutes',
+  expires_at timestamptz not null default clock_timestamp()+interval '15 minutes',
   -- This column is never granted to browser callers. Only the file service can supply it.
-  verification_receipt uuid,
+  verification_receipt uuid, object_created_at timestamptz,
   primary key(term_id,id), foreign key(term_id,item_id) references public.grade_items(term_id,id),
   foreign key(term_id,group_id) references public.class_groups(term_id,id),
   check((owner_uni is null) <> (group_id is null))
@@ -59,7 +59,7 @@ begin
     case when tg_op='DELETE' then null else to_jsonb(new)-'verification_receipt' end);
   return null;
 end $$;
-grant select(id,term_id,item_id,owner_uni,group_id,storage_path,on_time_path,on_time_started_at,on_time_submitted_at,link,on_time_link,file_name,file_size,started_at,submitted_at,late,graded_at) on public.submissions to authenticated;
+grant select(id,term_id,item_id,owner_uni,group_id,storage_path,on_time_path,on_time_started_at,on_time_submitted_at,link,on_time_link,file_name,file_size,started_at,object_created_at,submitted_at,late) on public.submissions to authenticated;
 grant select(id,term_id,item_id,owner_uni,group_id,uploader_id,storage_path,file_name,file_size,mime_type,started_at,expires_at) on public.pending_uploads to authenticated;
 
 create function private.submission_owner_read(t text,u text,g uuid) returns boolean
@@ -73,6 +73,14 @@ create policy pending_read on public.pending_uploads for select to authenticated
 create function private.submission_lock(t text,i integer,u text,g uuid) returns void
 language sql security definer set search_path='' as $$
   select pg_advisory_xact_lock(hashtextextended('submission:'||t||':'||i||':'||coalesce(u,g::text),0))
+$$;
+-- A zero score is still a grade, even before any work has been submitted.
+create function private.submission_is_graded(t text,i integer,u text,g uuid) returns boolean
+language sql stable security definer set search_path='' as $$
+  select exists(select 1 from public.submissions s where s.term_id=t and s.item_id=i
+    and (s.owner_uni=u or s.group_id=g) and s.graded_at is not null)
+    or exists(select 1 from public.grades v where v.term_id=t and v.item_id=i and
+      (v.uni=u or exists(select 1 from public.group_memberships m where m.term_id=t and m.group_id=g and m.uni=v.uni)))
 $$;
 -- All submission entry points derive ownership from the caller, never a browser UNI/group.
 create function private.submission_target(p_item integer,p_kind text)
@@ -92,8 +100,7 @@ begin
     if g is null then raise exception using errcode='P0002',message='Join a group first.'; end if;
   end if;
   perform private.submission_lock(t,p_item,case when g is null then u end,g);
-  if exists(select 1 from public.submissions s where s.term_id=t and s.item_id=p_item
-    and (s.owner_uni=u and g is null or s.group_id=g) and s.graded_at is not null) then raise exception 'Graded, locked.'; end if;
+  if private.submission_is_graded(t,p_item,case when g is null then u end,g) then raise exception 'Graded, locked.'; end if;
   return query select t,case when g is null then u end,g;
 end $$;
 create function public.begin_submission(p_item integer,p_name text,p_size bigint,p_type text) returns jsonb
@@ -117,28 +124,30 @@ begin
   return to_jsonb(p)-'verification_receipt';
 end $$;
 -- Service-only attestation; callers cannot forge a validated finish through the public RPC.
-create function public.confirm_submission_upload(p_pending uuid,p_size bigint,p_type text) returns uuid
+create function public.confirm_submission_upload(p_term text,p_pending uuid,p_size bigint,p_type text) returns uuid
 language plpgsql security definer set search_path='' as $$
-declare p public.pending_uploads; receipt uuid:=gen_random_uuid();
+declare p public.pending_uploads; receipt uuid:=gen_random_uuid(); uploaded timestamptz;
 begin
   perform private.assert_writable();
-  select * into p from public.pending_uploads where id=p_pending;
+  select * into p from public.pending_uploads where term_id=p_term and id=p_pending;
   if not found then raise exception 'Pending upload not found.'; end if;
   perform private.submission_lock(p.term_id,p.item_id,p.owner_uni,p.group_id);
-  update public.pending_uploads set verification_receipt=receipt where id=p_pending and term_id=private.active_term()
+  select created_at into uploaded from storage.objects where bucket_id='submissions' and name=p.storage_path;
+  if uploaded is null then raise exception 'Uploaded object not found.'; end if;
+  update public.pending_uploads set verification_receipt=receipt,object_created_at=uploaded where id=p_pending and term_id=p_term and term_id=private.active_term()
     and expires_at>clock_timestamp() and file_size=p_size and mime_type=p_type;
   if not found then raise exception 'Pending upload expired or file metadata does not match.'; end if;
   return receipt;
 end $$;
 -- Shared final write also handles links. The caller holds the owner lock and set row lock.
-create function private.store_submission(t text,i integer,u text,g uuid,p_path text,p_link text,p_name text,p_size bigint,p_started timestamptz) returns jsonb
+create function private.store_submission(t text,i integer,u text,g uuid,p_path text,p_link text,p_name text,p_size bigint,p_started timestamptz,p_uploaded timestamptz) returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare old public.submissions; saved public.submissions; due timestamptz; is_late boolean; members text[];
   keep_path text; keep_link text; keep_started timestamptz; keep_submitted timestamptz; removed text[];
 begin
   perform private.assert_writable();
   select due_at into due from public.grade_items where term_id=t and id=i;
-  is_late:=due is not null and p_started>due;
+  is_late:=due is not null and (p_started>due or coalesce(p_uploaded>due+interval '5 minutes',false));
   select * into old from public.submissions where term_id=t and item_id=i and (owner_uni=u or group_id=g) for update;
   if old.graded_at is not null then raise exception 'Graded, locked.'; end if;
   if clock_timestamp()>due then
@@ -150,17 +159,18 @@ begin
   -- A timely upload that finishes late is still the latest on-time version.
   if not is_late then keep_path:=null; keep_link:=null; keep_started:=null; keep_submitted:=null; end if;
   if old.id is null then
-    insert into public.submissions(term_id,item_id,owner_uni,group_id,storage_path,link,file_name,file_size,started_at,late,submitted_by,member_unis)
-      values(t,i,u,g,p_path,p_link,p_name,p_size,p_started,is_late,private.current_uni(),members) returning * into saved;
+    insert into public.submissions(term_id,item_id,owner_uni,group_id,storage_path,link,file_name,file_size,started_at,object_created_at,late,submitted_by,member_unis,graded_at)
+      values(t,i,u,g,p_path,p_link,p_name,p_size,p_started,p_uploaded,is_late,private.current_uni(),members,
+        case when private.submission_is_graded(t,i,u,g) then clock_timestamp() end) returning * into saved;
   else
     update public.submissions set storage_path=p_path,link=p_link,file_name=p_name,file_size=p_size,
-      started_at=p_started,submitted_at=clock_timestamp(),late=is_late,submitted_by=private.current_uni(),member_unis=members,
+      started_at=p_started,object_created_at=p_uploaded,submitted_at=clock_timestamp(),late=is_late,submitted_by=private.current_uni(),member_unis=members,
       on_time_path=keep_path,on_time_link=keep_link,on_time_started_at=keep_started,on_time_submitted_at=keep_submitted
       where term_id=t and id=old.id returning * into saved;
   end if;
   select coalesce(array_agg(distinct path),'{}') into removed from unnest(array[old.storage_path,old.on_time_path]) path
     where path is not null and path is distinct from saved.storage_path and path is distinct from saved.on_time_path;
-  return jsonb_build_object('submission',to_jsonb(saved)-'member_unis'-'submitted_by','replaced_paths',to_jsonb(removed));
+  return jsonb_build_object('submission',(to_jsonb(saved)-'member_unis'-'submitted_by'-'graded_at')||jsonb_build_object('locked',private.submission_is_graded(t,i,u,g)),'replaced_paths',to_jsonb(removed));
 end $$;
 create function public.finish_submission(p_pending uuid,p_receipt uuid default null) returns jsonb
 language plpgsql security definer set search_path='' as $$
@@ -176,7 +186,7 @@ begin
   if not found or p.expires_at<=clock_timestamp() then raise exception 'Pending upload expired or superseded.'; end if;
   if p.owner_uni is distinct from o.owner_uni or p.group_id is distinct from o.group_id then raise exception 'Group membership changed. Start again.'; end if;
   if p_receipt is null or p.verification_receipt is distinct from p_receipt then raise exception 'Upload must be verified by the file service.'; end if;
-  result:=private.store_submission(p.term_id,p.item_id,p.owner_uni,p.group_id,p.storage_path,null,p.file_name,p.file_size,p.started_at);
+  result:=private.store_submission(p.term_id,p.item_id,p.owner_uni,p.group_id,p.storage_path,null,p.file_name,p.file_size,p.started_at,p.object_created_at);
   delete from public.pending_uploads where term_id=p.term_id and id=p.id;
   return result;
 end $$;
@@ -186,7 +196,7 @@ declare o record;
 begin
   perform private.assert_writable(); select * into o from private.submission_target(p_item,'link');
   if p_link is null or length(p_link)>2000 or p_link !~ '^https://[^/[:space:]?#]+[^[:space:]]*$' then raise exception 'Use a valid https:// video link.'; end if;
-  return private.store_submission(o.term_id,p_item,o.owner_uni,o.group_id,null,p_link,null,null,clock_timestamp());
+  return private.store_submission(o.term_id,p_item,o.owner_uni,o.group_id,null,p_link,null,null,clock_timestamp(),null);
 end $$;
 
 -- Only instructors can configure items. Changing ownership rules after submission is forbidden.
@@ -215,12 +225,12 @@ $$;
 create policy submission_object_insert on storage.objects for insert to authenticated with check(bucket_id='submissions' and private.pending_path_writable(name));
 create policy submission_object_no_direct_read on storage.objects as restrictive for select to anon,authenticated using(bucket_id<>'submissions');
 -- A sweep finds superseded objects even when begin replaced their pending row.
-create function public.submission_sweep_candidates(p_limit integer default 100) returns text[]
+create function public.submission_sweep_candidates(p_term text,p_limit integer default 100) returns text[]
 language plpgsql security definer set search_path='' as $$
 declare x record; result text[]:='{}';
 begin
   perform private.assert_writable();
-  for x in select o.name from storage.objects o where o.bucket_id='submissions'
+  for x in select o.name from storage.objects o where o.bucket_id='submissions' and split_part(o.name,'/',1)=p_term
     and not exists(select 1 from public.submissions s where o.name in (s.storage_path,s.on_time_path))
     and not exists(select 1 from public.pending_uploads p where p.storage_path=o.name and p.expires_at>clock_timestamp())
     order by o.name limit least(greatest(p_limit,1),500) loop
@@ -234,12 +244,12 @@ begin
   return result;
 end $$;
 
-revoke all on function private.submission_owner_read(text,text,uuid),private.submission_lock(text,integer,text,uuid),private.submission_target(integer,text),private.store_submission(text,integer,text,uuid,text,text,text,bigint,timestamptz),private.pending_path_writable(text) from public,anon,authenticated;
+revoke all on function private.submission_is_graded(text,integer,text,uuid),private.submission_owner_read(text,text,uuid),private.submission_lock(text,integer,text,uuid),private.submission_target(integer,text),private.store_submission(text,integer,text,uuid,text,text,text,bigint,timestamptz,timestamptz),private.pending_path_writable(text) from public,anon,authenticated;
 grant execute on function private.submission_owner_read(text,text,uuid),private.pending_path_writable(text) to authenticated;
 revoke all on function public.begin_submission(integer,text,bigint,text),public.finish_submission(uuid,uuid),public.submit_link(integer,text),public.configure_grade_item(integer,text,text,uuid,timestamptz) from public,anon;
 grant execute on function public.begin_submission(integer,text,bigint,text),public.finish_submission(uuid,uuid),public.submit_link(integer,text),public.configure_grade_item(integer,text,text,uuid,timestamptz) to authenticated;
-revoke all on function public.confirm_submission_upload(uuid,bigint,text),public.submission_sweep_candidates(integer) from public,anon,authenticated;
-grant execute on function public.confirm_submission_upload(uuid,bigint,text),public.submission_sweep_candidates(integer) to service_role;
+revoke all on function public.confirm_submission_upload(text,uuid,bigint,text),public.submission_sweep_candidates(text,integer) from public,anon,authenticated;
+grant execute on function public.confirm_submission_upload(text,uuid,bigint,text),public.submission_sweep_candidates(text,integer) to service_role;
 create or replace function public.choose_group(p_set uuid,p_group uuid default null,p_uni text default null) returns void
 language plpgsql security definer set search_path='' as $$
 declare s public.group_sets; u text; r text:=private.current_role(); t text:=private.active_term();
@@ -252,6 +262,11 @@ begin
   select * into s from public.group_sets where term_id=t and id=p_set for update;
   if not found then raise exception 'Group set not found.'; end if;
   if r='student' and (not s.is_open or (s.deadline is not null and clock_timestamp()>=s.deadline) or exists(select 1 from public.grade_items i where i.term_id=t and i.group_set_id=p_set and i.mode='group' and i.due_at<=clock_timestamp())) then raise exception 'Sign-up is closed.'; end if;
+  if r='student' and exists(select 1 from public.submissions v join public.grade_items i on i.term_id=v.term_id and i.id=v.item_id
+    where v.term_id=t and i.group_set_id=p_set and (v.group_id=p_group or v.group_id=(
+      select m.group_id from public.group_memberships m where m.term_id=t and m.set_id=p_set and m.uni=u))) then
+    raise exception 'Groups with submitted work cannot be joined or left. Ask the instructor.';
+  end if;
   if p_group is null then delete from public.group_memberships where term_id=t and set_id=p_set and uni=u; return; end if;
   if not exists(select 1 from public.class_groups where term_id=t and id=p_group and set_id=p_set) then raise exception 'Group not found in this set.'; end if;
   if exists(select 1 from public.group_memberships where term_id=t and set_id=p_set and uni=u and group_id=p_group) then return; end if;
@@ -261,22 +276,22 @@ begin
 end $$;
 -- Failure cleanup is also conditional on committed references. A duplicate finish must
 -- never delete the file committed by the first request.
-create function public.reject_submission_upload(p_pending uuid) returns text[]
+create function public.reject_submission_upload(p_term text,p_pending uuid) returns text[]
 language plpgsql security definer set search_path='' as $$
 declare p public.pending_uploads;
 begin
   perform private.assert_writable();
-  select * into p from public.pending_uploads where id=p_pending;
+  select * into p from public.pending_uploads where term_id=p_term and id=p_pending;
   if not found then return '{}'; end if;
   perform private.submission_lock(p.term_id,p.item_id,p.owner_uni,p.group_id);
-  select * into p from public.pending_uploads where id=p_pending for update;
+  select * into p from public.pending_uploads where term_id=p_term and id=p_pending for update;
   if not found then return '{}'; end if;
-  delete from public.pending_uploads where id=p_pending;
+  delete from public.pending_uploads where term_id=p_term and id=p_pending;
   if exists(select 1 from public.submissions s where p.storage_path in (s.storage_path,s.on_time_path)) then return '{}'; end if;
   return array[p.storage_path];
 end $$;
-revoke all on function public.reject_submission_upload(uuid) from public,anon,authenticated;
-grant execute on function public.reject_submission_upload(uuid) to service_role;
+revoke all on function public.reject_submission_upload(text,uuid) from public,anon,authenticated;
+grant execute on function public.reject_submission_upload(text,uuid) to service_role;
 
 create or replace function private.term_snapshot(t text,u text,r text) returns jsonb
 language sql stable security definer set search_path='' as $$

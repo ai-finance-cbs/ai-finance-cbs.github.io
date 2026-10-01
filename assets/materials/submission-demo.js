@@ -1,5 +1,5 @@
 import { canWrite, gradeCode, scoreValue } from './class-core.js';
-import { checkSubmissionFile, defaultSubmissionItem, safeSubmission } from './submission-core.js';
+import { checkSubmissionFile, submissionContentType, defaultSubmissionItem, safeSubmission } from './submission-core.js';
 const arrays=['roster','assignments','sessions','attendance','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads'];
 export function normalizeTerms(d) {
   d.terms ||= [{id:'spring-2027',title:'Spring 2027',status:'active'}];
@@ -28,6 +28,16 @@ export function mergeTerm(all,data,term) {
 export function refreshDemoLocks(d,items) {
   for(const s of d.submissions.filter(s=>items.includes(s.item_id))) s.graded_at=d.grades.some(g=>g.item_id===s.item_id && s.member_unis.includes(g.uni)) ? s.graded_at || new Date().toISOString() : null;
 }
+export function demoSubmissionLocked(d,item,owner,group) {
+  return d.submissions.some(s=>s.item_id===item && (owner ? s.owner_uni===owner : s.group_id===group) && s.graded_at) ||
+    d.grades.some(g=>g.item_id===item && (g.uni===owner || (group && d.members.some(m=>m.group_id===group && m.uni===g.uni))));
+}
+export function studentSubmissionItems(d,uni) {
+  return d.items.filter(i=>i.kind!=='none').map(({id,term_id,code,title,kind,mode,group_set_id,due_at})=>({
+    id,term_id,code,title,kind,mode,group_set_id,due_at,
+    locked:demoSubmissionLocked(d,id,mode==='individual'?uni:null,d.members.find(m=>m.set_id===group_set_id && m.uni===uni)?.group_id),
+  }));
+}
 export function extendSubmissions({read,save,access,allTerms}) {
   const requireRole=roles=>{ const a=access(); if(!canWrite(a) || !roles.includes(a.role)) throw new Error('Access required. Archived terms and preview are read-only.'); return a; };
   const target=(d,id,kind)=>{
@@ -37,12 +47,12 @@ export function extendSubmissions({read,save,access,allTerms}) {
     if(i.mode==='group' && !group) {const e=new Error('Join a group first.'); e.code='P0002'; throw e;}
     const owner=group ? null : a.uni;
     const prior=d.submissions.find(s=>s.item_id===id && (group ? s.group_id===group : s.owner_uni===owner));
-    if(prior?.graded_at) throw new Error('Graded, locked.');
+    if(demoSubmissionLocked(d,id,owner,group)) throw new Error('Graded, locked.');
     return {i,group,owner,prior};
   };
   const store=(d,id,kind,values)=>{
     const {i,group,owner,prior}=target(d,id,kind);
-    const late=!!i.due_at && new Date(values.started_at)>new Date(i.due_at);
+    const late=!!i.due_at && (new Date(values.started_at)>new Date(i.due_at) || (!!values.object_created_at && new Date(values.object_created_at).getTime()>new Date(i.due_at).getTime()+300000));
     const keep=late && prior ? (prior.late ? {on_time_path:prior.on_time_path,on_time_link:prior.on_time_link,on_time_data:prior.on_time_data,on_time_started_at:prior.on_time_started_at,on_time_submitted_at:prior.on_time_submitted_at} :
       {on_time_path:prior.storage_path,on_time_link:prior.link,on_time_data:prior.data,on_time_started_at:prior.started_at,on_time_submitted_at:prior.submitted_at}) : {};
     const row={id:prior?.id || crypto.randomUUID(),term_id:d.term_id,item_id:id,owner_uni:owner,group_id:group,
@@ -66,16 +76,17 @@ export function extendSubmissions({read,save,access,allTerms}) {
     async beginSubmission(id,file) {
       const d=read(),{owner,group}=target(d,id,'file');
       const ext=file.name.split('.').at(-1).toLowerCase();
-      const {SUBMISSION_TYPES}=await import('./submission-core.js');
-      if(!file.size || file.size>25*1024*1024 || SUBMISSION_TYPES[ext]!==file.type || file.name.length>240 || /[/\\]/.test(file.name))throw new Error('Use PDF, DOCX, XLSX, PPTX, or ZIP up to 25 MB.');
+      const type=submissionContentType(file);
+      if(!file.size || file.size>25*1024*1024 || file.name.length>240 || /[/\\]/.test(file.name))throw new Error('Use PDF, DOCX, XLSX, PPTX, or ZIP up to 25 MB.');
       d.pending_uploads=d.pending_uploads.filter(p=>p.item_id!==id || (group ? p.group_id!==group : p.owner_uni!==owner));
-      const p={id:crypto.randomUUID(),term_id:d.term_id,item_id:id,owner_uni:owner,group_id:group,uploader:access().uni,storage_path:`${d.term_id}/${id}/${group || owner}/${crypto.randomUUID()}.${ext}`,file_name:file.name,file_size:file.size,mime_type:file.type,started_at:new Date().toISOString(),expires_at:new Date(Date.now()+1800000).toISOString()};
+      const p={id:crypto.randomUUID(),term_id:d.term_id,item_id:id,owner_uni:owner,group_id:group,uploader:access().uni,storage_path:`${d.term_id}/${id}/${group || owner}/${crypto.randomUUID()}.${ext}`,file_name:file.name,file_size:file.size,mime_type:type,started_at:new Date().toISOString(),expires_at:new Date(Date.now()+900000).toISOString()};
       d.pending_uploads.push(p);save(d);return p;
     },
     async uploadSubmissionFile(pending,file) {
       requireRole(['student']);await checkSubmissionFile(file);const d=read(),p=d.pending_uploads.find(p=>p.id===pending.id && p.uploader===access().uni);
       if(!p || new Date(p.expires_at)<=new Date())throw new Error('Pending upload expired or superseded.');
-      if(file.size!==p.file_size || file.type!==p.mime_type)throw new Error('File metadata does not match.');
+      if(file.size!==p.file_size || submissionContentType(file)!==p.mime_type)throw new Error('File metadata does not match.');
+      p.object_created_at=new Date().toISOString();
       p.data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});save(d);
     },
     async finishSubmission(id) {
@@ -83,7 +94,7 @@ export function extendSubmissions({read,save,access,allTerms}) {
       if(!p || new Date(p.expires_at)<=new Date())throw new Error('Pending upload expired or superseded.');
       const o=target(d,p.item_id,'file'); if(p.owner_uni!==o.owner || p.group_id!==o.group)throw new Error('Group membership changed. Start again.');
       if(!p.data)throw new Error('Upload the file before finishing.');
-      const result=store(d,p.item_id,'file',{storage_path:p.storage_path,file_name:p.file_name,file_size:p.file_size,started_at:p.started_at,data:p.data});
+      const result=store(d,p.item_id,'file',{storage_path:p.storage_path,file_name:p.file_name,file_size:p.file_size,started_at:p.started_at,object_created_at:p.object_created_at,data:p.data});
       d.pending_uploads=d.pending_uploads.filter(x=>x.id!==id);save(d);return result;
     },
     async submitFile(id,file) {await checkSubmissionFile(file);const p=await this.beginSubmission(id,file);await this.uploadSubmissionFile(p,file);return this.finishSubmission(p.id);},

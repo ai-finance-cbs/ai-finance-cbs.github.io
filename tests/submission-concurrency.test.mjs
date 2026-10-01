@@ -48,8 +48,9 @@ test('real PostgreSQL serializes two group members finishing overlapping uploads
   await b.query('begin');
   const second=await rpc(b,'begin_submission',2,'second.pdf',10,'application/pdf');
   // The second begin supersedes A inside an uncommitted transaction. A still sees its old row.
+  await b.query("insert into storage.objects(bucket_id,name) values('submissions',$1)",[second.storage_path]);
   await b.query('reset role');await b.query('set role service_role');
-  const receiptB=await rpc(b,'confirm_submission_upload',second.id,10,'application/pdf');
+  const receiptB=await rpc(b,'confirm_submission_upload',second.term_id,second.id,10,'application/pdf');
   await authenticate(b,'b');
   const competing=rpc(a,'finish_submission',first.id,receiptA).then(value=>({value}),error=>({error}));
   await wait();
@@ -71,4 +72,32 @@ test('real PostgreSQL finish waits for a concurrent grade and preserves the grad
   assert.match((await competing).error?.message || '',/Graded, locked/);
   const rows=(await owner.query('select * from submissions')).rows;
   assert.equal(rows.length,1);assert.equal(rows[0].storage_path,original.storage_path);assert.ok(rows[0].graded_at);
+}));
+
+test('real PostgreSQL early zero scores serialize against the first individual and group finish', {timeout:30000}, async()=>database(async({h,owner,a,grader})=>{
+  for(const item of [1,2]) {
+    if(item===2) {
+      await h.as('teacher');const set=await h.rpc('create_group_set','Early group grade',1,4,null);
+      const group=(await h.rpc('class_data')).groups.find(g=>g.set_id===set).id;
+      await h.rpc('configure_grade_item',2,'file','group',set,null);
+      for(const uni of ['aa1001','bb1002'])await h.rpc('choose_group',set,group,uni);
+    }
+    const pending=await h.begin('a',item),receipt=await h.verify(pending);
+    await h.as('owner');const wait=await waits(owner,a);
+    await grader.query('begin');await rpc(grader,'save_grades',JSON.stringify([{uni:item===1?'aa1001':'bb1002',item_id:item,score:0}]));
+    const competing=rpc(a,'finish_submission',pending.id,receipt).then(value=>({value}),error=>({error}));
+    await wait();await grader.query('commit');assert.match((await competing).error?.message || '',/Graded, locked/);
+    assert.equal((await owner.query('select id from submissions where item_id=$1',[item])).rows.length,0);
+    // Reverse the race: first finish commits while grading waits, then the new row must lock.
+    const uni=item===1?'aa1001':'bb1002';await h.as('grader');
+    await h.rpc('save_grades',JSON.stringify([{uni,item_id:item,score:null}]));
+    const next=await h.begin('a',item),nextReceipt=await h.verify(next);await h.as('owner');
+    const gradeWait=await waits(owner,grader);await a.query('begin');
+    const accepted=await rpc(a,'finish_submission',next.id,nextReceipt);
+    const grading=rpc(grader,'save_grades',JSON.stringify([{uni,item_id:item,score:0}])).then(value=>({value}),error=>({error}));
+    await gradeWait();await a.query('commit');assert.equal((await grading).error,undefined);
+    const row=(await owner.query('select id,graded_at from submissions where item_id=$1',[item])).rows[0];
+    assert.equal(row.id,accepted.submission.id);assert.ok(row.graded_at);
+
+  }
 }));

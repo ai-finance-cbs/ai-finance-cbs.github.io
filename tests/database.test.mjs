@@ -1,7 +1,7 @@
 import { bootstrapSQL, migrationFiles, seedGoogleIdentity } from './helpers/database.mjs';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 let db;
 const ids = {
@@ -180,12 +180,7 @@ test('forged JWT email and mutable user metadata do not grant access', async () 
   await assert.rejects(rows('select public.get_access()'), /verified Columbia/);
 });
 
-test('legacy private assignment seed imports before migration 003 and preserves later edits', async (context) => {
-  const seed = new URL('../supabase/private/seed.sql', import.meta.url);
-  if (!existsSync(seed)) {
-    context.skip('Private seed is not distributed with the public repository.');
-    return;
-  }
+test('legacy assignment seed format imports before migration 003 and preserves later edits', async () => {
   const seedDb = new PGlite();
   try {
     await seedDb.exec(bootstrapSQL);
@@ -195,7 +190,10 @@ test('legacy private assignment seed imports before migration 003 and preserves 
         'utf8',
       ),
     );
-    const sql = readFileSync(seed, 'utf8');
+    // Keep the historical format fixture separate from the current term-aware private seed.
+    const sql = 'insert into public.assignments(id,title,due,points,description,deliverable,grading,observer_visible) values ' +
+      Array.from({length:6},(_,i)=>`(${i+1},'Legacy demo','Week ${i+1}',${i===5?25:10},'Synthetic','Demo','Demo',false)`).join(',') +
+      ' on conflict(id) do nothing';
     await seedDb.exec(sql);
     const data = (
       await seedDb.query('select id,points,observer_visible from public.assignments order by id')

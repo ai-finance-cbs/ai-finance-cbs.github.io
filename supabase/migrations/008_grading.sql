@@ -2,25 +2,38 @@
 begin;
 alter table public.grades add column comment text check(length(comment)<=10000);
 
--- Lock owners in a fixed order before taking student locks. This also covers moved members
--- appearing in two submission snapshots for the same item.
+-- Lock settings, linked sets, then owners in one fixed order. Include possible owners
+-- without submissions, so a first finish and an early score use the same lock.
 create function private.lock_item_submissions(p_items integer[]) returns void
 language plpgsql security definer set search_path='' as $$
-declare s record;
+declare s record; t text:=private.active_term();
 begin
-  for s in select term_id,item_id,owner_uni,group_id from public.submissions
-    where term_id=private.active_term() and item_id=any(p_items)
-    order by term_id,item_id,coalesce(owner_uni,group_id::text) loop
+  perform 1 from public.grade_items where term_id=t and id=any(p_items) order by id for share;
+  perform 1 from public.group_sets where term_id=t and id in (
+    select group_set_id from public.grade_items where term_id=t and id=any(p_items) and mode='group') order by id for update;
+  for s in select * from (
+    select term_id,item_id,owner_uni,group_id from public.submissions where term_id=t and item_id=any(p_items)
+    union
+    select t,i.id,r.uni,null::uuid from public.grade_items i cross join private.term_roster(t) r
+      where i.term_id=t and i.id=any(p_items) and i.mode='individual' and i.kind<>'none'
+    union
+    select t,i.id,null::text,g.id from public.grade_items i join public.class_groups g on g.term_id=t and g.set_id=i.group_set_id
+      where i.term_id=t and i.id=any(p_items) and i.mode='group' and i.kind<>'none'
+  ) owners order by term_id,item_id,coalesce(owner_uni,group_id::text) loop
     perform private.submission_lock(s.term_id,s.item_id,s.owner_uni,s.group_id);
   end loop;
 end $$;
 create function private.refresh_submission_locks(p_items integer[]) returns void
 language plpgsql security definer set search_path='' as $$
 begin
-  update public.submissions s set graded_at=case when exists(select 1 from public.grades g
-    where g.term_id=s.term_id and g.item_id=s.item_id and g.uni=any(s.member_unis))
-    then coalesce(s.graded_at,clock_timestamp()) else null end
-    where s.term_id=private.active_term() and s.item_id=any(p_items);
+  -- Preserve the original lock time. Do not audit a no-op on another student's work.
+  with state as (
+    select s.id,s.term_id,exists(select 1 from public.grades g where g.term_id=s.term_id
+      and g.item_id=s.item_id and g.uni=any(s.member_unis)) has_grade
+    from public.submissions s where s.term_id=private.active_term() and s.item_id=any(p_items)
+  )
+  update public.submissions s set graded_at=case when state.has_grade then clock_timestamp() else null end
+    from state where s.term_id=state.term_id and s.id=state.id and (s.graded_at is not null) is distinct from state.has_grade;
 end $$;
 create or replace function public.save_grades(entries jsonb) returns void
 language plpgsql security definer set search_path='' as $$
@@ -76,8 +89,14 @@ end $$;
 create function private.submission_snapshot(t text,u text,r text) returns jsonb
 language sql stable security definer set search_path='' as $$
   select jsonb_build_object(
-    'submission_items',(select coalesce(jsonb_agg(i order by id),'[]') from public.grade_items i where i.term_id=t and r in ('instructor','grader','student')),
-    'submissions',(select coalesce(jsonb_agg((case when r='student' then to_jsonb(s)-'member_unis'-'submitted_by' else to_jsonb(s) end)||jsonb_build_object('status',case when s.late then 'Late' else 'Submitted' end,
+    'submission_items',(select coalesce(jsonb_agg(case when r='student' then
+      jsonb_build_object('id',i.id,'term_id',i.term_id,'code',i.code,'title',i.title,'kind',i.kind,'mode',i.mode,
+        'group_set_id',i.group_set_id,'due_at',i.due_at,'locked',private.submission_is_graded(t,i.id,
+          case when i.mode='individual' then u end,
+          (select m.group_id from public.group_memberships m where m.term_id=t and m.set_id=i.group_set_id and m.uni=u)))
+      else to_jsonb(i) end order by id),'[]') from public.grade_items i
+      where i.term_id=t and (r in ('instructor','grader') or (r='student' and i.kind<>'none'))),
+    'submissions',(select coalesce(jsonb_agg((case when r='student' then to_jsonb(s)-'member_unis'-'submitted_by'-'graded_at' else to_jsonb(s) end)||jsonb_build_object('locked',private.submission_is_graded(t,s.item_id,s.owner_uni,s.group_id),'status',case when s.late then 'Late' else 'Submitted' end,
       'membership_changed',case when r in ('instructor','grader') and s.group_id is not null then
         s.member_unis is distinct from (select array_agg(m.uni order by m.uni) from public.group_memberships m join private.term_roster(t) c on c.uni=m.uni where m.term_id=t and m.group_id=s.group_id)
         else false end)),'[]') from public.submissions s where s.term_id=t and (r in ('instructor','grader') or (r='student' and

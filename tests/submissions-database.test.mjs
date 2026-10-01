@@ -29,7 +29,7 @@ test('pending rows have no submission status, a new begin supersedes, and servic
   assert.equal((await h.rows('select id from pending_uploads')).length,1);assert.deepEqual((await h.rpc('class_data')).submissions,[]);
   await assert.rejects(h.rpc('finish_submission',old.id),/not found/);
   await assert.rejects(h.rpc('finish_submission',latest.id),/verified/);
-  await assert.rejects(h.rpc('confirm_submission_upload',latest.id,10,'application/pdf'),/permission denied/);
+  await assert.rejects(h.rpc('confirm_submission_upload',TERM,latest.id,10,'application/pdf'),/permission denied/);
   await assert.rejects(h.rows('select verification_receipt from pending_uploads'),/permission denied/);
   await h.as('owner');await h.rows("update pending_uploads set expires_at=now()-interval '1 second' where id=$1",[latest.id]);
   await h.as('a');await assert.rejects(h.rpc('finish_submission',latest.id),/expired/);
@@ -47,9 +47,9 @@ test('individual reads, active pending storage paths, size/type limits, and expi
   const pending=await h.begin();await h.rows("insert into storage.objects(bucket_id,name) values('submissions',$1)",[pending.storage_path]);
   await h.as('owner');await h.rows("update pending_uploads set expires_at=now()-interval '1 second' where id=$1",[pending.id]);
   const bucket=(await h.rows("select * from storage.buckets where id='submissions'"))[0];assert.equal(bucket.public,false);assert.equal(Number(bucket.file_size_limit),25*1024*1024);assert.equal(bucket.allowed_mime_types.length,5);
-  await h.as('service');assert.ok((await h.rpc('submission_sweep_candidates')).includes(pending.storage_path));
-  assert.ok(!(await h.rpc('submission_sweep_candidates')).includes(s.storage_path));
-  assert.deepEqual(await h.rpc('reject_submission_upload',p.id),[]); // duplicate finish cleanup cannot remove committed work
+  await h.as('service');assert.ok((await h.rpc('submission_sweep_candidates',TERM)).includes(pending.storage_path));
+  assert.ok(!(await h.rpc('submission_sweep_candidates',TERM)).includes(s.storage_path));
+  assert.deepEqual(await h.rpc('reject_submission_upload',TERM,p.id),[]); // duplicate finish cleanup cannot remove committed work
 });
 test('grading locks an existing submission, unreleasing keeps the lock, and deleting all scores unlocks',async()=>{
   await clear();const first=(await h.finish(await h.begin())).submission;
@@ -61,8 +61,8 @@ test('grading locks an existing submission, unreleasing keeps the lock, and dele
   await h.as('teacher');await h.rpc('release_grade_item',1,true);await h.as('a');assert.equal((await h.rpc('class_data')).grades[0].comment,'Clear analysis');
   await h.as('teacher');await h.rpc('release_grade_item',1,false);await h.as('a');await assert.rejects(h.rpc('begin_submission',1,'new.pdf',10,'application/pdf'),/Graded, locked/);
   await h.as('grader');await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:null}]));await h.begin();
-  // A grade without any submitted work must not invent a submission or pending lock.
-  await h.as('grader');await h.rpc('save_grades',JSON.stringify([{uni:'bb1002',item_id:1,score:0}]));await h.begin('b');
+  // Even a zero score before a first submission locks the owner.
+  await h.as('grader');await h.rpc('save_grades',JSON.stringify([{uni:'bb1002',item_id:1,score:0}]));await assert.rejects(h.begin('b'),/Graded, locked/);
 });
 test('group replacement preserves the last on-time work and current membership controls access',async()=>{
   await clear();const {set,groups}=await group();await h.as('teacher');await h.rpc('choose_group',set,null,'cc1003');

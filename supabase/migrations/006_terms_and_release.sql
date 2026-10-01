@@ -131,12 +131,12 @@ create function public.set_student_preview(target_uni text default null,p_term t
 language plpgsql security definer set search_path='' as $$
 declare t text:=coalesce(p_term,private.active_term());
 begin
-  -- Exiting preview is the one deliberate exception: otherwise the account could never exit.
+  -- Preview controls check the real actor, so an instructor can switch or exit directly.
+  if private.actor_role()<>'instructor' then raise exception 'Instructor access required.'; end if;
   if target_uni is null then
-    if private.actor_role()<>'instructor' then raise exception 'Instructor access required.'; end if;
     delete from private.student_previews where user_id=auth.uid(); return public.get_access();
   end if;
-  perform private.assert_writable(); perform private.require_instructor();
+  -- Only readable terms can be previewed; ordinary writes still reject archived terms.
   if not exists(select 1 from public.terms where id=t and status in ('active','archived-readable')) or
     not exists(select 1 from private.term_roster(t) where uni=target_uni) then raise exception 'Student not found.'; end if;
   insert into private.student_previews(user_id,uni,term_id) values(auth.uid(),target_uni,t)

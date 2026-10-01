@@ -1,7 +1,7 @@
-# Class tools: local build and review
+# Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-This task adds local code only. Migrations `003_class_tools.sql` and `004_security_hardening.sql` have not been applied to the linked project.
+Migrations 001–005 are applied live, as recorded in the review. Phase A migrations 006–008 remain local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -22,8 +22,8 @@ The original Admin page is archived under `__archive__/20261001/before-class-too
 | Role | Reads | Writes |
 | --- | --- | --- |
 | Instructor | All course data and audit records | Roster, files, settings, groups, dates, scores, attendance, grade release |
-| Grader | Materials, names/UNIs needed for grading, scores and attendance | Scores and attendance only |
-| Student | Materials, own attendance, own released grades, group availability | Own group membership while sign-up is open |
+| Grader | Materials, submissions, groups, names/UNIs needed for grading, scores and attendance | Scores and attendance only |
+| Student | Materials, own attendance, own released grades, permitted submissions and groups | Own ungraded submissions; group changes when permitted |
 | Auditor | Materials marked auditor-visible | None |
 | Unlisted / anonymous | Public site only | None |
 
@@ -44,7 +44,7 @@ Only an instructor can read the private test-account list. Test emails are never
 9. **Attendance** edits six session dates and records present, absent, or excused statuses.
 10. Open **Import attendance CSV** for a UNI column or one UNI per line. Imports mark listed students present only.
 11. **Groups** creates sets with a group count, maximum size, optional deadline, and open/closed state.
-12. Students may join, switch, or leave while open. Instructors can move or remove students and export membership.
+12. Students can change groups while sign-up is open and neither group has submitted work. Instructor moves remain allowed.
 13. Group availability is public within the class. Names and emails appear to students only for their own teammates.
 14. **Roster → View as** and the header dropdown show the selected student's materials and records.
 15. Preview is read-only across the instructor's account, including other tabs. Select **Exit** before making changes.
@@ -68,7 +68,7 @@ Only an instructor can read the private test-account list. Test emails are never
 
 ## Database and function review
 
-1. Review `003_class_tools.sql` and `004_security_hardening.sql` together after the already-applied `001` and `002` migrations.
+1. Migrations 001–005 are already applied. The following notes describe their retained security rules; Phase A adds 006–008.
 2. Migration `003` converts `instructor_ta` to `instructor` and `observer` to `auditor`.
 3. It renames both visibility columns to `auditor_visible` and preserves existing content and flags.
 4. It creates attendance, groups, grade items, scores, append-only audit records, account links, and server-side preview state.
@@ -79,12 +79,13 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. A reviewer must coordinate migrations `003` and `004`, the file function, and browser publication in a later approved task.
+12. A reviewer must coordinate migrations 006–008, both file functions, and browser publication in a later approved task.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply `001`, `002`, `003`, `004`, then `005` after review. Existing legacy private seeds use `observer_visible` and belong before `003`.
-New seeds from `tools/create-materials-seed.rb` use `auditor_visible` and belong after `003`.
+For a fresh database, apply migrations 001–008 in order after review.
+Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
+The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
 Named test-account seeding now belongs in the ignored `supabase/private/test-accounts.sql` file, after migration `004`.
 Migration `002` remains unchanged history. Migration `004` preserves existing test rows and contains no account seed.
@@ -146,14 +147,14 @@ They cover 1440px and 390px views with a synthetic class. Evidence remains local
 Course Materials now opens **Upcoming**. The submenu retains Assignments and Lecture Notes.
 Upcoming uses the earliest Attendance date that is today or later, in New York time.
 If no dates are set, it uses Week 1. After all dated classes finish, it shows a finished-course message.
-Only configured date, time, and room details appear. Attendance currently stores dates only.
+Only configured date, time, and room details appear. Phase A adds session start and end times beside the date.
 
 Required readings come from `_data/materials.yml` at build time. No private assignment text enters generated pages.
 The milestone uses that week's assignment ID, matching the Schedule's existing assignment mapping.
 PDFs obey existing visibility checks. When current notes are absent, Upcoming shows the previous week's available notes.
 Students see open group reminders or their own group and teammates. Auditors see readings, permitted PDFs, and announcements.
 
-1. Apply `005_announcements.sql` after `004`, following review, before publishing this browser version.
+1. Migration `005_announcements.sql` is already applied live, as confirmed in the round 1 review.
 2. Migration 005 adds announcements with role-based reads and Instructor-only writes.
 3. It also grants auditors read access to session dates. Attendance records, grades, and groups remain restricted.
 4. In Settings, open **Announcements**. The title is optional; body text is required.
@@ -166,17 +167,17 @@ The closed **Legend** explains names, points, quiz attendance, and the optional-
 Imports accept these codes, existing full names, and existing `item_N` headers. Duplicate aliases reject the import.
 Student My grades keeps full names.
 
-The header uses the same 136px height on all pages. Desktop title/menu/submenu start at 12/49/78px.
-The submenu list spans 84–122px. Desktop navigation stays on one line and scrolls internally when necessary.
+The merged `77b18e5` header uses 148px on desktop and 136px on phones.
+Desktop title/menu/submenu start at 15/54/91px. Navigation scrolls internally when necessary.
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
-Migration 005 is local and unapplied to the hosted database. No push or db push was run.
+Migration 005 is already applied live. Migrations 006–008 remain local and unapplied.
 
 ## Phase A: terms, submissions, and group grades
 
 Phase A adds the data layer for the week pages. Existing pages and menus remain in place.
 Migrations `006_terms_and_release.sql`, `007_submissions.sql`, and `008_grading.sql` follow the unchanged 001–005 files.
-Migration 005 must run first. This branch has not changed any hosted service.
+Migration 005 is already applied live. This branch has not changed any hosted service.
 
 Spring 2027 is the initial active term. Each course record carries a `term_id`.
 Instructions remain in `assignments`; they also have term keys to preserve old course content.
@@ -193,11 +194,14 @@ The service-role secret stays in the function environment. It must never enter b
 
 The private `submissions` bucket accepts PDF, DOCX, XLSX, PPTX, and ZIP files up to 25 MB.
 A student first creates a pending row with `beginSubmission(itemId, file)`.
-Only that student's live pending path accepts an upload. Pending rows expire after 30 minutes.
+Only that student's live pending path accepts an upload. Pending rows expire after 15 minutes.
 A new begin replaces the same owner's previous pending row.
 `submitFile(itemId, file)` handles begin, upload, and finish in order.
 
 The file function checks existence, actual size, and file signatures before finish.
+PDFs need `%PDF-` at the start and `%%EOF` within the final 1 KB.
+The browser derives MIME types from extensions, including Windows ZIP labels and empty DOCX types.
+Server MIME checks remain strict.
 Office formats also require matching entries in the ZIP directory. These checks are not antivirus scanning.
 A private, service-issued receipt prevents students from bypassing validation through a direct finish RPC.
 Only the caller's database transaction commits the submission. Cleanup uses paths returned by database functions.
@@ -205,14 +209,22 @@ Failed duplicate finishes cannot delete committed work. Failed old-file cleanup 
 Sweeps run on finish and through the Instructor-only `sweepSubmissions()` method.
 Downloads first use caller-scoped metadata, then return attachment URLs that expire after 300 seconds.
 
-Late status uses server time when begin runs. Finishing after the deadline does not make an on-time start late.
+Late status uses both server start time and the stored object creation time.
+Starting after the deadline is late. Creating the object more than five minutes after the deadline is also late.
+Confirmation reads `storage.objects.created_at`; browser timestamps cannot change this decision.
+A pending upload must also finish before its 15-minute expiry.
 A late replacement retains the last on-time path and both of its timestamps.
 Group submissions record the members at finish. Later group changes do not change those grading recipients.
-Grading and finishing share an owner lock. A waiting finish rejects a file once grading has locked the prior submission.
-Deleting every score for the saved member list unlocks the submission. Unreleasing scores does not unlock it.
+Grading and finishing share an owner lock. A waiting finish rejects a file once grading has locked its owner.
+Even a zero score before the first submission locks the owner. A current group member’s score locks group submissions.
+Grading takes owner locks even when submission rows do not exist. Lock timestamps change only on lock or unlock.
+Clear the owner’s scores to unlock. For groups, saved-member and current-member grades can both block uploads.
+Unreleasing scores does not unlock submissions.
 
 `classData()` adds `submission_items` and `submissions` alongside the existing fields.
-`submission_items` includes unreleased item settings, without scores or comments.
+`submission_items` gives students only file/link items. Its fields are `id`, `term_id`, `code`, `title`, `kind`, `mode`,
+`group_set_id`, `due_at`, and `locked`. It excludes quiz and attendance items.
+Students receive a `locked` boolean instead of the private `graded_at` timestamp, including before any submission exists.
 `submissions` contains submitted work and its status; an absent row means no submitted work.
 Students receive their own or current group's submissions. Peer UNI snapshots stay hidden.
 Staff also receive member snapshots and a `membership_changed` flag.
@@ -229,8 +241,24 @@ The browser adapter and synthetic demo share these additional methods:
 Omitting `comment` from a score update preserves the existing comment. A null score removes the grade row.
 Group item settings start without linked sets. The Instructor must link a set before students can submit.
 Item kind, mode, and linked set cannot change after completed submissions exist. Pending uploads do not block settings.
-The earliest due time among linked group items closes student sign-up. Instructor moves remain available.
+The earliest due time among linked group items closes student sign-up.
+Students also cannot join or leave a group with submitted work in that set. Instructor moves remain available.
+Instructors can switch directly between student previews. Ordinary preview writes remain blocked, including archived-term writes.
 
 Phase A tests use synthetic identities and local databases only. Native PostgreSQL tests cover both required races.
 The ordinary Node tests now run one file at a time to reduce resource use.
 Hosted upload, replacement, download, and security-advisor checks remain for Claude's review and publication stage.
+
+### Service-role and existing-page contracts
+
+Service-role code must pass `term_id` explicitly. Do not rely on browser defaults or a caller's current-term context.
+The submission service passes a trusted `p_term` to `confirm_submission_upload`, `reject_submission_upload`, and `submission_sweep_candidates`.
+Confirmation takes the term from caller-visible pending metadata. Sweeps use the term returned by `get_access`.
+The ignored private seed names `spring-2027` explicitly and uses `auditor_visible` with `on conflict (term_id, id)`.
+
+Existing page methods were checked against migrations 006–008 in local PostgreSQL tests.
+Assignment edits send only title, due, points, description, deliverable, grading, and auditor visibility.
+Lecture uploads also send only editable metadata. IDs, term labels, creation dates, and unknown fields are excluded.
+Assignment, announcement, and file updates use the current term key. Global identity and allowlist tables remain global.
+The contract tests cover existing staff RPC names and arguments, column grants, release rules, and preview switching.
+The full browser suite continues to test existing pages with synthetic data.

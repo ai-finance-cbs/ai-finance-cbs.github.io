@@ -1,5 +1,5 @@
 import { safeSubmission } from './submission-core.js';
-import { refreshDemoLocks } from './submission-demo.js';
+import { refreshDemoLocks, demoSubmissionLocked, studentSubmissionItems } from './submission-demo.js';
 import { GRADE_ITEMS, checkGroupChange, canWrite, scoreValue } from './class-core.js';
 export function classSeed() {
   return {
@@ -50,9 +50,9 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       files: d.files.filter(f => ['instructor','grader'].includes(a.role) || ((a.role !== 'auditor' || f.auditor_visible) && (f.released || (f.release_at && new Date(f.release_at).getTime() <= Date.now())))).map(({data,...f}) => f),
       assignments: d.assignments.filter(r => a.role !== 'auditor' || r.auditor_visible),
       announcements: d.announcements,
-      submission_items: a.role === 'auditor' ? [] : d.items,
+      submission_items: a.role === 'auditor' ? [] : a.role === 'student' ? studentSubmissionItems(d,a.uni) : d.items,
       submissions: a.role === 'auditor' ? [] : d.submissions.filter(s => admin || a.role === 'grader' || s.owner_uni === a.uni || d.members.some(m => m.group_id === s.group_id && m.uni === a.uni)).map(s => ({
-        ...(a.role === 'student' ? safeSubmission(s) : s), status:s.late ? 'Late' : 'Submitted',
+        ...(a.role === 'student' ? safeSubmission(s) : s), status:s.late ? 'Late' : 'Submitted', locked:demoSubmissionLocked(d,s.item_id,s.owner_uni,s.group_id),
         membership_changed: a.role !== 'student' && !!s.group_id && JSON.stringify(s.member_unis) !== JSON.stringify(d.members.filter(m => m.group_id === s.group_id).map(m => m.uni).sort()),
       })),
     };
@@ -116,8 +116,15 @@ export function extendDemo({ read, save, user, saveUser, access }) {
     async setPreview(uni, term = null) {
       const u = user();
       if (access()?.actor_role !== 'instructor') throw new Error('Instructor access required.');
-      if (uni) requireAdmin();
-      if (uni && !roster(read(term)).some((r) => r.uni === uni)) throw new Error('Student not found.');
+      // Validate with the real actor while keeping ordinary preview writes blocked.
+      if (uni) {
+        const old={...u};
+        saveUser({...u,preview_uni:null,preview_term:null});
+        try {
+          const d=read(term);
+          if (d.terms.find(t=>t.id===d.term_id)?.status==='closed' || !roster(d).some(r=>r.uni===uni)) throw new Error('Student not found.');
+        } finally { saveUser(old); }
+      }
       u.preview_uni = uni;
       u.preview_term = term;
       saveUser(u);
@@ -218,6 +225,9 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         a = access(),
         target = a.role === 'instructor' ? uni : a.uni;
       checkGroupChange(d, a, set, group, target);
+      const source=d.members.find(m=>m.set_id===set && m.uni===target)?.group_id;
+      if (a.role==='student' && d.submissions.some(s=>[source,group].filter(Boolean).includes(s.group_id) && d.items.some(i=>i.id===s.item_id && i.group_set_id===set)))
+        throw new Error('Groups with submitted work cannot be joined or left. Ask the instructor.');
       if (!roster(d).some((r) => r.uni === target)) throw new Error('Student not found.');
       d.members = d.members.filter((m) => m.set_id !== set || m.uni !== target);
       if (group) d.members.push({ set_id: set, group_id: group, uni: target });

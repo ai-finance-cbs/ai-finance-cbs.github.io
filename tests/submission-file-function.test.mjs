@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHandler } from '../supabase/functions/submission-file/handler.js';
 import { validSubmissionBytes, TYPES, MAX_BYTES } from '../supabase/functions/_shared/submission-files.js';
 const ID='11111111-0000-0000-0000-000000000001', PATH=`spring-2027/1/aa1001/${ID}.pdf`;
-const pdf=new TextEncoder().encode('%PDF-1.7\nDemo');
+const pdf=new TextEncoder().encode('%PDF-1.7\nDemo\n%%EOF');
 // Minimal ZIP records with empty entries. This tests the directory parser without external tools.
 function zip(names) {
   const locals=[],central=[];let offset=0;
@@ -19,8 +19,8 @@ function zip(names) {
   return Buffer.concat([...locals,directory,end]);
 }
 function setup(options={}) {
-  const calls=[],access={role:'student',...options.access};
-  const pending={id:ID,storage_path:PATH,file_name:'work.pdf',file_size:pdf.length,mime_type:TYPES.pdf,expires_at:new Date(Date.now()+60000).toISOString(),...options.pending};
+  const calls=[],access={role:'student',term_id:'spring-2027',...options.access};
+  const pending={id:ID,term_id:'spring-2027',storage_path:PATH,file_name:'work.pdf',file_size:pdf.length,mime_type:TYPES.pdf,expires_at:new Date(Date.now()+60000).toISOString(),...options.pending};
   const query=table=>({select(fields){calls.push({select:table,fields});return this;},eq(field,id){assert.equal(field,'id');assert.equal(id,ID);return this;},async single(){
     if(options.hidden)return {error:{message:'hidden'}};
     return {data:table==='pending_uploads'?pending:{id:ID,storage_path:PATH,on_time_path:'server-on-time.pdf'}};
@@ -80,7 +80,7 @@ test('finish verifies the uploaded object then calls the caller RPC and deletes 
   assert.equal(res.status,200);assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:['expired.pdf']},{remove:['old.pdf']}]);
   const verify=x.calls.findIndex(c=>c.server==='confirm_submission_upload'),finish=x.calls.findIndex(c=>c.caller==='finish_submission');
   assert.ok(verify>0 && finish>verify);assert.equal(x.calls.some(c=>c.server==='finish_submission'),false);
-  assert.deepEqual(x.calls.find(c=>c.server==='confirm_submission_upload').args,{p_pending:ID,p_size:pdf.length,p_type:TYPES.pdf});
+  assert.deepEqual(x.calls.find(c=>c.server==='confirm_submission_upload').args,{p_term:'spring-2027',p_pending:ID,p_size:pdf.length,p_type:TYPES.pdf});
 });
 test('missing objects never finish; forged magic bytes and over-size objects are rejected and removed',async()=>{
   const missing=setup({absent:true});assert.equal((await missing.run({action:'finish',pending_id:ID})).status,409);
@@ -120,4 +120,20 @@ test('role, preview, archived, origin, and identity denials never reach privileg
   const invalid=setup({invalid:true});assert.equal((await invalid.run({action:'finish',pending_id:ID})).status,401);
   const x=setup();assert.equal((await x.handler(x.request({action:'finish',pending_id:ID},{origin:'https://evil.example'}))).status,403);
   assert.equal((await x.run({action:'download',id:'../private'})).status,400);
+});
+
+test('review 6: a PDF needs both its header and an end marker within the final 1 KB',async()=>{
+  for(const content of ['%PDF-1.7\ntruncated','%PDF-1.7\n%%EOF'+'x'.repeat(1024)]) {
+    const bytes=new TextEncoder().encode(content);assert.equal(validSubmissionBytes(bytes,'work.pdf',TYPES.pdf),false);
+    const x=setup({file:new Blob([bytes]),pending:{file_size:bytes.length}});
+    assert.equal((await x.run({action:'finish',pending_id:ID})).status,400);
+    assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[PATH]}]);
+  }
+  assert.ok(validSubmissionBytes(new TextEncoder().encode('%PDF-1.7\n%%EOF'+' '.repeat(1019)),'work.pdf',TYPES.pdf));
+});
+test('review 12: every privileged submission RPC receives the trusted term explicitly',async()=>{
+  const x=setup({finishError:'Graded, locked.'});await x.run({action:'finish',pending_id:ID,term_id:'attacker-term'});
+  for(const call of x.calls.filter(c=>c.server))assert.equal(call.args.p_term,'spring-2027');
+  const instructor=setup({access:{role:'instructor'}});await instructor.run({action:'sweep',term_id:'attacker-term'});
+  assert.deepEqual(instructor.calls.find(c=>c.server).args,{p_term:'spring-2027'});
 });
