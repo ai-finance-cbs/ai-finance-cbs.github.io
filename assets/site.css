@@ -958,22 +958,14 @@ button.grade-visibility { cursor:pointer; }
 .speaker-form { padding:12px 0; }
 @media(max-width:1099px) { .speaker-heading { display:flex; flex-wrap:wrap; gap:4px 12px; } }
 
-/* ---- 2026-10-01: each Course Materials week has its own colour (shaded title box + sub-menu label) ---- */
-.week-1 { --wk:#2F6FB8; --wk-bg:#EEF4FB; }
-.week-2 { --wk:#2E7D6F; --wk-bg:#EAF5F2; }
-.week-3 { --wk:#A86A12; --wk-bg:#FBF3E6; }
-.week-4 { --wk:#6A4FB3; --wk-bg:#F2EFFA; }
-.week-5 { --wk:#B04A5E; --wk-bg:#FBEEF1; }
-.week-6 { --wk:#4A5A6A; --wk-bg:#EEF1F4; }
-body.week-tint .title-stack { background:var(--wk-bg); border-radius:6px; padding:14px 18px 16px; }
-body.week-tint .content p.kicker { color:var(--wk); }
-nav[aria-label="Course materials sections"] li .subnav-kicker { color:var(--wk); }
-nav[aria-label="Course materials sections"] li a[aria-current="page"] { border-bottom-color:var(--wk); }
 .week-material-list { margin-top:10px; }
 
 .badge-required { white-space:nowrap; width:92px; }
-body.week-tint .title-stack { display:block; }
-nav[aria-label="Course materials sections"] li a[aria-current="page"] .subnav-kicker { color:var(--wk); }
 .class-tools #materials-root h3.week-reading-topic, h3.week-reading-topic { font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#4b5560; margin:16px 0 6px; }
 .week-material-list { margin-top:0; }
-body.week-tint .title-stack { margin-bottom:14px; }
+
+/* ---- 2026-10-01: week pages: each section sits in its own shaded box so sections read as separate ---- */
+body.week-page #materials-root > .week-block { background:#FAFAFA; border:1px solid #ECECEC; border-radius:8px; padding:18px 22px 20px; margin:0 0 16px; }
+body.week-page #materials-root > .week-block > h2 { color:#4b5560; margin:0 0 12px; }
+body.week-page #materials-root > .next-class { background:#fff; border:1px solid #ECECEC; border-radius:8px; padding:14px 22px; margin:6px 0 16px; }
+body.week-page #materials-root > .week-block .week-reading-topic:first-of-type { margin-top:8px; }
