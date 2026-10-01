@@ -25,7 +25,7 @@
 - number: 5
   title: Persuading Stakeholders with AI
   goal: Produce written memos, slides, and presentations with AI, and defend them.
-  topics: ["Three Modes of Communication", "AI-Assisted Drafting", "Models as Readers", "Artifact Handover", "Defending the Analysis"]
+  topics: ["Choosing the Format (Memo, Slides, Talk)", "Drafting with AI", "Spotting AI Writing (Detectors and Their Limits)", "Writing for Machine Readers", "Handing Over the Work", "Defending the Analysis"]
   exercises: ["Writing Pageant", "Pass It On"]
   milestone: "Milestone #5: Pitch It"
 - number: 6
