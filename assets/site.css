@@ -668,7 +668,6 @@ caption { margin-bottom:6px; }
 .class-tools main { padding:calc(var(--topbar) + 24px) 28px 0; }
 body.class-tools .content { max-width:1180px; }
 .class-tools .outline-title { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
-.class-tools .subnav-empty { display:none; }
 .class-tools .page-heading { margin-bottom:8px; }
 .class-tools .page-title-row { margin:0; }
 .class-tools .page-title-row h1 { font-size:32px; }
@@ -737,24 +736,37 @@ body.class-tools .content { max-width:1180px; }
 .class-tools .student-attendance-grid th[scope="row"], .student-attendance-grid thead th:first-child { width:76px; min-width:76px; max-width:76px; }
 .class-tools .page-footer { margin-top:28px; }
 @media (min-width:820px) {
-  .menu-row .topnav ul { flex-wrap:wrap; gap:6px 17px; }
-  .menu-row .topnav a { font-size:13px; }
-  .topbar-main { min-width:0; }
-  body:has([data-role]:not([hidden])) { --topbar:184px; }
-  body.class-tools:has([data-role]) { --topbar:136px; }
-  .brand-row { gap:8px 14px; }
-  .brand-row .course-brand { flex-wrap:wrap; }
+  /* Reserve all three rows, even when a role has fewer links or no submenu. */
+  .topbar-main { display:grid; grid-template-rows:52px 45px 52px; align-content:start; justify-content:normal; gap:0; padding-top:0; min-width:0; }
+  .brand-row { flex-wrap:nowrap; gap:12px; min-width:0; }
+  .brand-heading { flex:1; height:40px; }
+  .brand-row .course-brand { height:24px; flex-wrap:nowrap; gap:8px; }
+  .topbar .brand-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brand-term { flex-shrink:0; }
+  .brand-row .auth-controls { flex-shrink:0; height:30px; }
+  .menu-row { align-items:flex-start; margin:0; padding:0; }
+  .menu-row .topnav ul { flex-wrap:wrap; gap:1px 17px; }
+  .menu-row .topnav a { display:block; font-size:13px; line-height:18px; padding:0 0 2px; }
+  .topbar-main > .subnav-top { display:block; align-self:start; margin:0; }
+  .topbar-main > .subnav-top ul { height:38px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .topbar-main > .subnav-top li { flex-shrink:0; }
+  .topbar-main > .subnav-top a { display:flex; }
 }
-@media (min-width:820px) and (max-width:1120px) { body:has([data-role]:not([hidden])) { --topbar:222px; } body.class-tools:has([data-role]) { --topbar:184px; } .topbar .brand-title { white-space:normal; } }
+@media (min-width:820px) and (max-width:1180px) {
+  .topbar .brand-title { font-size:18px; }
+  .topbar .brand-term { font-size:12px; }
+  .view-picker select { max-width:136px; }
+  [data-preview-name] { max-width:100px; }
+}
 @media (max-width:819px) {
   :root, body.in-library { --topbar:136px; }
-  .topbar { display:grid; grid-template-columns:28px minmax(0,1fr) auto; grid-template-rows:1fr auto; gap:6px 10px; height:var(--topbar); padding:8px 16px; }
+  .topbar { display:grid; grid-template-columns:28px minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) 30px; gap:6px 10px; height:var(--topbar); padding:8px 16px; }
   .topbar .cbs-logo { grid-column:1; grid-row:1; width:28px; margin:0; }
-  .brand-heading { grid-column:2; grid-row:1; }
+  .brand-heading { grid-column:2; grid-row:1; align-self:start; padding-top:8px; }
   .topbar .course-brand { padding:0; border:0; }
   .topbar .brand-title { white-space:normal; font-size:16px; }
   .demo-tag { font-size:9px; }
-  .brand-row .auth-controls { grid-column:1 / -1; grid-row:2; width:100%; margin:0; justify-content:flex-end; gap:6px; }
+  .brand-row .auth-controls { grid-column:1 / -1; grid-row:2; width:100%; height:30px; margin:0; justify-content:flex-end; gap:6px; }
   .auth-controls .role-badge { flex-shrink:0; }
   .preview-banner { flex:1; justify-content:flex-end; }
   .preview-pill { min-width:0; font-size:10px; padding:4px 6px; }
