@@ -29,7 +29,7 @@ test('instructor posts, edits, and deletes short announcements with literal text
   page.once('dialog', d => d.accept()); await page.getByRole('button',{name:'Delete announcement',exact:true}).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Announcement deleted.');
   await page.goto('/materials/week-1/'); await ready(page);
-  await expect(page.locator('#week-announcements')).toContainText('No announcements yet.');
+  await expect(page.locator('#week-announcements')).toHaveCount(0);
 });
 
 test('gradebook uses codes, a closed legend, and code CSV exports that can be reimported', async ({page}) => {

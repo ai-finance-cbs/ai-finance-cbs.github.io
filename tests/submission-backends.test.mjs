@@ -140,3 +140,14 @@ test('review 2: demo stores object time, applies upload grace, and keeps on-time
   await d.pickRole('instructor');await d.configureItem(1,{kind:'link',mode:'individual',group_set_id:null,due_at:'2099-01-01'});await d.saveGrades([{uni:'ab1234',item_id:1,score:null}]);
   await d.pickRole('student');assert.equal((await d.submitLink(1,'https://example.test/demo')).submission.late,false);
 });
+
+test('file category is explicit in demo uploads and does not change titles or access rules',async()=>{
+  const b=createDemo();await b.pickRole('instructor');
+  await b.uploadFile(pdf(),{week:3,title:'Exercise',category:'in_class',released:true,auditor_visible:true});
+  await b.uploadFile(pdf(),{week:3,title:'In-class: note title',category:'notes',released:true});
+  const files=await b.files();assert.equal(files[0].category,'in_class');assert.equal(files[0].title,'Exercise');
+  assert.equal(files[1].category,'notes');assert.equal(files[1].title,'In-class: note title');
+  await assert.rejects(b.uploadFile(pdf(),{week:1,title:'Invalid',category:'other'}),/Choose/);
+  await b.pickRole('auditor');assert.deepEqual((await b.classData()).files.map(f=>f.category),['in_class']);
+  await assert.rejects(b.uploadFile(pdf(),{week:3,title:'No',category:'in_class'}),/access/);
+});

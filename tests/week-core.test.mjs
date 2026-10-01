@@ -29,7 +29,7 @@ test('grade rows order codes across term-specific IDs and withhold unreleased sc
   assert.equal(rows[0].grade.comment,'Released'); assert.equal(rows[0].grade.score,0);
   assert.equal(rows[2].grade,null); assert.equal(rows[2].submission.late,true);
 });
-test('file categories keep old notes compatible and explicitly mark handouts', () => {
-  assert.equal(inClassFile({title:'In-class: Exercise'}),true);
-  assert.equal(inClassFile({title:'Week 3 lecture notes'}),false);
+test('file categories use metadata and never infer the category from a title', () => {
+  assert.equal(inClassFile({title:'Exercise',category:'in_class'}),true);
+  assert.equal(inClassFile({title:'In-class: a note title',category:'notes'}),false);
 });

@@ -19,9 +19,9 @@ async function seed(page, joined=true) {
     for(const id of [2,3,5,6]) await b.configureItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
     const key='b8403-demo-state-v3', d=JSON.parse(sessionStorage.getItem(key));
     // A fresh set closes at its earliest deadline. Use the fixture before that deadline.
-    d.files=[{id:'handout',week:3,title:'In-class: Verification exercise',storage_path:'demo/handout.pdf',released:false,release_at:null,auditor_visible:true},
-      {id:'timed',week:3,title:'In-class: Scheduled exercise',storage_path:'demo/timed.pdf',released:false,release_at:'2027-01-26T14:00:00Z',auditor_visible:true},
-      {id:'private',week:3,title:'Private class notes',storage_path:'demo/private.pdf',released:true,auditor_visible:false}];
+    d.files=[{id:'handout',week:3,title:'Verification exercise',category:'in_class',storage_path:'demo/handout.pdf',released:false,release_at:null,auditor_visible:true},
+      {id:'timed',week:3,title:'Scheduled exercise',category:'in_class',storage_path:'demo/timed.pdf',released:false,release_at:'2027-01-26T14:00:00Z',auditor_visible:true},
+      {id:'private',week:3,title:'Private class notes',category:'notes',storage_path:'demo/private.pdf',released:true,auditor_visible:false}];
     d.announcements=[{id:'old',title:'Earlier notice',body:'Review the readings.',created_at:'2027-01-20T15:00:00Z'},
       {id:'new',title:'Class update',body:'Bring your annotated task map.',created_at:'2027-01-25T15:00:00Z'}];
     sessionStorage.setItem(key,JSON.stringify(d));
@@ -113,10 +113,10 @@ test('release now and timed release expose in-class files to students with no re
   await handout.getByRole('button',{name:'Release now'}).click();
   await expect(handout.getByRole('button')).toHaveCount(0);
   await enter(page,'student');
-  await expect(page.getByRole('link',{name:'In-class: Verification exercise',exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Verification exercise',exact:true})).toBeVisible();
   await expect(page.getByRole('button',{name:'Release now'})).toHaveCount(0);
   await page.clock.setFixedTime(new Date('2027-01-26T14:01:00Z')); await page.reload(); await ready(page);
-  await expect(page.getByRole('link',{name:'In-class: Scheduled exercise',exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Scheduled exercise',exact:true})).toBeVisible();
 });
 
 test('preview shows the student submission and disables uploads; archived pages also disable uploads', async ({page}) => {
@@ -153,6 +153,10 @@ test('Grades orders all codes, keeps unreleased comments hidden, caps optional p
   await expect(page.locator('#materials-root')).not.toContainText('Hidden comment');
   await expect(page.locator('[data-grade-code=M1] .grade-comment')).toHaveText('Released comment');
   await expect(page.locator('#materials-root')).toContainText('Released points: 23.');
+  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.pickRole('instructor');await b.releaseItem(3,true);await b.pickRole('student');});
+  await page.reload();await ready(page);
+  await expect(page.locator('[data-grade-code=M3] .grade-status')).toHaveCount(0);
+  await expect(page.locator('[data-grade-code=M3] .grade-score')).toHaveText('9 / 10');
   expect(await page.locator('[data-grade-code]').evaluateAll(rows=>rows.map(r=>r.dataset.gradeCode))).toEqual(['M1','M2','M3','M4','M5','FP','Q1','Q2','Q3','Q4','Q5','PA','O1','O2','O3','O4']);
   await page.goto('/materials/attendance/'); await ready(page);
   await expect(page.locator('.student-attendance-grid tbody tr')).toHaveCount(6);
@@ -161,11 +165,11 @@ test('Grades orders all codes, keeps unreleased comments hidden, caps optional p
 
 for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture required states at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000}); await seed(page);
-  mkdirSync('evidence/phase-b',{recursive:true});
+  mkdirSync('evidence/phase-b/round-1',{recursive:true});
   const capture=async name=>{
     await page.evaluate(()=>document.fonts.ready);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await page.screenshot({path:`evidence/phase-b/${name}-${width}.png`,fullPage:true});
+    await page.screenshot({path:`evidence/phase-b/round-1/${name}-${width}.png`,fullPage:true});
   };
   await enter(page,'student');
   expect(await page.locator('#materials-root > *').evaluateAll(nodes=>nodes.map(n=>n.id||n.className))).toEqual(['week-announcements','next-class','milestone-3','in-class-files','lecture-notes','required-readings']);
@@ -196,4 +200,81 @@ test('each role gets its exact menu and Files stays reachable only by the instru
     await page.goto('/materials/files/'); await ready(page);
     await expect(page.locator('#file-form')).toHaveCount(role==='instructor'?1:0);
   }
+});
+
+test('Grades reserves status for upload items without a released score, including zero scores',async({page})=>{
+  await enter(page,'instructor','grades');
+  await page.evaluate(async()=>{
+    const b=(await import('/assets/materials/demo.js')).createDemo();
+    await b.saveGrades([{uni:'ab1234',item_id:1,score:0},{uni:'ab1234',item_id:7,score:0},{uni:'ab1234',item_id:12,score:6},{uni:'ab1234',item_id:16,score:3}]);
+    for(const id of [1,7,8,12,16]) await b.releaseItem(id,true);
+  });
+  await enter(page,'student','grades');
+  for(const [code,score] of [['M1','0 / 10'],['Q1','0 / 3'],['PA','6 / 10'],['O4','3 / 5']]) {
+    await expect(page.locator(`[data-grade-code=${code}] .grade-score`)).toHaveText(score);
+    await expect(page.locator(`[data-grade-code=${code}] .grade-status`)).toHaveCount(0);
+  }
+  for(const code of ['Q2','Q3','Q4','Q5']) {
+    await expect(page.locator(`[data-grade-code=${code}] p`)).toHaveCount(0);
+  }
+  for(const code of ['M4','FP','O1']) await expect(page.locator(`[data-grade-code=${code}] .grade-status`)).toHaveText('Not submitted');
+});
+
+test('only the newest notice is open; earlier notices use one collapsed disclosure',async({page})=>{
+  await seed(page); await enter(page,'student');
+  const notices=page.locator('#week-announcements');
+  await expect(notices.locator('h3:visible')).toHaveText(['Class update']);
+  await expect(notices.locator('details')).toHaveCount(1);
+  await expect(notices.locator('details')).not.toHaveAttribute('open','');
+  await expect(notices.locator('summary')).toHaveText('Earlier notices (1)');
+  await notices.locator('summary').click();
+  await expect(notices.locator('h3:visible')).toHaveText(['Class update','Earlier notice']);
+  await page.evaluate(()=>{const k='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(k));d.announcements=d.announcements.filter(a=>a.id==='new');sessionStorage.setItem(k,JSON.stringify(d));});
+  await page.reload();await ready(page);await expect(notices.locator('details')).toHaveCount(0);
+  await page.evaluate(()=>{const k='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(k));d.announcements=[];sessionStorage.setItem(k,JSON.stringify(d));});
+  await page.reload();await ready(page);await expect(notices).toHaveCount(0);
+  await expect(page.locator('#materials-root')).not.toContainText('No announcements');
+});
+
+test('Files uploads use the category select, preserving titles and grouping by metadata',async({page})=>{
+  await enter(page,'instructor','files');
+  await expect(page.getByLabel('File category').locator('option')).toHaveText(['Lecture notes','In-class files']);
+  for(const [category,title] of [['notes','In-class: a note title'],['in_class','Class handout']]) {
+    await page.getByLabel('File category').selectOption(category);
+    await page.getByLabel('File title',{exact:true}).fill(title);
+    await page.getByLabel('Lecture PDF (maximum 20 MB)').setInputFiles(pdf('class.pdf'));
+    await page.getByRole('button',{name:'Upload PDF',exact:true}).click();
+    await expect(page.locator('[data-admin-status]')).toHaveText('PDF uploaded.');
+    await expect(page.getByRole('link',{name:title,exact:true})).toBeVisible();
+  }
+  await enter(page,'student','week-1');
+  await expect(page.locator('#lecture-notes a')).toHaveText(['In-class: a note title']);
+  await expect(page.locator('#in-class-files a')).toHaveText(['Class handout']);
+});
+
+for(const width of [1440,390,320]) test(`section labels and compact file/link controls at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});await seed(page);await enter(page,'student');
+  await expect(page.locator('.week-block h2')).toHaveText(['Announcements','Milestone','In-class files','Lecture notes','Readings']);
+  const styles=await page.locator('.week-block h2').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.fontSize,s.fontWeight,s.letterSpacing,s.textTransform,s.color];}));
+  expect(styles.every(s=>JSON.stringify(s)===JSON.stringify(styles[0]))).toBe(true);
+  expect(styles[0].slice(0,4)).toEqual(['11px','500','1.54px','uppercase']);
+  expect(await page.locator('#milestone-3 h3').evaluate(n=>getComputedStyle(n).fontSize)).toBe('15px');
+  await expect(page.getByLabel('Submission file')).toBeHidden();
+  const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Choose file',exact:true}).click();
+  const name='a-long-selected-name-that-must-not-push-submit-off-the-phone.pdf';await (await chooser).setFiles(pdf(name));
+  await expect(page.locator('[data-selected-file]')).toHaveText(name);
+  const geometry=async()=>page.locator('form.submission-box').evaluate(form=>{
+    const row=form.querySelector('.submission-row'),children=[...row.children].filter(n=>!n.hidden),status=form.querySelector('.submission-status'),hint=form.querySelector('.submission-hint');
+    const rect=n=>n.getBoundingClientRect();
+    return {border:getComputedStyle(form).borderWidth,centers:children.map(n=>rect(n).top+rect(n).height/2),rowBottom:rect(row).bottom,statusTop:rect(status).top,statusBottom:rect(status).bottom,hintTop:rect(hint).top,hintSize:getComputedStyle(hint).fontSize};
+  });
+  for(const slug of ['week-3','week-6']) {
+    if(slug==='week-6') {await page.goto('/materials/week-6/');await ready(page);}
+    const g=await geometry();expect(g.border).toBe('0px');expect(Math.max(...g.centers)-Math.min(...g.centers)).toBeLessThan(1);
+    expect(g.statusTop).toBeGreaterThanOrEqual(g.rowBottom);expect(g.hintTop).toBeGreaterThanOrEqual(g.statusBottom);expect(g.hintSize).toBe('12px');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }
+  await enter(page,'instructor');await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');
+  await expect(page.getByRole('button',{name:'Choose file',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Submit',exact:true})).toBeDisabled();
 });

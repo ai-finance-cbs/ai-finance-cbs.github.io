@@ -6,7 +6,7 @@ export function normalizeTerms(d) {
   const active=d.terms.find(t=>t.status==='active')?.id || 'spring-2027';
   for(const key of arrays) d[key]=(d[key] || []).map(row=>({term_id:active,...row}));
   d.items=d.items.map(i=>defaultSubmissionItem({...i,code:gradeCode(i)}));
-  d.files=d.files.map(f=>({released:true,release_at:null,...f}));
+  d.files=d.files.map(f=>({released:true,release_at:null,category:'notes',...f}));
   return d;
 }
 export function termData(d,a,term=a?.term_id) {

@@ -74,8 +74,11 @@ export function createDemo() {
     async removeAllowlist(email) { requireRole(true); if (email === OWNER) throw new Error('The instructor cannot be removed.'); const d = read(); d.allowlist = d.allowlist.filter(r => r.email !== email); save(d); },
     async saveAssignment(row) { requireRole(true); const d = read(); d.assignments = d.assignments.map(a => a.id === row.id ? row : a); save(d); },
     async uploadFile(file, fields) {
-      requireRole(true); const data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
-      const d = read(); const id = crypto.randomUUID(); d.files.push({ id, ...fields, storage_path: `${id}.pdf`, created_at: new Date().toISOString(), data }); save(d);
+      requireRole(true);
+      const category = fields.category ?? 'notes';
+      if (!['in_class', 'notes'].includes(category)) throw new Error('Choose In-class files or Lecture notes.');
+      const data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
+      const d = read(); const id = crypto.randomUUID(); d.files.push({ id, ...fields, category, storage_path: `${id}.pdf`, created_at: new Date().toISOString(), data }); save(d);
     },
     async setFileRelease(id, released, release_at = null) { requireRole(true); const d = read(); Object.assign(d.files.find(f => f.id === id), { released, release_at }); save(d); },
     async setFileVisibility(id, value) { requireRole(true); const d = read(); d.files = d.files.map(f => f.id === id ? { ...f, auditor_visible: value } : f); save(d); },

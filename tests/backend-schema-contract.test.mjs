@@ -64,9 +64,9 @@ test('review 12: legacy assignment and announcement edits use permitted columns 
   assert.deepEqual(await backend.announcements(),[]);
 });
 test('review 12: legacy file upload, visibility and release work under narrow column grants',async()=>{
-  await backend.uploadFile(new File(['%PDF-1.7\n%%EOF'],'notes.pdf',{type:'application/pdf'}),{week:0,title:'Prelude',auditor_visible:true,id:'ignored',term_id:'forged',created_at:'ignored'});
-  const file=(await backend.files())[0];assert.equal(file.term_id,TERM);assert.equal(file.week,0);
-  assert.deepEqual(Object.keys(mutations.at(-1).values).sort(),['week','title','auditor_visible','storage_path'].sort());
+  await backend.uploadFile(new File(['%PDF-1.7\n%%EOF'],'notes.pdf',{type:'application/pdf'}),{week:0,title:'Prelude',category:'in_class',auditor_visible:true,id:'ignored',term_id:'forged',created_at:'ignored'});
+  const file=(await backend.files())[0];assert.equal(file.term_id,TERM);assert.equal(file.week,0);assert.equal(file.category,'in_class');
+  assert.deepEqual(Object.keys(mutations.at(-1).values).sort(),['week','title','category','auditor_visible','storage_path'].sort());
   await backend.setFileVisibility(file.id,false);await backend.setFileRelease(file.id,false,'2099-01-01');
   const changed=(await backend.files())[0];assert.equal(changed.auditor_visible,false);assert.equal(changed.released,false);
 });

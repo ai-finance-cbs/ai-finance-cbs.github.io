@@ -314,14 +314,18 @@ function renderFileAdmin(files) {
   const weekLabel = el('label', 'Week', { for: 'upload-week' }); const week = el('select', null, { id: 'upload-week', name: 'week' }); WEEK_TITLES.forEach((title, i) => week.append(el('option', `Week ${i + 1}: ${title}`, { value: i + 1 })));
   weekLabel.className = 'tool-label'; weekLabel.append(week); form.append(weekLabel);
   const title = field(form, 'File title', 'title'); title.required = true; title.maxLength = 200;
+  const categoryLabel = el('label', 'File category', { for: 'upload-category', class: 'tool-label' });
+  const category = el('select', null, { id: 'upload-category', name: 'category' });
+  category.append(el('option', 'Lecture notes', { value: 'notes' }), el('option', 'In-class files', { value: 'in_class' }));
+  categoryLabel.append(category); form.append(categoryLabel);
   const file = field(form, 'Lecture PDF (maximum 20 MB)', 'pdf', '', 'file'); file.accept = '.pdf,application/pdf'; file.required = true;
   const visible = field(form, 'Visible to auditors', 'auditor_visible', false, 'checkbox');
   const upload = button('Upload PDF'); upload.type = 'submit'; const status = formStatus(form); form.append(upload);
   form.addEventListener('submit', e => { e.preventDefault(); runAction(upload, status, async () => {
     await validatePdf(file.files[0]); if (!title.value.trim()) throw new Error('Enter a file title.');
-    await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), auditor_visible: visible.checked });
+    await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), category: category.value, auditor_visible: visible.checked });
   }, 'PDF uploaded.', true); });
-  s.append(form); const { t, body } = table(['File', 'Week', 'Access', 'Actions']);
+  s.append(form); const { t, body } = table(['File', 'Week', 'Category', 'Access', 'Actions']);
   for (const row of files) {
     const tr = el('tr'), name = el('th', null, { scope: 'row' }), actions = el('td');
     name.append(fileLink(row));
@@ -330,7 +334,7 @@ function renderFileAdmin(files) {
     toggle.setAttribute('aria-label', toggle.textContent); toggle.textContent = row.auditor_visible ? 'Hide from auditors' : 'Share with auditors';
     remove.setAttribute('aria-label', remove.textContent); remove.textContent = 'Delete';
     actions.append(toggle, remove);
-    tr.append(name, el('td', row.week), el('td', row.auditor_visible ? 'Auditors included' : 'Class only'), actions);
+    tr.append(name, el('td', row.week), el('td', row.category === 'in_class' ? 'In-class files' : 'Lecture notes'), el('td', row.auditor_visible ? 'Auditors included' : 'Class only'), actions);
     body.append(tr);
   }
   if (files.length) s.append(wrapTable(t));

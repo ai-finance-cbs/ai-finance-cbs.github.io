@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–005 are applied live, as recorded in the review. Phase A migrations 006–008 remain local and unapplied.
+Migrations 001–008 are live, as confirmed by Simon before Phase B. Migration 009 remains local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -79,11 +79,11 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. A reviewer must coordinate migrations 006–008, both file functions, and browser publication in a later approved task.
+12. Phase A migrations and file functions are live. A later publication must apply migration 009 before the Phase B browser changes.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply migrations 001–008 in order after review.
+For a fresh database, apply migrations 001–009 in order after review.
 Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
 The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
@@ -171,7 +171,7 @@ The merged `77b18e5` header uses 148px on desktop and 136px on phones.
 Desktop title/menu/submenu start at 15/54/91px. Navigation scrolls internally when necessary.
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
-Migration 005 is already applied live. Migrations 006–008 remain local and unapplied.
+Migrations 001–008 are now live. Migration 009 remains local and unapplied.
 
 ## Phase A: terms, submissions, and group grades
 
@@ -262,3 +262,19 @@ Lecture uploads also send only editable metadata. IDs, term labels, creation dat
 Assignment, announcement, and file updates use the current term key. Global identity and allowlist tables remain global.
 The contract tests cover existing staff RPC names and arguments, column grants, release rules, and preview switching.
 The full browser suite continues to test existing pages with synthetic data.
+
+
+## Phase B review: explicit file categories
+
+Migration `009_file_category.sql` adds `lecture_files.category`: `in_class` or `notes`, defaulting to `notes`.
+It converts existing `In-class:` titles into the `in_class` category and removes the prefix.
+A prefix-only title becomes `Untitled file`, preserving the existing nonempty-title constraint.
+All existing file paths, release settings, term keys, and Auditor flags remain unchanged.
+
+The existing row-to-JSON projection includes the new column in student and preview snapshots automatically.
+The migration grants authenticated callers only category insertion and updates, subject to existing Instructor RLS and preview guards.
+There are no new functions or policies. Migrations 006–008 remain unchanged.
+The Files upload form now selects the category explicitly. Titles no longer control grouping.
+
+Apply 009 before publishing these browser changes in a later authorized release.
+This task creates and tests the migration locally only. It does not apply it to the hosted database.

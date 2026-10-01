@@ -815,14 +815,21 @@ body.class-tools .content { max-width:1180px; }
 /* Week pages use the existing course type and spacing, with one vertical reading order. */
 .class-tools .week-block { display:block; border-top:1px solid #ececec; padding:20px 0; }
 .class-tools .week-block:first-child { border-top:0; padding-top:0; }
-.week-block h2 { margin:0 0 12px; }
+.class-tools #materials-root .week-block h2 { font:500 11px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#737373; margin:0 0 12px; }
+.class-tools #materials-root .week-block h3 { font-size:15px; font-weight:500; margin:0 0 6px; }
 .week-block p { margin:8px 0; }
-.week-block .announcement + .announcement { margin-top:16px; }
+.earlier-notices { margin-top:12px; }
+.earlier-notices summary { cursor:pointer; color:#737373; }
+.earlier-notices .announcement { margin-top:12px; }
+.class-tools #materials-root .week-block .upcoming-readings li { font-size:15px; }
 .week-files { list-style:none; padding:0; margin:0; }
-.week-files li { margin:8px 0; overflow-wrap:anywhere; }
-.submission-box { border:1px solid #ececec; padding:16px; margin-top:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-.submission-box label, .submission-status { flex-basis:100%; }
-.submission-box input { min-width:0; max-width:100%; flex:1 1 220px; }
+.class-tools #materials-root .week-files li { font-size:15px; margin:8px 0; overflow-wrap:anywhere; }
+.submission-box { border:0; padding:0; margin-top:16px; }
+.submission-row { display:flex; align-items:center; gap:10px; min-width:0; }
+.submission-row .materials-button { flex-shrink:0; white-space:nowrap; }
+.selected-file-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.submission-row input[type=url] { flex:1; width:0; min-width:0; padding:5px 8px; font:inherit; border:1px solid #d8d8d8; }
+.class-tools #materials-root .submission-hint { color:#737373; font-size:12px; margin:4px 0 0; }
 .submission-status, .assignment-copy, .grade-comment { overflow-wrap:anywhere; white-space:pre-wrap; }
 .submission-mode { font-weight:600; }
 .text-action { background:none; border:0; padding:0; margin-left:16px; font:inherit; text-decoration:underline; color:var(--link, #1a1a1a); cursor:pointer; }

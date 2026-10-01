@@ -101,7 +101,7 @@ export async function createBackend(config) {
     async uploadFile(file, fields) {
       const path = `week-${fields.week}/${crypto.randomUUID()}.pdf`;
       checked(await client.storage.from('lecture-notes').upload(path, file, { contentType: 'application/pdf', cacheControl: '0', upsert: false }));
-      const result = await client.from('lecture_files').insert({ week:fields.week, title:fields.title, auditor_visible:fields.auditor_visible ?? false, ...(fields.released !== undefined ? {released:fields.released} : {}), ...(fields.release_at !== undefined ? {release_at:fields.release_at} : {}), storage_path: path });
+      const result = await client.from('lecture_files').insert({ week:fields.week, title:fields.title, category:fields.category ?? 'notes', auditor_visible:fields.auditor_visible ?? false, ...(fields.released !== undefined ? {released:fields.released} : {}), ...(fields.release_at !== undefined ? {release_at:fields.release_at} : {}), storage_path: path });
       if (result.error) {
         try { await fileAction({ action: 'cleanup', path }); }
         catch { throw new Error(`Upload metadata failed; remove orphan ${path} in Supabase Storage. ${result.error.message}`); }

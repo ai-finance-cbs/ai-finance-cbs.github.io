@@ -21,8 +21,7 @@ export function ownSubmission(data, item, uni) {
 }
 export const submissionStatus = submission => submission ? submission.late ? 'Late' : 'Submitted' : 'Not submitted';
 export const fileReleased = (file, now = Date.now()) => file.released || (file.release_at && Date.parse(file.release_at) <= now);
-// Existing posted PDFs are notes. The title prefix marks class handouts without a schema change.
-export const inClassFile = file => /^in-class\s*:/i.test(file.title);
+export const inClassFile = file => file.category === 'in_class';
 
 export function studentGradeRows(data) {
   // Public assessment names provide ordering, never scores or release state.

@@ -314,9 +314,11 @@ export function renderClassPage(ctx) {
     for (const item of studentGradeRows(data)) {
       const row = el('section', null, { class: 'student-grade', 'data-grade-code': item.code });
       row.append(el('h2', `${item.code} · ${item.title}`));
-      row.append(el('p', submissionStatus(item.submission), { class: 'grade-status' }));
-      if (item.released) {
-        row.append(el('p', item.grade?.score == null ? 'Not graded' : `${item.grade.score} / ${item.max_points}`, { class: 'grade-score' }));
+      const hasScore = item.grade?.score != null;
+      if (!hasScore && ['file', 'link'].includes(item.kind))
+        row.append(el('p', submissionStatus(item.submission), { class: 'grade-status' }));
+      if (hasScore) {
+        row.append(el('p', `${item.grade.score} / ${item.max_points}`, { class: 'grade-score' }));
         if (item.grade?.comment) row.append(el('p', item.grade.comment, { class: 'grade-comment' }));
       }
       list.append(row);

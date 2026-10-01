@@ -17,8 +17,9 @@ function milestone({ data, access, path, backend, refresh }, week) {
   const code = week === 6 ? 'FP' : `M${week}`;
   const item = data.submission_items.find(i => gradeCode(i) === code);
   const assignment = data.assignments.find(a => a.id === week);
-  const section = block(`${code} · ${assignment?.title || item?.title || 'Milestone'}`, week === 6 ? 'final-prototype' : `milestone-${week}`);
+  const section = block('Milestone', week === 6 ? 'final-prototype' : `milestone-${week}`);
   section.classList.add('assignment-section');
+  section.append(el('h3', `${code} · ${assignment?.title || item?.title || 'Milestone'}`));
   if (item?.due_at) section.append(el('p', `Due ${courseTime(item.due_at)}`, { class: 'upcoming-meta' }));
   else section.append(el('p', 'Due time to be announced.', { class: 'upcoming-meta' }));
   if (assignment) {
@@ -49,18 +50,33 @@ function milestone({ data, access, path, backend, refresh }, week) {
   }
   if (item.kind === 'none') return section;
   const form = el('form', null, { class: 'submission-box' });
+  const row = el('div', null, { class: 'submission-row' });
   const input = el('input', null, { id: `submission-${item.id}`, type: item.kind === 'link' ? 'url' : 'file', 'aria-label': item.kind === 'link' ? 'Prototype HTTPS link' : 'Submission file' });
-  if (item.kind === 'file') input.accept = '.pdf,.docx,.xlsx,.pptx,.zip';
-  const label = el('label', item.kind === 'link' ? 'Prototype HTTPS link' : 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB', { for: input.id });
   const save = el('button', submission ? 'Replace submission' : 'Submit', { type: 'submit', class: 'materials-button' });
+  let choose;
+  if (item.kind === 'file') {
+    input.accept = '.pdf,.docx,.xlsx,.pptx,.zip'; input.hidden = true;
+    choose = el('button', 'Choose file', { type: 'button', class: 'materials-button' });
+    choose.addEventListener('click', () => input.click());
+    const filename = el('span', 'No file selected', { class: 'selected-file-name', 'data-selected-file': '' });
+    input.addEventListener('change', () => { filename.textContent = input.files[0]?.name || 'No file selected'; });
+    row.append(choose, filename, input);
+  } else {
+    input.placeholder = 'https://';
+    row.append(input);
+  }
+  row.append(save);
   const writable = access.role === 'student' && canWrite(access);
-  input.disabled = save.disabled = !writable;
+  const disable = value => { for (const control of [input, choose, save]) if (control) control.disabled = value; };
+  disable(!writable);
   form.noValidate = true;
-  form.append(label, input, save, status);
+  const hint = el('p', item.kind === 'file' ? 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB' : 'Use an HTTPS video link.', { class: 'submission-hint', id: `submission-hint-${item.id}` });
+  input.setAttribute('aria-describedby', hint.id);
+  form.append(row, status, hint);
   let saving = false;
   form.addEventListener('submit', async event => {
     event.preventDefault(); if (!writable || saving) return;
-    saving = true; save.disabled = input.disabled = true; status.textContent = 'Submitting…';
+    saving = true; disable(true); status.textContent = 'Submitting…';
     try {
       if (item.kind === 'link') {
         const link = input.value.trim();
@@ -75,13 +91,13 @@ function milestone({ data, access, path, backend, refresh }, week) {
       status.textContent = error.message;
       // Another member or grader may have changed the owner while this page was open.
       if (/graded.*locked/i.test(error.message)) {
-        input.disabled = save.disabled = true;
+        disable(true);
         status.setAttribute('data-submission-locked', '');
         return;
       }
     } finally {
       saving = false;
-      if (!status.hasAttribute('data-submission-locked')) input.disabled = save.disabled = !writable;
+      if (!status.hasAttribute('data-submission-locked')) disable(!writable);
     }
   });
   section.append(form); return section;
@@ -90,15 +106,24 @@ export function renderWeek(ctx) {
   const { root, data, access, backend, refresh, fileLink } = ctx;
   const week = Number(root.dataset.week);
   if (week >= 1 && week <= 6) {
-    const announcements = block('Announcements', 'week-announcements');
-    if (!data.announcements.length) announcements.append(el('p', 'No announcements yet.', { class: 'upcoming-meta' }));
-    for (const row of [...data.announcements].sort((a, b) => b.created_at.localeCompare(a.created_at))) {
-      const article = el('article', null, { class: 'announcement' });
-      if (row.title) article.append(el('h3', row.title));
-      article.append(el('time', courseTime(row.created_at), { datetime: row.created_at, class: 'upcoming-meta' }), el('p', row.body, { class: 'announcement-body' }));
-      announcements.append(article);
+    const notices = [...data.announcements].sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id));
+    if (notices.length) {
+      const announcements = block('Announcements', 'week-announcements');
+      const notice = row => {
+        const article = el('article', null, { class: 'announcement' });
+        if (row.title) article.append(el('h3', row.title));
+        article.append(el('time', courseTime(row.created_at), { datetime: row.created_at, class: 'upcoming-meta' }), el('p', row.body, { class: 'announcement-body' }));
+        return article;
+      };
+      announcements.append(notice(notices[0]));
+      if (notices.length > 1) {
+        const earlier = el('details', null, { class: 'earlier-notices' });
+        earlier.append(el('summary', `Earlier notices (${notices.length - 1})`));
+        for (const row of notices.slice(1)) earlier.append(notice(row));
+        announcements.append(earlier);
+      }
+      root.append(announcements);
     }
-    root.append(announcements);
     const session = data.sessions.find(s => s.week === week);
     const when = session?.starts_at ? courseTime(session.starts_at) : classDate(session?.date);
     root.append(el('p', `Next class · Week ${week}${when ? ` · ${when}` : ' · Date to be announced'}${session?.room ? ` · ${session.room}` : ''}; the paper quiz covers the required readings.`, { class: 'next-class', 'data-next-class': '' }));
