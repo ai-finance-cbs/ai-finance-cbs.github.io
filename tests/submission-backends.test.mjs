@@ -182,3 +182,20 @@ test('a rejected XHR never calls finish and reports the original upload error',a
   const b=await createBackend({url:'https://db.example',key:'public'});
   await assert.rejects(b.submitFile(4,pdf()),/Storage permission denied/);assert.deepEqual(calls,[]);
 });
+
+test('demo group deletion follows the current uploader while teammates retain replacement access',async()=>{
+  const b=createDemo();await b.pickRole('instructor');await b.chooseGroup('demo-set','demo-group-1','ab1234');
+  await b.configureItem(2,{kind:'file',mode:'group',group_set_id:'demo-set',due_at:'2099-01-01'});
+  await b.pickRole('student');const original=await b.submitFile(2,pdf());
+  assert.equal((await b.classData()).submissions[0].is_uploader,true);
+  sessionStorage.setItem(USER,JSON.stringify({email:'cd5678@columbia.edu',uni:'cd5678'}));
+  const other=(await b.classData()).submissions[0];assert.equal(other.is_uploader,false);assert.equal(other.submitted_by,undefined);
+  await assert.rejects(b.deleteSubmission(original.submission.id),{message:'Only the member who uploaded this file can delete it. You can replace it.'});
+  await assert.rejects(b.chooseGroup('demo-set',null),/submitted work/);
+  await b.submitFile(2,pdf());assert.equal((await b.classData()).submissions[0].is_uploader,true);
+  await b.pickRole('student');assert.equal((await b.classData()).submissions[0].is_uploader,false);
+  await assert.rejects(b.deleteSubmission(original.submission.id),/Only the member who uploaded/);
+  sessionStorage.setItem(USER,JSON.stringify({email:'cd5678@columbia.edu',uni:'cd5678'}));
+  await b.deleteSubmission(original.submission.id);await b.chooseGroup('demo-set',null);
+  assert.equal((await b.classData()).submissions.length,0);
+});

@@ -18,6 +18,17 @@ test('restricted Markdown escapes HTML and unsafe links, with only the requested
   assert.ok([...html.matchAll(/<\/?([a-z0-9]+)/g)].every(m => ['h1','p','strong','em','ul','ol','li','a'].includes(m[1])));
   for (const payload of ['[bad](java\nscript:evil)','[bad](jav&#x61;script:evil)','[bad](https://test\"onmouseover=evil)','<svg/onload=evil>']) assert.doesNotMatch(prepMarkdown(payload),/<(?:svg|script)|href="(?:java|data)|onmouseover="/);
 });
+test('review payloads remain escaped as plain text inside paragraphs, bold text and headings', () => {
+  for (const payload of ['[x](javascript:alert(1))','[x](https://a"onmouseover=...)','<img src=x onerror=alert(1)>']) {
+    const escaped=payload.replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+    assert.equal(prepMarkdown(payload),`<p>${escaped}</p>`);
+    assert.equal(prepMarkdown(`**${payload}**`),`<p><strong>${escaped}</strong></p>`);
+    for (const level of [1,2,6]) {
+      assert.equal(prepMarkdown(`${'#'.repeat(level)} ${payload}`),`<h${level}>${escaped}</h${level}>`);
+      assert.equal(prepMarkdown(`${'#'.repeat(level)} **${payload}**`),`<h${level}><strong>${escaped}</strong></h${level}>`);
+    }
+  }
+});
 test('speaker ordering follows workflow status then name, and filtering searches all fields', () => {
   const rows = [{id:'3',name:'Z',status:'Confirmed',notes:'Banking'},{id:'2',name:'Z',status:'Idea'},{id:'1',name:'A',status:'Idea'},{id:'4',name:'B',status:'Contacted'},{id:'5',name:'C',status:'Declined'}];
   assert.deepEqual(sortedSpeakers(rows).map(r => r.id),['1','2','4','3','5']);

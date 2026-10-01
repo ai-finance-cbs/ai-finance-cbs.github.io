@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–011 are live. Main is now `9d127bb`; Phase D 012 and Phase E 013 remain local and unapplied.
+Migrations 001–011 are live. Main is now `9c47771`; migrations 012–014 remain local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -79,11 +79,11 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. Migrations 001–011 are live. A later authorized release must apply 012 before publishing the Preparation and Speakers pages.
+12. Migrations 001–011 are live. A later authorized release must apply 012–014 before publishing the Preparation and Speakers pages.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply migrations 001–013 in order after review.
+For a fresh database, apply migrations 001–014 in order after review.
 Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
 The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
@@ -171,7 +171,7 @@ The merged `77b18e5` header uses 148px on desktop and 136px on phones.
 Desktop title/menu/submenu start at 15/54/91px. Navigation scrolls internally when necessary.
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
-Migrations 001–011 are now live. Phase D migration 012 remains local and unapplied.
+Migrations 001–011 are now live. Migrations 012–014 remain local and unapplied.
 
 ## Phase A: terms, submissions, and group grades
 
@@ -355,7 +355,7 @@ No hosted changes occur during local tests. Test evidence belongs in `evidence/p
 ## Phase D: instructor Preparation and Speakers
 
 Migration `012_instructor_prep.sql` remains local. This phase never edits migrations 001–011.
-An authorized release must apply 012 before publishing these pages. No Edge Function change is needed.
+An authorized release must apply 012–014 before publishing these pages. No Edge Function change is needed.
 
 Preparation and Speakers follow Settings in the staff menu. Only Instructors can open them.
 Preview hides both tabs and denies their data. Graders, Students, Auditors, unlisted users, and anonymous users cannot read them.
@@ -377,7 +377,7 @@ Both tables are global. Opening, closing, or purging a term does not copy or rem
 Authenticated users receive only SELECT column grants, subject to instructor-only row policies.
 The policy helper checks `private.actor_role()='instructor'` and no active preview.
 Writes use `save_instructor_note`, `save_speaker`, and `delete_speaker`, each guarded by `require_instructor()`.
-Preview triggers provide a second write barrier. Audit triggers record the actor and before/after values.
+Preview triggers provide a second write barrier. Migration 014 removes audit copies of notes and speaker content.
 Timestamps and UUIDs remain server-owned. No browser role can write directly to either table.
 
 Local demo notes and three synthetic speakers are available only through the loopback demo.
@@ -389,7 +389,7 @@ Phase D screenshots and test logs belong in `evidence/phase-d/`.
 
 This branch includes main `4536849` and the unshipped Phase D work.
 Migration `013_delete_submission.sql` is new. Migrations 001–012 are unchanged in this phase.
-A later authorized release needs migrations 012–013, the updated `submission-file` function, and the browser assets.
+A later authorized release needs migrations 012–014, the updated `submission-file` function, and the browser assets.
 No database push or deployment occurred during this task.
 
 Week pages and Submit show a thin upload bar under the selected filename.
@@ -399,7 +399,9 @@ The file extension supplies the normalized MIME. The 25 MB limit and pending-pat
 The finish function still checks file contents and records Storage `created_at` before accepting the submission.
 Choose file and Submit remain disabled through upload and finish. An inline failure hides the bar and enables retry.
 
-**Delete submission** is available to the student owner or a current group member before the due time.
+**Delete submission** is available to the individual owner or current group uploader before the due time.
+For group work, the caller must still belong to the group and must have uploaded its current submission.
+Other members can replace it. Replacement transfers deletion rights to the new uploader.
 An unset due time permits deletion. Any grade, including zero, blocks deletion.
 Preview, archived terms, other students, Instructors, Graders, Auditors, and unlisted or anonymous callers cannot delete work.
 The control asks for inline confirmation and then returns the status to **Not submitted**.
@@ -444,5 +446,27 @@ An item filter does not change either course total. Missing grades remain ungrad
 CSV exports retain their existing complete gradebook format and recorded-score totals.
 
 Phase F continues on `phase-d-prep` after merging main `9d127bb`.
-The merge retains both main's week colors/readings and the Phase D/E instructor workspace styles.
+Round 1 merges main `9c47771`, removes per-week colors, and keeps main's neutral section boxes and the instructor workspace.
 Screenshots and verification logs belong in `evidence/phase-f/`.
+
+
+## Phase F review, round 1
+
+Migration `014_uploader_delete_and_prep_privacy.sql` is new. Migrations 001–013 remain unchanged.
+Group deletion compares the current row's `submitted_by` with the caller after acquiring the existing locks.
+If a teammate finishes a replacement first, the previous uploader's waiting deletion is rejected.
+The member who uploaded the current submission can delete it before the deadline while it remains ungraded.
+The same rule covers group files and links. Individual deletion rules are unchanged.
+The existing `choose_group` freeze applies while the submission row exists.
+Student snapshots add only an `is_uploader` boolean. They continue to omit uploader identity and membership snapshots.
+The week and Submit controls use that boolean. The database remains the authority for every deletion.
+
+Migration 014 also drops `change_audit` on `speakers` and `instructor_notes`.
+Their `preview_guard` triggers, role checks, RLS policies, and column grants remain unchanged.
+New inserts, edits, and deletes do not copy private content into `audit_log`.
+Submission and grade audit records remain enabled. This migration does not purge historical audit records.
+
+Tests check uploader replacement/deletion, group freezes, concurrent replacement, prep role denials, and absence of prep audit rows.
+Markdown tests cover JavaScript links, quoted event-handler URLs, and raw image payloads inside bold and headings.
+No parser change was needed; these payloads already render as escaped text.
+Review evidence belongs in `evidence/phase-f/review-1/`.

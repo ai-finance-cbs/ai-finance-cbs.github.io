@@ -102,7 +102,7 @@ test('real PostgreSQL early zero scores serialize against the first individual a
   }
 }));
 
-for(const first of ['delete','finish']) test(`real PostgreSQL ${first} wins concurrent group delete versus finish without reviving deleted work`,{timeout:30000},async()=>database(async({h,owner,a,b})=>{
+for(const first of ['delete','finish']) test(`real PostgreSQL ${first} wins concurrent group delete versus finish with the current uploader rechecked`,{timeout:30000},async()=>database(async({h,owner,a,b})=>{
   await h.as('teacher');const set=await h.rpc('create_group_set','Delete race',1,4,null),group=(await h.rpc('class_data')).groups.find(g=>g.set_id===set).id;
   await h.rpc('configure_grade_item',2,'file','group',set,null);
   for(const uni of ['aa1001','bb1002'])await h.rpc('choose_group',set,group,uni);
@@ -120,7 +120,11 @@ for(const first of ['delete','finish']) test(`real PostgreSQL ${first} wins conc
     await rpc(b,'finish_submission',pending.id,receipt);
     const competing=rpc(a,'delete_submission',saved.submission.id).then(value=>({value}),error=>({error}));
     await wait();await b.query('commit');
-    const result=await competing;assert.equal(result.error,undefined);assert.deepEqual(result.value,[pending.storage_path]);
+    const result=await competing;assert.equal(result.error?.message,'Only the member who uploaded this file can delete it. You can replace it.');
+    const current=(await owner.query('select * from submissions')).rows;
+    assert.equal(current.length,1);assert.equal(current[0].submitted_by,'bb1002');assert.equal(current[0].storage_path,pending.storage_path);
+    assert.equal((await owner.query("select * from audit_log where table_name='submissions' and operation='DELETE'")).rows.length,0);
+    assert.deepEqual(await rpc(b,'delete_submission',saved.submission.id),[pending.storage_path]);
   }
   assert.equal((await owner.query('select * from submissions')).rows.length,0);
   assert.equal((await owner.query('select * from pending_uploads')).rows.length,0);

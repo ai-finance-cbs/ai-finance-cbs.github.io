@@ -36,7 +36,15 @@ for (const who of ['grader','a','auditor','outside','anon','preview']) test(`${w
   }
   for (const [rpc, args] of [['save_instructor_note',[1,'Forbidden']], ['save_speaker',values()], ['save_speaker',values({id:speaker.id})], ['delete_speaker',[speaker.id]]])
     await assert.rejects(h.rpc(rpc, ...args), /Instructor|read-only|permission denied/);
+  // A known key must not expose content through a filtered read either.
+  if (who === 'grader' || who === 'preview') {
+    assert.deepEqual(await h.rows('select week,body from instructor_notes where week=1'), []);
+    assert.deepEqual(await h.rows('select id,name,contact,notes from speakers where id=$1',[speaker.id]), []);
+  }
   if (who === 'preview') await h.rpc('set_student_preview', null);
+  await h.as('teacher');
+  assert.equal((await h.rows('select body from instructor_notes where week=1'))[0].body, 'Private preparation canary e4c159');
+  assert.equal((await h.rows('select name from speakers where id=$1',[speaker.id]))[0].name, 'Updated guest');
 });
 
 test('database enforces note/week bounds and every speaker field limit', async () => {
@@ -54,23 +62,24 @@ test('database enforces note/week bounds and every speaker field limit', async (
   for (const rpc of ['save_speaker','delete_speaker']) await assert.rejects(h.rpc(rpc, ...(rpc === 'delete_speaker' ? ['00000000-0000-0000-0000-000000000099'] : values({id:'00000000-0000-0000-0000-000000000099'}))), /not found/);
 });
 
-test('audit captures insert, update and delete with actor and before/after values', async () => {
+test('prep inserts, edits and deletes do not copy notes, contacts or speaker content to audit_log', async () => {
   await h.as('teacher');
-  const logs = await h.rows("select * from audit_log where table_name in ('instructor_notes','speakers') order by changed_at,id");
-  for (const [table, operations] of [['instructor_notes',['INSERT','UPDATE']], ['speakers',['INSERT','UPDATE','DELETE']]])
-    for (const operation of operations) assert.ok(logs.some(l => l.table_name === table && l.operation === operation && l.actor_email === 'oh@gsb.columbia.edu'));
-  const update = logs.find(l => l.table_name === 'instructor_notes' && l.operation === 'UPDATE');
-  assert.equal(update.old_row.body, 'Before'); assert.equal(update.new_row.body, 'After');
+  await h.rpc('save_instructor_note',3,'No audit copy'); await h.rpc('save_instructor_note',3,'No edited audit copy');
+  const row = await h.rpc('save_speaker',...values({name:'Unaudited guest'}));
+  await h.rpc('save_speaker',...values({id:row.id,notes:'Unaudited edit'})); await h.rpc('delete_speaker',row.id);
+  await h.as('owner'); await h.rows('delete from instructor_notes where week=3');
+  const logs = await h.rows("select * from audit_log where table_name in ('instructor_notes','speakers')");
+  assert.deepEqual(logs,[]);
 });
 
-test('both tables use SELECT column grants only, instructor RLS, and preview/audit triggers', async () => {
+test('both tables keep SELECT column grants, instructor RLS and preview_guard without audit triggers', async () => {
   await h.as('owner');
   for (const table of ['instructor_notes','speakers']) {
     for (const role of ['anon','authenticated']) for (const privilege of ['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'])
       assert.equal((await h.rows('select has_table_privilege($1,$2,$3) allowed',[role,table,privilege]))[0].allowed,false,`${role} ${table} ${privilege}`);
     assert.equal((await h.rows("select has_any_column_privilege('authenticated',$1,'SELECT') allowed",[table]))[0].allowed,true);
     const triggers = await h.rows('select tgname from pg_trigger where tgrelid=$1::regclass and not tgisinternal',[table]);
-    assert.deepEqual(triggers.map(t => t.tgname).sort(), ['change_audit','preview_guard']);
+    assert.deepEqual(triggers.map(t => t.tgname).sort(), ['preview_guard']);
     const policy = (await h.rows('select qual from pg_policies where tablename=$1',[table]))[0].qual;
     assert.match(policy,/instructor_workspace/);
   }

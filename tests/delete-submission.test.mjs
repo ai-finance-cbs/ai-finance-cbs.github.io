@@ -54,17 +54,37 @@ test('unset due time permits deleting both current and retained on-time objects;
   await h.rpc('delete_submission',fresh.s.id);
 });
 
-test('a current teammate may delete a group link; a removed member or other group may not', async () => {
-  await h.as('teacher'); const set=await h.rpc('create_group_set','Deletion group',2,4,null), groups=(await h.rpc('class_data')).groups.filter(g=>g.set_id===set);
-  await h.rpc('configure_grade_item',6,'link','group',set,null);
+for (const kind of ['file','link']) test(`only the current group ${kind} uploader can delete; teammates can replace and membership stays frozen`, async () => {
+  const item=kind==='file'?2:6;
+  await h.as('teacher'); const set=await h.rpc('create_group_set',`Uploader ${kind}`,2,4,null), groups=(await h.rpc('class_data')).groups.filter(g=>g.set_id===set);
+  await h.rpc('configure_grade_item',item,kind,'group',set,'2099-01-01');
   for (const uni of ['aa1001','bb1002']) await h.rpc('choose_group',set,groups[0].id,uni);
   await h.rpc('choose_group',set,groups[1].id,'cc1003');
-  await h.as('a'); const {submission:s}=await h.rpc('submit_link',6,'https://example.test/video');
-  await h.as('c'); await assert.rejects(h.rpc('delete_submission',s.id),/access required/);
-  await h.as('teacher'); await h.rpc('choose_group',set,groups[1].id,'aa1001');
-  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/access required/);
-  await h.as('b'); assert.deepEqual(await h.rpc('delete_submission',s.id),[]);
-  assert.equal((await h.rpc('class_data')).submissions.length,0);
+  const save=async who=>{await h.as(who);return kind==='file'?(await submit(who,item)).s:(await h.rpc('submit_link',item,`https://example.test/${who}`)).submission;};
+  const original=await save('a');
+  let snapshot=(await h.rpc('class_data')).submissions.find(s=>s.id===original.id);
+  assert.equal(snapshot.is_uploader,true);assert.equal(snapshot.submitted_by,undefined);assert.equal(snapshot.member_unis,undefined);
+  const denial='Only the member who uploaded this file can delete it. You can replace it.';
+  await h.as('b');assert.equal((await h.rpc('class_data')).submissions.find(s=>s.id===original.id).is_uploader,false);
+  await assert.rejects(h.rpc('delete_submission',original.id),{message:denial});
+  for (const who of ['a','b']) {
+    await h.as(who);
+    await assert.rejects(h.rpc('choose_group',set,null),/submitted work cannot be joined or left/);
+    await assert.rejects(h.rpc('choose_group',set,groups[1].id),/submitted work cannot be joined or left/);
+  }
+  await h.as('c');await assert.rejects(h.rpc('delete_submission',original.id),/access required/);
+  await assert.rejects(h.rpc('choose_group',set,groups[0].id),/submitted work cannot be joined or left/);
+  const replacement=await save('b');assert.equal(replacement.id,original.id);
+  snapshot=(await h.rpc('class_data')).submissions.find(s=>s.id===original.id);assert.equal(snapshot.is_uploader,true);
+  await h.as('a');assert.equal((await h.rpc('class_data')).submissions.find(s=>s.id===original.id).is_uploader,false);
+  await assert.rejects(h.rpc('delete_submission',original.id),{message:denial});
+  // Uploader status cannot bypass the current-membership check.
+  await h.as('teacher');await h.rpc('choose_group',set,groups[1].id,'bb1002');
+  await h.as('b');await assert.rejects(h.rpc('delete_submission',original.id),/access required/);
+  await h.as('teacher');await h.rpc('choose_group',set,groups[0].id,'bb1002');
+  await h.as('b');assert.deepEqual(await h.rpc('delete_submission',original.id),kind==='file'?[replacement.storage_path]:[]);
+  await h.rpc('choose_group',set,groups[1].id);
+  assert.equal((await h.rpc('class_data')).submissions.some(s=>s.id===original.id),false);
 });
 
 test('file service deletion removes actual current and retained objects selected by SQL, never browser paths', async () => {

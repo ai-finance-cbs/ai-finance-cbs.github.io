@@ -52,7 +52,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       announcements: d.announcements,
       submission_items: a.role === 'auditor' ? [] : a.role === 'student' ? studentSubmissionItems(d,a.uni) : d.items,
       submissions: a.role === 'auditor' ? [] : d.submissions.filter(s => admin || a.role === 'grader' || s.owner_uni === a.uni || d.members.some(m => m.group_id === s.group_id && m.uni === a.uni)).map(s => ({
-        ...(a.role === 'student' ? safeSubmission(s) : s), status:s.late ? 'Late' : 'Submitted', locked:demoSubmissionLocked(d,s.item_id,s.owner_uni,s.group_id),
+        ...(a.role === 'student' ? {...safeSubmission(s),is_uploader:s.submitted_by===a.uni} : s), status:s.late ? 'Late' : 'Submitted', locked:demoSubmissionLocked(d,s.item_id,s.owner_uni,s.group_id),
         membership_changed: a.role !== 'student' && !!s.group_id && JSON.stringify(s.member_unis) !== JSON.stringify(d.members.filter(m => m.group_id === s.group_id).map(m => m.uni).sort()),
       })),
     };

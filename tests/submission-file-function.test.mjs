@@ -149,11 +149,11 @@ test('delete uses the caller RPC and only its returned object paths; links need 
   assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[PATH,'server-on-time.pdf']}]);
   const link=setup({deletePaths:[]});assert.equal((await link.run({action:'delete',id:ID})).status,200);assert.ok(!link.calls.includes('service-client'));
 });
-test('delete denies wrong roles, preview, archived, late, graded, and non-members before privileged removal',async()=>{
+test('delete denies wrong roles, preview, archived, late, graded, non-members and other uploaders before privileged removal',async()=>{
   for(const access of [...['instructor','grader','auditor','unlisted'].map(role=>({role})),{role:'student',view_as:{uni:'aa1001'}},{role:'student',read_only:true}]) {
     const x=setup({access});assert.equal((await x.run({action:'delete',id:ID})).status,403);assert.ok(!x.calls.includes('service-client'));
   }
-  for(const deleteError of ['The deadline has passed.','Graded, locked.','Submission access required.','Submission unavailable.']) {
+  for(const deleteError of ['The deadline has passed.','Graded, locked.','Submission access required.','Submission unavailable.','Only the member who uploaded this file can delete it. You can replace it.']) {
     const x=setup({deleteError}),res=await x.run({action:'delete',id:ID});assert.equal(res.status,409);assert.equal((await res.json()).error,deleteError);assert.ok(!x.calls.includes('service-client'));
   }
   const invalid=setup({invalid:true});assert.equal((await invalid.run({action:'delete',id:ID})).status,401);

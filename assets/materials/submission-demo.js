@@ -107,6 +107,7 @@ export function extendSubmissions({read,save,access,allTerms}) {
       if(!s)throw new Error('Submission unavailable.');
       const i=d.items.find(i=>i.id===s.item_id),o=target(d,s.item_id,i?.kind);
       if(s.owner_uni!==o.owner || s.group_id!==o.group)throw new Error('Submission access required.');
+      if(s.group_id && s.submitted_by!==access().uni)throw new Error('Only the member who uploaded this file can delete it. You can replace it.');
       if(i.due_at && Date.now()>=new Date(i.due_at).getTime())throw new Error('The deadline has passed. This submission cannot be deleted.');
       d.submissions=d.submissions.filter(row=>row.id!==id);
       d.pending_uploads=d.pending_uploads.filter(p=>p.item_id!==s.item_id || (s.group_id ? p.group_id!==s.group_id : p.owner_uni!==s.owner_uni));

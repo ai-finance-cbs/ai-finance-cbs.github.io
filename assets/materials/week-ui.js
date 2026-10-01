@@ -95,7 +95,7 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   input.setAttribute('aria-describedby', compact ? 'submit-format-hint' : hint.id);
   if (compact) form.append(row); else form.append(row, stateLine, hint);
   let saving = false;
-  if (submission && writable && (!item.due_at || Date.now() < new Date(item.due_at).getTime())) {
+  if (submission && writable && (!submission.group_id || submission.is_uploader) && (!item.due_at || Date.now() < new Date(item.due_at).getTime())) {
     const actions = el('span', null, { class:'submission-delete' });
     remove = el('button', 'Delete submission', { type:'button', class:'text-action' });
     remove.addEventListener('click', () => {
