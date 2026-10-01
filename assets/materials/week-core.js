@@ -4,9 +4,9 @@ import { GRADE_ITEMS, gradeCode } from './class-core.js';
 export function currentWeek(sessions, now = Date.now()) {
   const dated = sessions.filter(s => s.week >= 1 && s.week <= 6 && Number.isFinite(Date.parse(s.ends_at)));
   if (!dated.length) return 1;
-  return dated.filter(s => Date.parse(s.ends_at) > Number(now)).sort((a, b) => a.week - b.week)[0]?.week ?? 7;
+  return dated.filter(s => Date.parse(s.ends_at) > Number(now)).sort((a, b) => a.week - b.week)[0]?.week ?? 6;
 }
-export const weekSlug = week => week === 0 ? 'prelude' : week === 7 ? 'coda' : `week-${week}`;
+export const weekSlug = week => `week-${Math.min(Math.max(week, 1), 6)}`;
 export function courseTime(value) {
   if (!value) return '';
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(value));

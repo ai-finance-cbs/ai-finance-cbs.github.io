@@ -29,7 +29,7 @@ async function seed(page, joined=true) {
   },joined);
 }
 
-test('signed-in Home and Materials land on the first unfinished class, then Coda; signed-out Home stays public', async ({page}) => {
+test('signed-in Home and Materials land on the first unfinished class, then Week 6; signed-out Home stays public', async ({page}) => {
   await page.goto('/'); await ready(page); await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading',{level:1})).not.toHaveText('AI Economics');
   await enter(page,'student',''); await expect(page).toHaveURL(/materials\/week-1\/$/);
@@ -37,8 +37,7 @@ test('signed-in Home and Materials land on the first unfinished class, then Coda
   await page.clock.setFixedTime(new Date('2027-01-26T17:00:00Z'));
   await page.goto('/materials/'); await ready(page); await expect(page).toHaveURL(/materials\/week-4\/$/);
   await page.clock.setFixedTime(new Date('2027-03-01T12:00:00Z'));
-  await page.goto('/'); await ready(page); await expect(page).toHaveURL(/materials\/coda\/$/);
-  await expect(page.locator('#week-announcements, .assignment-section, [data-reading-block], [data-next-class]')).toHaveCount(0);
+  await page.goto('/'); await ready(page); await expect(page).toHaveURL(/materials\/week-6\/$/);
 });
 
 test('all old URLs redirect, retaining assignment anchors, notes, and query parameters', async ({page}) => {
@@ -68,7 +67,6 @@ test('no-group message, early grade lock, empty notes, and Auditor denial match 
     await expect(page.locator('#materials-root')).toContainText('does not have access');
     await expect(page.locator('.student-grade, .student-attendance-grid')).toHaveCount(0);
   }
-  await enter(page,'student','prelude'); await expect(page.locator('#materials-root > section')).toHaveCount(2);
 });
 
 test('file errors use one inline status; upload, late replace, and graded lock use backend state', async ({page}) => {

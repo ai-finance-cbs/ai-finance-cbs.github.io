@@ -21,7 +21,7 @@ test('private assignment descriptions never enter generated HTML or JS', context
   }
 });
 test('material page source contains gates and no real assignment content', () => {
-  for (const page of ['prelude', 'week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'coda', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
+  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
     const html = readFileSync(new URL(`materials/${page}/index.html`, output), 'utf8');
     assert.match(html, /Sign in to see course materials/);
     assert.doesNotMatch(html, /<section class="assignment-section"/);

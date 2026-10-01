@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const pages = ['/', '/syllabus/', ...Array.from({length:6},(_,i)=>`/syllabus/week-${i+1}/`), '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/materials/',
-  ...['prelude', 'week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'coda', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
+  ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 

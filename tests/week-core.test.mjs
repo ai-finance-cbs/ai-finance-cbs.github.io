@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { currentWeek, weekSlug, courseTime, ownGroup, ownSubmission, studentGradeRows, inClassFile } from '../assets/materials/week-core.js';
-test('landing switches at the exact class end, falls back to week 1, and ends at Coda', () => {
+test('landing switches at the exact class end, falls back to week 1, and stays on Week 6 after the last class', () => {
   const sessions = [1,2,3,4,5,6].map(week=>({week,ends_at:`2027-01-${String(week+10).padStart(2,'0')}T18:00:00Z`}));
   assert.equal(currentWeek([],Date.now()),1);
   assert.equal(currentWeek([{week:1,date:'2027-01-01'}]),1);
   assert.equal(currentWeek(sessions,Date.parse('2027-01-12T17:59:59Z')),2);
   assert.equal(currentWeek(sessions,Date.parse('2027-01-12T18:00:00Z')),3);
-  assert.equal(currentWeek(sessions,Date.parse('2027-01-16T18:00:00Z')),7);
-  assert.equal(weekSlug(7),'coda'); assert.equal(weekSlug(0),'prelude');
+  assert.equal(currentWeek(sessions,Date.parse('2027-01-16T18:00:00Z')),6);
+  assert.equal(weekSlug(7),'week-6'); assert.equal(weekSlug(0),'week-1');
   assert.equal(weekSlug(3),'week-3');
 });
 test('due timestamps display New York time across daylight saving dates', () => {
