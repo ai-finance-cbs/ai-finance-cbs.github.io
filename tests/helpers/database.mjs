@@ -1,4 +1,4 @@
-export const bootstrapSQL = `create role anon nologin; create role authenticated nologin; create schema auth; create schema storage;
+export const bootstrapSQL = `create role service_role nologin bypassrls; create role anon nologin; create role authenticated nologin; create schema auth; create schema storage;
  create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_app_meta_data jsonb);
  create table auth.identities(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id),provider text not null,identity_data jsonb not null);
  create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
@@ -18,6 +18,9 @@ export const migrationFiles = [
   '003_class_tools.sql',
   '004_security_hardening.sql',
   '005_announcements.sql',
+  '006_terms_and_release.sql',
+  '007_submissions.sql',
+  '008_grading.sql',
 ];
 export async function seedGoogleIdentity(db, userId, email) {
   await db.query(

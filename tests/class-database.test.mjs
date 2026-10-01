@@ -81,7 +81,7 @@ test('migration preserves legacy roles/visibility and seeds six sessions and six
     100,
   );
 });
-test('students read only own attendance and released grades; auditors get no class data', async () => {
+test('students read only own attendance and released grades; auditors get only course material data', async () => {
   await as('teacher');
   await rpc(
     'save_attendance',
@@ -121,7 +121,8 @@ test('students read only own attendance and released grades; auditors get no cla
   );
   for (const who of ['auditor', 'unlisted']) {
     await as(who);
-    await assert.rejects(rpc('class_data'), /Class access/);
+    if (who === 'unlisted') await assert.rejects(rpc('class_data'), /Class access/);
+    else { const d = await rpc('class_data'); for (const key of ['attendance','grades','items','sets','groups','members','submissions','submission_items']) assert.deepEqual(d[key], []); }
     for (const t of [
       'attendance',
       'grades',
@@ -229,7 +230,7 @@ test('grader quiz entry, including zero, records attendance and preserves manual
   await as('grader');
   const d = await rpc('class_data');
   assert.ok(d.roster.every((r) => Object.keys(r).sort().join(',') === 'name,uni'));
-  assert.equal(d.groups, undefined);
+  assert.ok(Array.isArray(d.groups)); assert.ok(Array.isArray(d.sets)); assert.ok(Array.isArray(d.members));
   await rpc('save_grades', '[{"uni":"ab1234","item_id":8,"score":0}]');
   let a = (await rows("select * from attendance where uni='ab1234' and week=2"))[0];
   assert.equal(a.status, 'excused');
@@ -312,9 +313,22 @@ const tables = [
   'grades',
   'audit_log',
   'announcements',
+  'terms',
+  'submissions',
+  'pending_uploads',
 ];
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
+const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates'];
 const fnCases = {
+  set_session_times: [1, null, null],
+  begin_submission: [1, 'work.pdf', 10, 'application/pdf'],
+  finish_submission: ['00000000-0000-0000-0000-000000000099', null],
+  submit_link: [6, 'https://example.test/video'],
+  configure_grade_item: [1, 'file', 'individual', null, null],
+  confirm_submission_upload: ['00000000-0000-0000-0000-000000000099', 10, 'application/pdf'],
+  reject_submission_upload: ['00000000-0000-0000-0000-000000000099'],
+  submission_sweep_candidates: [],
+  grade_group: [2, '00000000-0000-0000-0000-000000000099', 8, 'Comment'],
   get_access: [],
   replace_roster: ['[{"uni":"ab1234"}]'],
   set_student_preview: ['ab1234'],
@@ -394,8 +408,10 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       if (who === 'anon') {
         await assert.rejects(rows('select * from ' + t), /permission denied/);
       } else {
-        const visible = await rows('select * from ' + t);
-        if (t === 'profiles') assert.ok(visible.every((r) => r.id === id(who)));
+        const visible = await rows('select ' + (['submissions','pending_uploads'].includes(t) ? 'id' : '*') + ' from ' + t);
+        if (t === 'terms') assert.equal(visible.length, who === 'unlisted' ? 0 : 1);
+        else if (t === 'pending_uploads' || t === 'submissions') assert.equal(visible.length, 0);
+        else if (t === 'profiles') assert.ok(visible.every((r) => r.id === id(who)));
         else if (['assignments', 'lecture_files'].includes(t)) {
           assert.equal(visible.length, who === 'unlisted' ? 0 : who === 'auditor' ? 1 : 2);
           if (who === 'auditor') assert.ok(visible.every((r) => r.auditor_visible));
@@ -421,7 +437,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       );
       for (const sql of [
         `delete from ${t} returning *`,
-        `update ${t} set ${t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : t === 'grades' ? 'score=score' : 'actor_email=actor_email'} returning *`,
+        `update ${t} set ${['submissions','pending_uploads','terms'].includes(t) ? 'id=id' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : t === 'grades' ? 'score=score' : 'actor_email=actor_email'} returning *`,
       ]) {
         try {
           assert.equal((await rows(sql)).length, 0, `${who}: ${sql}`);
@@ -470,11 +486,15 @@ test('each role calls each public function, including guessed identities and gra
         ? []
         : [
             'get_access',
-            ...(['a', 'grader'].includes(who) ? ['class_data'] : []),
+            ...(['a', 'grader','auditor'].includes(who) ? ['class_data'] : []),
+            ...(who === 'a' ? ['begin_submission'] : []),
             ...(who === 'grader' ? ['save_grades', 'save_attendance'] : []),
           ];
     for (const [fn, args] of Object.entries(fnCases)) {
-      if (allowed.includes(fn)) await rpc(fn, ...args);
+      if (who === 'a' && fn === 'finish_submission') await assert.rejects(rpc(fn,...args), /Pending upload not found/);
+      else if (who === 'a' && fn === 'submit_link') await assert.rejects(rpc(fn,...args), /Join a group first/);
+      else if (who === 'grader' && fn === 'grade_group') await assert.rejects(rpc(fn,...args), /Group does not belong/);
+      else if (allowed.includes(fn)) await rpc(fn, ...args);
       else
         await assert.rejects(
           rpc(fn, ...args),
@@ -489,7 +509,7 @@ test('preview rejects all write RPCs and direct old-table writes; auditors are e
   await rpc('set_student_preview', 'ab1234');
   for (const [fn, args] of Object.entries(fnCases))
     if (!['get_access', 'set_student_preview', 'view_as_student', 'class_data'].includes(fn))
-      await assert.rejects(rpc(fn, ...args), /read-only|Instructor/);
+      await assert.rejects(rpc(fn, ...args), serviceFunctions.includes(fn) ? /permission denied/ : /read-only|Instructor/);
   for (const table of ['allowlist', 'assignments', 'lecture_files'])
     assert.equal((await rows(`delete from ${table} returning *`)).length, 0);
   await assert.rejects(

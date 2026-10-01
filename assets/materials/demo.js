@@ -1,4 +1,5 @@
 import { announcementText } from './upcoming-core.js';
+import { extendSubmissions, termData, mergeTerm, normalizeTerms } from './submission-demo.js';
 import { classSeed, extendDemo } from './class-demo.js';
 import { OWNER, extractUni, fakeAuthAllowed, resolveRole } from './core.js';
 const KEY = 'b8403-demo-state-v3';
@@ -15,25 +16,32 @@ function seed() {
 }
 export function createDemo() {
   if (!fakeAuthAllowed(window.location)) throw new Error('Local demo is available only on http://127.0.0.1.');
-  const read = () => JSON.parse(sessionStorage.getItem(KEY) || 'null') || seed();
-  const save = data => sessionStorage.setItem(KEY, JSON.stringify(data));
+  const readAll = () => normalizeTerms(JSON.parse(sessionStorage.getItem(KEY) || 'null') || seed());
+  const saveAll = data => sessionStorage.setItem(KEY, JSON.stringify(data));
   const user = () => JSON.parse(sessionStorage.getItem(SESSION) || 'null');
   const access = () => {
     const u = user(); if (!u) return null;
-    const data = read(); const linkedUni = data.student_accounts.find(a => a.email === u.email)?.uni;
-    const actor_role = data.test_accounts.find(t => t.email === u.email)?.role || resolveRole(u.email, linkedUni || (u.email.endsWith('@columbia.edu') ? u.uni : null), data.roster, data.allowlist);
+    const data = readAll(); const linkedUni = data.student_accounts.find(a => a.email === u.email)?.uni;
+    const actor_role = data.test_accounts.find(t => t.email === u.email)?.role || resolveRole(u.email, linkedUni || (u.email.endsWith('@columbia.edu') ? u.uni : null), data.roster.filter(r => data.terms.some(t => t.id === r.term_id && t.status !== 'closed')), data.allowlist);
     const preview = actor_role === 'instructor' && u.preview_uni ? { uni: u.preview_uni, name: data.roster.find(r => r.uni === u.preview_uni)?.name || `Test student ${u.preview_uni}` } : null;
     const role = preview ? 'student' : actor_role;
-    return { email: u.email, uni: preview?.uni || linkedUni || u.uni, role, actor_role, view_as: preview };
+    const active = data.terms.find(t => t.status === 'active');
+    const uni = linkedUni || u.uni;
+    const own = data.terms.filter(t => t.status !== 'closed' && data.roster.some(r => r.term_id === t.id && r.uni === uni));
+    const term_id = preview ? u.preview_term || active?.id : role !== 'student' || data.test_accounts.some(t => t.email === u.email) ? active?.id : own.find(t => t.status === 'active')?.id || own.at(-1)?.id;
+    return { email: u.email, uni: preview?.uni || uni, role, actor_role, view_as: preview, term_id, read_only: !!preview || data.terms.find(t => t.id === term_id)?.status !== 'active' };
   };
+  const read = term => termData(readAll(), access(), term);
+  const save = data => saveAll(mergeTerm(readAll(), data, access().term_id));
   const requireRole = (admin = false) => {
     const a = access();
     if (!a || a.role === 'unlisted' || (admin && a.role !== 'instructor')) throw new Error('You do not have access to this material.');
     return a;
   };
-  const visible = row => { const a = requireRole(); return a.role !== 'auditor' || row.auditor_visible; };
+  const visible = row => { const a = requireRole(); return (a.role !== 'auditor' || row.auditor_visible) && (!('storage_path' in row) || ['instructor','grader'].includes(a.role) || row.released || (row.release_at && new Date(row.release_at).getTime() <= Date.now())); };
   return {
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
+    ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
     demo: true,
     async sessions() { requireRole(); return read().sessions; },
     async announcements() { requireRole(); return (read().announcements || []).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)); },
@@ -69,6 +77,7 @@ export function createDemo() {
       requireRole(true); const data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
       const d = read(); const id = crypto.randomUUID(); d.files.push({ id, ...fields, storage_path: `${id}.pdf`, created_at: new Date().toISOString(), data }); save(d);
     },
+    async setFileRelease(id, released, release_at = null) { requireRole(true); const d = read(); Object.assign(d.files.find(f => f.id === id), { released, release_at }); save(d); },
     async setFileVisibility(id, value) { requireRole(true); const d = read(); d.files = d.files.map(f => f.id === id ? { ...f, auditor_visible: value } : f); save(d); },
     async deleteFile(id) { requireRole(true); const d = read(); d.files = d.files.filter(f => f.id !== id); save(d); },
     async fileUrl(id) { const file = read().files.find(f => f.id === id); if (!file || !visible(file)) throw new Error('File unavailable.'); const blob = await (await fetch(file.data)).blob(); const url = URL.createObjectURL(blob); setTimeout(() => URL.revokeObjectURL(url), 300000); return url; },

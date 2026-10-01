@@ -1,3 +1,4 @@
+import { checkSubmissionFile } from './submission-core.js';
 import { isColumbiaEmail } from './core.js';
 async function loadClient() {
   if (window.supabase) return window.supabase;
@@ -13,8 +14,8 @@ function checked(result) { if (result.error) throw result.error; return result.d
 export async function createBackend(config) {
   const { createClient } = await loadClient();
   const client = createClient(config.url, config.key, { auth: { flowType: 'pkce', detectSessionInUrl: true } });
-  async function fileAction(body) {
-    const { data, error } = await client.functions.invoke('lecture-file', { body });
+  async function fileAction(body, service = 'lecture-file') {
+    const { data, error } = await client.functions.invoke(service, { body });
     if (error) {
       let detail;
       try { detail = await error.context?.json(); } catch { /* A failed gateway may not return JSON. */ }
@@ -24,22 +25,41 @@ export async function createBackend(config) {
   }
   let access = null;
   const rpc = async (name, args = {}) => checked(await client.rpc(name, args));
-  const classData = () => access?.view_as ? rpc('view_as_student', { target_uni: access.view_as.uni }) : rpc('class_data');
+  const classData = (term = access?.term_id) => access?.view_as ? rpc('view_as_student', { target_uni: access.view_as.uni }) : rpc('class_data', { p_term: term || null });
   return {
     demo: false,
     classData,
-    async sessions() { return checked(await client.from('attendance_sessions').select('*').order('week')); },
-    async announcements() { return checked(await client.from('announcements').select('*').order('created_at', { ascending: false }).order('id')); },
+    async sessions() { return checked(await client.from('attendance_sessions').select('*').eq('term_id', access.term_id).order('week')); },
+    async announcements() { return checked(await client.from('announcements').select('*').eq('term_id', access.term_id).order('created_at', { ascending: false }).order('id')); },
     async saveAnnouncement(row) {
       const values = { title: row.title, body: row.body };
       const query = row.id ? client.from('announcements').update(values).eq('id', row.id) : client.from('announcements').insert(values);
       return checked(await query.select('id').single());
     },
     async deleteAnnouncement(id) { return checked(await client.from('announcements').delete().eq('id', id).select('id').single()); },
+    async terms() { return checked(await client.from('terms').select('*').order('created_at')); },
+    async setSessionTimes(week, startsAt, endsAt) { return rpc('set_session_times', { p_week: week, p_start: startsAt, p_end: endsAt }); },
+    async configureItem(id, fields) { return rpc('configure_grade_item', { p_item:id, p_kind:fields.kind, p_mode:fields.mode, p_group_set:fields.group_set_id || null, p_due:fields.due_at || null }); },
+    async beginSubmission(item, file) { return rpc('begin_submission', { p_item:item, p_name:file.name, p_size:file.size, p_type:file.type }); },
+    async uploadSubmissionFile(pending, file) {
+      await checkSubmissionFile(file);
+      checked(await client.storage.from('submissions').upload(pending.storage_path, file, { contentType:file.type, cacheControl:'0', upsert:false }));
+    },
+    async finishSubmission(pendingId) { return fileAction({ action:'finish', pending_id:pendingId }, 'submission-file'); },
+    async submitFile(item, file) {
+      await checkSubmissionFile(file);
+      const pending = await this.beginSubmission(item, file);
+      await this.uploadSubmissionFile(pending, file);
+      return this.finishSubmission(pending.id);
+    },
+    async submitLink(item, link) { return rpc('submit_link', { p_item:item, p_link:link }); },
+    async submissionUrl(id, version = 'current') { return (await fileAction({ action:'download', id, version }, 'submission-file')).url; },
+    async sweepSubmissions() { return fileAction({ action:'sweep' }, 'submission-file'); },
+    async gradeGroup(item, group, score, comment = null) { return rpc('grade_group', { p_item:item, p_group:group, p_score:score, p_comment:comment }); },
     async testAccounts() { return rpc('list_test_accounts'); },
     async studentAccounts() { return rpc('list_student_accounts'); },
     async linkStudent(email, uni) { return rpc('link_student_account', { p_email: email, p_uni: uni }); },
-    async setPreview(uni) { access = await rpc('set_student_preview', { target_uni: uni }); return access; },
+    async setPreview(uni, term = null) { access = await rpc('set_student_preview', { target_uni: uni, p_term: term }); return access; },
     async setSessionDate(week, date) { return rpc('set_session_date', { p_week: week, p_date: date }); },
     async saveAttendance(week, entries) { return rpc('save_attendance', { p_week: week, entries }); },
     async saveGrades(entries) { return rpc('save_grades', { entries }); },
@@ -68,16 +88,16 @@ export async function createBackend(config) {
     // Google's own sign-in window (shows the course site's name) hands back an ID token.
     async signInWithGoogleToken(token, nonce) { checked(await client.auth.signInWithIdToken({ provider: 'google', token, nonce })); },
     async signOut() { if (access?.view_as) await rpc('set_student_preview', { target_uni: null }); checked(await client.auth.signOut()); access = null; },
-    async assignments() { if (access?.view_as) return (await classData()).assignments; return checked(await client.from('assignments').select('*').order('id')); },
-    async files() { if (access?.view_as) return (await classData()).files; return checked(await client.from('lecture_files').select('*').order('created_at')); },
+    async assignments() { if (access?.view_as) return (await classData()).assignments; return checked(await client.from('assignments').select('*').eq('term_id', access.term_id).order('id')); },
+    async files() { if (access?.view_as) return (await classData()).files; return checked(await client.from('lecture_files').select('*').eq('term_id', access.term_id).order('created_at')); },
     async adminData() {
-      const [roster, allowlist] = await Promise.all([client.from('roster').select('*').order('uni'), client.from('allowlist').select('*').order('email')]);
+      const [roster, allowlist] = await Promise.all([client.from('roster').select('*').eq('term_id', access.term_id).order('uni'), client.from('allowlist').select('*').order('email')]);
       return { roster: checked(roster), allowlist: checked(allowlist) };
     },
     async replaceRoster(rows) { checked(await client.rpc('replace_roster', { rows })); },
     async saveAllowlist(row) { checked(await client.from('allowlist').upsert(row)); },
     async removeAllowlist(email) { checked(await client.from('allowlist').delete().eq('email', email)); },
-    async saveAssignment(row) { checked(await client.from('assignments').update(row).eq('id', row.id)); },
+    async saveAssignment(row) { const { id, term_id, ...values } = row; checked(await client.from('assignments').update(values).eq('term_id', access.term_id).eq('id', id)); },
     async uploadFile(file, fields) {
       const path = `week-${fields.week}/${crypto.randomUUID()}.pdf`;
       checked(await client.storage.from('lecture-notes').upload(path, file, { contentType: 'application/pdf', cacheControl: '0', upsert: false }));
@@ -88,6 +108,7 @@ export async function createBackend(config) {
         throw result.error;
       }
     },
+    async setFileRelease(id, released, releaseAt = null) { checked(await client.from('lecture_files').update({ released, release_at:releaseAt }).eq('term_id', access.term_id).eq('id', id)); },
     async setFileVisibility(id, auditor_visible) { checked(await client.from('lecture_files').update({ auditor_visible }).eq('id', id)); },
     async deleteFile(id) { await fileAction({ action: 'delete', id }); },
     async fileUrl(id) { return (await fileAction({ action: 'download', id })).url; },

@@ -171,3 +171,66 @@ The submenu list spans 84–122px. Desktop navigation stays on one line and scro
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
 Migration 005 is local and unapplied to the hosted database. No push or db push was run.
+
+## Phase A: terms, submissions, and group grades
+
+Phase A adds the data layer for the week pages. Existing pages and menus remain in place.
+Migrations `006_terms_and_release.sql`, `007_submissions.sql`, and `008_grading.sql` follow the unchanged 001–005 files.
+Migration 005 must run first. This branch has not changed any hosted service.
+
+Spring 2027 is the initial active term. Each course record carries a `term_id`.
+Instructions remain in `assignments`; they also have term keys to preserve old course content.
+Students can read their own active or archived-readable terms. Closed terms exclude students.
+Staff can read older terms through `classData(termId)`. All editing methods target the active term.
+Term creation, export, close, and purge remain Phase C, unit U10.
+The file function currently refuses `purge`; it cannot delete a term without the export-and-close workflow.
+
+The shared file authentication code is `supabase/functions/_shared/course-auth.js`.
+Both `lecture-file` and the new `submission-file` import it.
+After review, both functions need publication alongside the migrations and browser code.
+The functions use the existing Supabase URL, public key, service-role secret, and allowed-origin settings.
+The service-role secret stays in the function environment. It must never enter browser configuration.
+
+The private `submissions` bucket accepts PDF, DOCX, XLSX, PPTX, and ZIP files up to 25 MB.
+A student first creates a pending row with `beginSubmission(itemId, file)`.
+Only that student's live pending path accepts an upload. Pending rows expire after 30 minutes.
+A new begin replaces the same owner's previous pending row.
+`submitFile(itemId, file)` handles begin, upload, and finish in order.
+
+The file function checks existence, actual size, and file signatures before finish.
+Office formats also require matching entries in the ZIP directory. These checks are not antivirus scanning.
+A private, service-issued receipt prevents students from bypassing validation through a direct finish RPC.
+Only the caller's database transaction commits the submission. Cleanup uses paths returned by database functions.
+Failed duplicate finishes cannot delete committed work. Failed old-file cleanup is retried by a later sweep.
+Sweeps run on finish and through the Instructor-only `sweepSubmissions()` method.
+Downloads first use caller-scoped metadata, then return attachment URLs that expire after 300 seconds.
+
+Late status uses server time when begin runs. Finishing after the deadline does not make an on-time start late.
+A late replacement retains the last on-time path and both of its timestamps.
+Group submissions record the members at finish. Later group changes do not change those grading recipients.
+Grading and finishing share an owner lock. A waiting finish rejects a file once grading has locked the prior submission.
+Deleting every score for the saved member list unlocks the submission. Unreleasing scores does not unlock it.
+
+`classData()` adds `submission_items` and `submissions` alongside the existing fields.
+`submission_items` includes unreleased item settings, without scores or comments.
+`submissions` contains submitted work and its status; an absent row means no submitted work.
+Students receive their own or current group's submissions. Peer UNI snapshots stay hidden.
+Staff also receive member snapshots and a `membership_changed` flag.
+Scores and comments stay in `grades`, behind the existing release rule.
+
+The browser adapter and synthetic demo share these additional methods:
+
+- `terms()`, `setSessionTimes(week, startsAt, endsAt)`, and `setPreview(uni, termId)`.
+- `configureItem(id, { kind, mode, group_set_id, due_at })` and `setFileRelease(id, released, releaseAt)`.
+- `beginSubmission`, `uploadSubmissionFile`, `finishSubmission`, `submitFile`, and `submitLink`.
+- `submissionUrl(id, 'current' | 'on-time')` and `sweepSubmissions()`.
+- `gradeGroup(itemId, groupId, score, comment)`; `saveGrades` also accepts `comment` per entry.
+
+Omitting `comment` from a score update preserves the existing comment. A null score removes the grade row.
+Group item settings start without linked sets. The Instructor must link a set before students can submit.
+Item kind, mode, and linked set cannot change after completed submissions exist. Pending uploads do not block settings.
+The earliest due time among linked group items closes student sign-up. Instructor moves remain available.
+
+Phase A tests use synthetic identities and local databases only. Native PostgreSQL tests cover both required races.
+The ordinary Node tests now run one file at a time to reduce resource use.
+Hosted upload, replacement, download, and security-advisor checks remain for Claude's review and publication stage.

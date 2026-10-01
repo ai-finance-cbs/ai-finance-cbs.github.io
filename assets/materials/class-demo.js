@@ -1,3 +1,5 @@
+import { safeSubmission } from './submission-core.js';
+import { refreshDemoLocks } from './submission-demo.js';
 import { GRADE_ITEMS, checkGroupChange, canWrite, scoreValue } from './class-core.js';
 export function classSeed() {
   return {
@@ -33,18 +35,31 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       .filter((r) => !d.allowlist.some((a) => a.email === `${r.uni}@columbia.edu`))
       .map((r) => ({ ...r, email: `${r.uni}@columbia.edu` })),
     ...d.test_accounts
-      .filter((t) => t.role === 'student' && !d.roster.some((r) => r.uni === t.uni))
+      .filter((t) => d.terms.find(term => term.id === d.term_id)?.status === 'active' && t.role === 'student' && !d.roster.some((r) => r.uni === t.uni))
       .map((t) => ({ uni: t.uni, name: `Test student ${t.uni}`, email: null, is_test: true })),
   ];
-  function snapshot() {
+  function snapshot(term) {
     const a = access(),
-      d = read();
-    if (!['student', 'grader', 'instructor'].includes(a?.role))
+      d = read(term);
+    if (!['student', 'grader', 'instructor', 'auditor'].includes(a?.role))
       throw new Error('Class access required.');
     const admin = a.role === 'instructor' && !a.view_as,
       students = roster(d);
+    const shared = {
+      term_id: d.term_id,
+      files: d.files.filter(f => ['instructor','grader'].includes(a.role) || ((a.role !== 'auditor' || f.auditor_visible) && (f.released || (f.release_at && new Date(f.release_at).getTime() <= Date.now())))).map(({data,...f}) => f),
+      assignments: d.assignments.filter(r => a.role !== 'auditor' || r.auditor_visible),
+      announcements: d.announcements,
+      submission_items: a.role === 'auditor' ? [] : d.items,
+      submissions: a.role === 'auditor' ? [] : d.submissions.filter(s => admin || a.role === 'grader' || s.owner_uni === a.uni || d.members.some(m => m.group_id === s.group_id && m.uni === a.uni)).map(s => ({
+        ...(a.role === 'student' ? safeSubmission(s) : s), status:s.late ? 'Late' : 'Submitted',
+        membership_changed: a.role !== 'student' && !!s.group_id && JSON.stringify(s.member_unis) !== JSON.stringify(d.members.filter(m => m.group_id === s.group_id).map(m => m.uni).sort()),
+      })),
+    };
+    if (a.role === 'auditor') return { ...shared, sessions:d.sessions, attendance:[], items:[], grades:[], sets:[], groups:[], members:[] };
     if (a.role === 'grader')
       return {
+        ...shared, sets:d.sets, groups:d.groups, members:d.members.map(m => ({...m,name:students.find(r => r.uni === m.uni)?.name,email:null})),
         roster: students.map(({ uni, name }) => ({ uni, name })),
         sessions: d.sessions,
         attendance: d.attendance,
@@ -52,6 +67,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         grades: d.grades,
       };
     return {
+      ...shared,
       ...(admin ? { roster: students } : {}),
       sessions: d.sessions,
       attendance: d.attendance
@@ -86,23 +102,24 @@ export function extendDemo({ read, save, user, saveUser, access }) {
               ? students.find((r) => r.uni === m.uni)?.email
               : null,
         })),
-      assignments: d.assignments,
-      files: d.files.map(({ data, ...f }) => f),
+
     };
   }
   return {
-    async classData() {
-      return snapshot();
+    async classData(term) {
+      return snapshot(term);
     },
     async testAccounts() {
       requireAdmin();
       return read().test_accounts;
     },
-    async setPreview(uni) {
+    async setPreview(uni, term = null) {
       const u = user();
       if (access()?.actor_role !== 'instructor') throw new Error('Instructor access required.');
-      if (uni && !roster(read()).some((r) => r.uni === uni)) throw new Error('Student not found.');
+      if (uni) requireAdmin();
+      if (uni && !roster(read(term)).some((r) => r.uni === uni)) throw new Error('Student not found.');
       u.preview_uni = uni;
+      u.preview_term = term;
       saveUser(u);
       return access();
     },
@@ -140,9 +157,11 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       for (const e of entries) {
         const item = d.items.find((i) => i.id === e.item_id);
         if (!item || !roster(d).some((r) => r.uni === e.uni)) throw new Error('Invalid grade row.');
+        if (e.comment?.length > 10000) throw new Error('Comment is too long.');
         const score = e.score == null ? null : scoreValue(e.score, item.max_points);
+        const old = d.grades.find(g => g.uni === e.uni && g.item_id === e.item_id);
         d.grades = d.grades.filter((g) => g.uni !== e.uni || g.item_id !== e.item_id);
-        if (score != null) d.grades.push({ ...e, score });
+        if (score != null) d.grades.push({ ...e, score, comment: 'comment' in e ? e.comment : old?.comment || null });
         if (item.quiz_week) {
           const record = d.attendance.find((a) => a.uni === e.uni && a.week === item.quiz_week);
           if (score == null) {
@@ -161,6 +180,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
             });
         }
       }
+      refreshDemoLocks(d, entries.map(e => e.item_id));
       save(d);
     },
     async releaseItem(id, released) {

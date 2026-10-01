@@ -2,15 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHandler } from '../supabase/functions/lecture-file/handler.js';
 const ID = '11111111-0000-0000-0000-000000000001';
-function setup({ role = 'student', visible = true, valid = true, removeError = null } = {}) {
+function setup({ role = 'student', visible = true, valid = true, removeError = null, term = 'spring-2027' } = {}) {
   const calls = [];
   const query = {
     select() { return this; }, eq() { return this; },
-    async single() { return visible ? { data: { id: ID, storage_path: 'week-1/server-path.pdf' } } : { error: { message: 'hidden' } }; },
+    async single() { return visible ? { data: { id: ID, term_id: term, storage_path: 'week-1/server-path.pdf' } } : { error: { message: 'hidden' } }; },
     async maybeSingle() { return { data: null }; },
     delete() { calls.push('delete-metadata'); return { eq: async () => ({ error: null }) }; },
   };
-  const caller = { auth: { getUser: async () => valid ? { data: { user: { id: 'authenticated' } } } : { error: {} } }, rpc: async () => ({ data: { role } }), from: () => query };
+  const caller = { auth: { getUser: async () => valid ? { data: { user: { id: 'authenticated' } } } : { error: {} } }, rpc: async () => ({ data: { role, term_id: 'spring-2027' } }), from: () => query };
   const server = { storage: { from: bucket => {
     assert.equal(bucket, 'lecture-notes');
     return { createSignedUrl: async (path, ttl, opts) => { calls.push({ path, ttl, opts }); return { data: { signedUrl: 'https://storage.example/signed' } }; }, remove: async paths => { calls.push({ remove: paths }); return { error: removeError }; } };
@@ -56,4 +56,18 @@ test('grader, auditor, unlisted, and student preview cannot mutate file storage'
  for(const role of ['grader','auditor','unlisted','student'])for(const action of ['delete','cleanup']){
   const x=setup({role});assert.equal((await x.handler(x.request({action,id:ID,path:'week-1/'+ID+'.pdf'}))).status,403);assert.deepEqual(x.calls,[]);
  }
+});
+
+test('lecture cleanup accepts Prelude and Coda paths but rejects week 8',async()=>{
+  const x=setup({role:'instructor'});
+  for(const week of [0,7])assert.equal((await x.handler(x.request({action:'cleanup',path:`week-${week}/${ID}.pdf`}))).status,200);
+  assert.equal((await x.handler(x.request({action:'cleanup',path:`week-8/${ID}.pdf`}))).status,400);
+  assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[`week-0/${ID}.pdf`]},{remove:[`week-7/${ID}.pdf`]}]);
+});
+
+test('instructor can download archived lecture files but cannot delete their objects',async()=>{
+  const x=setup({role:'instructor',term:'spring-2026'});
+  assert.equal((await x.handler(x.request({action:'delete',id:ID}))).status,403);
+  assert.deepEqual(x.calls,[]);
+  assert.equal((await x.handler(x.request({action:'download',id:ID}))).status,200);
 });

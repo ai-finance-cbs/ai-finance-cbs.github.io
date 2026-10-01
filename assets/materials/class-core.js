@@ -19,8 +19,9 @@ export const GRADE_ITEMS = [
     (title, i) => ({ id: 13 + i, title, max_points: i === 3 ? 5 : 10, optional: true }),
   ),
 ].map((i) => ({ optional: false, released: false, ...i }));
-// Codes follow the fixed grading item IDs in migration 003.
+// New terms keep explicit codes; legacy data uses the original migration 003 IDs.
 export function gradeCode(item) {
+  if (item.code) return item.code;
   const id = Number(item.id);
   if (id <= 5) return `M${id}`;
   if (id === 6) return 'FP';
@@ -46,7 +47,7 @@ export function pageAllowed(page, access) {
   return z.materials;
 }
 export function canWrite(access) {
-  return !!access && !access.view_as && ['instructor', 'grader', 'student'].includes(access.role);
+  return !!access && !access.view_as && !access.read_only && ['instructor', 'grader', 'student'].includes(access.role);
 }
 export function gradeTotal(items, grades) {
   let core = 0,
@@ -70,7 +71,7 @@ export function gradeTotal(items, grades) {
   };
 }
 export function groupOpen(set, now = Date.now()) {
-  return set.is_open && (!set.deadline || new Date(set.deadline).getTime() > now);
+  return set.is_open && [set.deadline, set.submission_deadline].every(d => !d || new Date(d).getTime() > now);
 }
 export function checkGroupChange(data, access, setId, groupId, uni = access.uni) {
   if (!canWrite(access)) throw new Error('Student preview is read-only.');

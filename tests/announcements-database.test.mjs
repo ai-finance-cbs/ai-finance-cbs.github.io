@@ -50,7 +50,9 @@ test('all signed-in course roles read announcements and dates; only instructor c
       assert.equal((await rows('select * from attendance_sessions')).length, index === 4 ? 0 : 6);
       if (index === 3) {
         for (const table of ['attendance','grades','grade_items','group_sets','group_memberships','class_groups','roster']) assert.equal((await rows(`select * from ${table}`)).length, 0);
-        await assert.rejects(db.exec('select class_data()'), /Class access required/);
+        const d = (await rows('select class_data() as value'))[0].value;
+        assert.equal(d.announcements.length, 1);
+        for (const key of ['attendance','grades','items','sets','groups','members']) assert.deepEqual(d[key], []);
       }
     }
     await assert.rejects(db.exec("insert into announcements(title,body) values('Forged','Forbidden')"), /permission denied|row-level security/);

@@ -9,6 +9,7 @@ supabase_url: "https://czamlkthqbnkmwdprlvo.supabase.co"
 google_client_id: "418538489374-9crq6gcp3ru2oennkenenh1t09pcns5h.apps.googleusercontent.com"
 supabase_publishable_key: "sb_publishable_yngPiZGAK49IC8HBA9Xrug_-Bsbf38i"
 exclude:
+  - docs
   - supabase
   - tests
   - package.json
