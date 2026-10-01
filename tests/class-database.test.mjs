@@ -1,4 +1,4 @@
-import { bootstrapSQL } from './helpers/database.mjs';
+import { bootstrapSQL, migrationFiles, seedGoogleIdentity } from './helpers/database.mjs';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ const people = [
   ['b', 'cd5678@columbia.edu'],
   ['auditor', 'auditor@columbia.edu'],
   ['unlisted', 'zz9999@columbia.edu'],
-  ['test', 'simonsm.oh@gmail.com'],
+  ['test', 'teststudent@example.test'],
   ['grader', 'grader@columbia.edu'],
   ['gsb', 'alias@gsb.columbia.edu'],
 ];
@@ -35,19 +35,24 @@ const rows = async (sql) => (await db.query(sql)).rows;
 before(async () => {
   db = new PGlite();
   await db.exec(bootstrapSQL);
-  for (const [role, email] of people)
+  for (const [role, email] of people) {
     await db.query('insert into auth.users values($1,$2,now(),$3)', [
       id(role),
       email,
       JSON.stringify({ provider: 'google' }),
     ]);
-  for (const file of ['001_course_materials.sql', '002_test_accounts.sql', '003_class_tools.sql']) {
+    await seedGoogleIdentity(db, id(role), email);
+  }
+  for (const file of migrationFiles) {
     if (file === '003_class_tools.sql')
       await db.exec(
         "insert into allowlist values('legacyteacher@columbia.edu','instructor_ta'),('legacyauditor@columbia.edu','observer'); insert into assignments values(6,'Legacy','Week 6',25,'Existing content','Existing work','Criteria',true)",
       );
     await db.exec(readFileSync(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'));
   }
+  await db.exec(
+    "delete from private.test_accounts; insert into private.test_accounts(email,role,uni) values('teststudent@example.test','student','test1')",
+  );
   await db.exec(
     `insert into public.roster values('ab1234','Alice'),('cd5678','Bob'); insert into public.allowlist values('auditor@columbia.edu','auditor'),('grader@columbia.edu','grader');`,
   );
@@ -96,8 +101,9 @@ test('students read only own attendance and released grades; auditors get no cla
   );
   await rpc('release_grade_item', 1, true);
   await as('a');
+  assert.deepEqual(await rows('select * from attendance'), []);
   assert.deepEqual(
-    (await rows('select uni from attendance')).map((r) => r.uni),
+    (await rpc('class_data')).attendance.map((r) => r.uni),
     ['ab1234'],
   );
   assert.equal((await rows('select * from grades')).length, 1);
@@ -278,14 +284,14 @@ test('audit records identify the grader and contain old/new values; updates, del
 test('CBS self-claims cannot impersonate a student; instructor-approved links control identity', async () => {
   await as('gsb');
   assert.equal((await rpc('get_access')).role, 'unlisted');
-  await assert.rejects(rpc('claim_uni', 'ab1234'), /instructor to link/);
+  await assert.rejects(rpc('claim_uni', 'ab1234'), /does not exist/);
   await as('teacher');
   await rpc('link_student_account', 'alias@gsb.columbia.edu', 'ab1234');
   await as('gsb');
   assert.equal((await rpc('get_access')).uni, 'ab1234');
   assert.equal((await rpc('get_access')).role, 'student');
-  await assert.rejects(rpc('claim_uni', 'cd5678'), /instructor to link/);
-  assert.equal((await rpc('claim_uni', 'ab1234')).uni, 'ab1234');
+  await assert.rejects(rpc('claim_uni', 'cd5678'), /does not exist/);
+  await assert.rejects(rpc('claim_uni', 'ab1234'), /does not exist/);
   await as('teacher');
   await rpc('link_student_account', 'alias@gsb.columbia.edu', null);
   await as('gsb');
@@ -309,7 +315,6 @@ const tables = [
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
 const fnCases = {
   get_access: [],
-  claim_uni: ['cd5678'],
   replace_roster: ['[{"uni":"ab1234"}]'],
   set_student_preview: ['ab1234'],
   set_session_date: [1, '2027-01-01'],
@@ -392,7 +397,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
         else if (['assignments', 'lecture_files'].includes(t)) {
           assert.equal(visible.length, who === 'unlisted' ? 0 : who === 'auditor' ? 1 : 2);
           if (who === 'auditor') assert.ok(visible.every((r) => r.auditor_visible));
-        } else if (who === 'a' && ['attendance', 'grades', 'group_memberships'].includes(t))
+        } else if (who === 'a' && ['grades', 'group_memberships'].includes(t))
           assert.ok(visible.every((r) => r.uni === 'ab1234'));
         else if (
           who === 'a' &&

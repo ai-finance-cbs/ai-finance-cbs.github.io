@@ -54,7 +54,18 @@ export function extendDemo({ read, save, user, saveUser, access }) {
     return {
       ...(admin ? { roster: students } : {}),
       sessions: d.sessions,
-      attendance: d.attendance.filter((r) => admin || r.uni === a.uni),
+      attendance: d.attendance
+        .filter((r) => admin || r.uni === a.uni)
+        .map((r) => {
+          if (admin || d.items.some((i) => i.quiz_week === r.source_quiz && i.released)) return r;
+          return {
+            uni: r.uni,
+            week: r.week,
+            status: r.status,
+            source_quiz: null,
+            manual_override: null,
+          };
+        }),
       items: d.items.filter((i) => admin || i.released),
       grades: d.grades.filter(
         (g) => admin || (g.uni === a.uni && d.items.find((i) => i.id === g.item_id)?.released),

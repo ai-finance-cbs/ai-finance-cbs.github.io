@@ -85,9 +85,9 @@ test('auditor sees only flagged assignments and PDFs, including after a visibili
   await switchRole(page, 'auditor'); await page.goto('/materials/lecture-notes/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
 test('CBS account cannot self-claim and can use an instructor-approved link', async ({page}) => {
-  await enter(page,'gsb'); await page.getByLabel('Your Columbia UNI').fill('ab1234'); await page.getByRole('button',{name:'Check class list'}).click();
-  await expect(page.locator('[data-login-message]')).toContainText('instructor to link');
-  await page.getByRole('button',{name:'Close sign-in'}).click(); await switchRole(page,'instructor');
+  await enter(page,'gsb'); await expect(page.locator('#materials-root')).toContainText('contact the instructor');
+  await expect(page.locator('[data-uni-form]')).toHaveCount(0);
+  await switchRole(page,'instructor');
   await page.goto('/materials/settings/'); await ready(page);
   await page.getByLabel('CBS student email').fill('demo@gsb.columbia.edu'); await page.getByLabel('Roster UNI',{exact:true}).fill('ab1234'); await page.getByRole('button',{name:'Link student account',exact:true}).click();
   await expect(page.locator('#student-accounts')).toContainText('demo@gsb.columbia.edu');

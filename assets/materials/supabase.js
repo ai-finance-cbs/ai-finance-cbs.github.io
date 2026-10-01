@@ -60,7 +60,6 @@ export async function createBackend(config) {
     // Google's own sign-in window (shows the course site's name) hands back an ID token.
     async signInWithGoogleToken(token, nonce) { checked(await client.auth.signInWithIdToken({ provider: 'google', token, nonce })); },
     async signOut() { if (access?.view_as) await rpc('set_student_preview', { target_uni: null }); checked(await client.auth.signOut()); access = null; },
-    async claimUni(value) { return checked(await client.rpc('claim_uni', { proposed_uni: value })); },
     async assignments() { if (access?.view_as) return (await classData()).assignments; return checked(await client.from('assignments').select('*').order('id')); },
     async files() { if (access?.view_as) return (await classData()).files; return checked(await client.from('lecture_files').select('*').order('created_at')); },
     async adminData() {

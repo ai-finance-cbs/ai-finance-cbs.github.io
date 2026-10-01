@@ -1,7 +1,7 @@
 # Class tools: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-This task adds local code only. Migration `003_class_tools.sql` has not been applied to the linked project.
+This task adds local code only. Migrations `003_class_tools.sql` and `004_security_hardening.sql` have not been applied to the linked project.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -59,7 +59,7 @@ Only an instructor can read the private test-account list. Test emails are never
 6. The full-grid export provides a CSV template for multiple items. Unknown or duplicate rows reject the entire import.
 7. Imported blank score cells clear existing scores in those columns.
 8. Quiz 1–5 scores automatically mark Weeks 1–5 present, including scores of zero. Week 6 uses manual attendance.
-9. Attendance shows `from Quiz N`. Manual changes take precedence over later quiz changes.
+9. Grading staff see `from Quiz N`. Students see the source only after quiz release. Manual changes retain precedence.
 10. **Use quiz or clear** removes a manual override. It restores present when that week's quiz score exists.
 11. Clearing a quiz removes automatic attendance. It retains manual attendance and removes the quiz source label.
 12. Only Instructor can release an item. Students see released items under **Attendance → My grades**.
@@ -68,7 +68,7 @@ Only an instructor can read the private test-account list. Test emails are never
 
 ## Database and function review
 
-1. Read `003_class_tools.sql` after the already-applied `001` and `002` migrations. Do not edit applied migration files.
+1. Review `003_class_tools.sql` and `004_security_hardening.sql` together after the already-applied `001` and `002` migrations.
 2. Migration `003` converts `instructor_ta` to `instructor` and `observer` to `auditor`.
 3. It renames both visibility columns to `auditor_visible` and preserves existing content and flags.
 4. It creates attendance, groups, grade items, scores, append-only audit records, account links, and server-side preview state.
@@ -79,13 +79,29 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. A reviewer must coordinate migration `003`, the `lecture-file` function, and browser publication in a later approved task.
+12. A reviewer must coordinate migrations `003` and `004`, the file function, and browser publication in a later approved task.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply `001`, `002`, then `003`. Existing legacy private seeds use `observer_visible` and belong before `003`.
+For a fresh database, apply `001`, `002`, `003`, then `004`. Existing legacy private seeds use `observer_visible` and belong before `003`.
 New seeds from `tools/create-materials-seed.rb` use `auditor_visible` and belong after `003`.
 Keep seeds and real roster files out of Git and `_site`.
+Named test-account seeding now belongs in the ignored `supabase/private/test-accounts.sql` file, after migration `004`.
+Migration `002` remains unchanged history. Migration `004` preserves existing test rows and contains no account seed.
+Public tests use synthetic account addresses only.
+
+## Security review fixes
+
+1. Migration `004` requires the Auth email to match a verified Google identity in `auth.identities`.
+2. Changing an Auth email and JWT without that identity match grants no course role.
+3. Private test accounts require the same verified Google identity.
+4. All application RPCs explicitly revoke `anon` and PUBLIC execution. Authenticated role checks still apply.
+5. The test bootstrap emulates Supabase's direct default function, table, and sequence grants.
+6. Raw attendance reads are now limited to Instructor and Grader. Students use the filtered `class_data` response.
+7. Student and preview responses hide both `source_quiz` and `manual_override` until the matching quiz is released.
+8. Manual attendance without a released quiz uses the same empty source fields. A hidden quiz cannot be inferred from them.
+9. `claim_uni` has been dropped. The obsolete UNI form and browser calls have been removed.
+10. Approved CBS account links resolve automatically when access is checked; no student claim step is needed.
 
 ## Local checks
 
@@ -99,7 +115,7 @@ The embedded PostgreSQL dependency creates a temporary cluster bound to `127.0.0
 Its install script restores bundled library links. If npm blocks that script on another platform, approve the matching `@embedded-postgres/<platform>` package.
 No system database service or account is created.
 
-Denial tests cover every application table and public RPC for Student, Grader, Auditor, Unlisted, and anonymous callers.
+Denial tests cover every application table and remaining public RPC for Student, Grader, Auditor, Unlisted, and anonymous callers.
 They also cover private helpers, owner protection, forged identities, preview writes, audit immutability, and grader release attempts.
 A native two-connection test verifies last-seat contention and a set lock committed while a join waits.
 

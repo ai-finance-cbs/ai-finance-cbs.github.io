@@ -68,7 +68,7 @@ function statusNote(a) {
     return a.manual_override
       ? `Manual override; Quiz ${a.source_quiz} recorded`
       : `from Quiz ${a.source_quiz}`;
-  return 'Manual entry';
+  return a.manual_override == null ? '' : 'Manual entry';
 }
 export function renderRosterTable(ctx) {
   const { root, data, startPreview } = ctx;

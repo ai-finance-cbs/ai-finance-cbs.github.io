@@ -51,13 +51,11 @@ test('grader enters quiz scores by column and CSV; attendance shows quiz source 
   await page.getByRole('button', { name: 'Save scores', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
   await page.getByLabel('Gradebook item').selectOption('8');
-  await page
-    .getByLabel('Grade CSV', { exact: true })
-    .setInputFiles({
-      name: 'quiz.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from('uni,score\nab1234,2\ncd5678,0'),
-    });
+  await page.getByLabel('Grade CSV', { exact: true }).setInputFiles({
+    name: 'quiz.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('uni,score\nab1234,2\ncd5678,0'),
+  });
   await page.getByRole('button', { name: 'Preview grade import' }).click();
   await expect(page.locator('#materials-root')).toContainText('2 scores ready to import');
   await page.getByRole('button', { name: 'Import scores', exact: true }).click();
@@ -109,13 +107,11 @@ test('instructor can import attendance, create and lock groups, and release scor
 }) => {
   await enter(page, 'instructor', 'attendance');
   await page.getByLabel('Week 1 date', { exact: true }).fill('2027-01-25');
-  await page
-    .getByLabel('Present UNI CSV')
-    .setInputFiles({
-      name: 'present.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from('UNI\nab1234\ncd5678'),
-    });
+  await page.getByLabel('Present UNI CSV').setInputFiles({
+    name: 'present.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('UNI\nab1234\ncd5678'),
+  });
   await page.getByRole('button', { name: 'Import present UNIs' }).click();
   await expect(page.getByLabel('ab1234 Week 1 attendance')).toHaveValue('present');
   await page.goto('/materials/groups/');
@@ -197,4 +193,40 @@ test('auditor has only Course Materials and cannot open class pages directly', a
     await expect(page.locator('#materials-root input')).toHaveCount(0);
     await expect(page.locator('#materials-root')).toContainText(/instructors|does not have access/);
   }
+});
+
+test('students and preview see plain attendance until the matching quiz is released', async ({
+  page,
+}) => {
+  await enter(page, 'grader', 'gradebook');
+  await page.getByLabel('ab1234 In-class quiz 1', { exact: true }).fill('0');
+  await page.getByRole('button', { name: 'Save scores', exact: true }).click();
+  await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
+  await page.goto('/materials/attendance/');
+  await ready(page);
+  await expect(page.locator('#materials-root')).toContainText('from Quiz 1');
+  await enter(page, 'student', 'attendance');
+  const firstWeek = page.locator('.class-grid tbody tr').first();
+  await expect(firstWeek).toContainText('present');
+  await expect(firstWeek.locator('td').last()).toHaveText('');
+  await expect(page.locator('#my-grades')).not.toContainText('In-class quiz 1');
+  const hidden = await page.evaluate(async () => {
+    const { createDemo } = await import('/assets/materials/demo.js');
+    return (await createDemo().classData()).attendance;
+  });
+  expect(hidden).toEqual([
+    { uni: 'ab1234', week: 1, status: 'present', source_quiz: null, manual_override: null },
+  ]);
+  await enter(page, 'instructor', 'roster');
+  await page.getByRole('button', { name: 'View as Demo Student', exact: true }).click();
+  await expect(page.locator('[data-preview-banner]')).toBeVisible();
+  await expect(page.locator('.class-grid tbody tr').first().locator('td').last()).toHaveText('');
+  await page.locator('[data-preview-exit]').click();
+  await page.goto('/materials/gradebook/');
+  await ready(page);
+  await page.getByLabel('Release In-class quiz 1', { exact: true }).check();
+  await expect(page.locator('[data-admin-status]')).toContainText('Release status saved');
+  await enter(page, 'student', 'attendance');
+  await expect(page.locator('.class-grid tbody tr').first()).toContainText('from Quiz 1');
+  await expect(page.locator('#my-grades')).toContainText('In-class quiz 1');
 });

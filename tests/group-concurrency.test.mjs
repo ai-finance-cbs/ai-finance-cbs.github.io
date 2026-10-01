@@ -7,7 +7,7 @@ import { createServer } from 'node:net';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import EmbeddedPostgres from 'embedded-postgres';
-import { bootstrapSQL } from './helpers/database.mjs';
+import { bootstrapSQL, migrationFiles, seedGoogleIdentity } from './helpers/database.mjs';
 const uid = (n) => `00000000-0000-0000-0000-00000000000${n}`;
 async function authenticate(client, n, email) {
   await client.query("select set_config('request.jwt.claims',$1,false)", [
@@ -53,11 +53,7 @@ test(
       }
       const [owner, instructor, a, b] = clients;
       await owner.query(bootstrapSQL);
-      for (const file of [
-        '001_course_materials.sql',
-        '002_test_accounts.sql',
-        '003_class_tools.sql',
-      ])
+      for (const file of migrationFiles)
         await owner.query(
           await readFile(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'),
         );
@@ -65,11 +61,13 @@ test(
         [1, 'oh@gsb.columbia.edu'],
         [2, 'ab1234@columbia.edu'],
         [3, 'cd5678@columbia.edu'],
-      ])
+      ]) {
         await owner.query('insert into auth.users values($1,$2,now(),\'{"provider":"google"}\')', [
           uid(i),
           email,
         ]);
+        await seedGoogleIdentity(owner, uid(i), email);
+      }
       await owner.query("insert into roster values('ab1234','Alice'),('cd5678','Bob')");
       await authenticate(instructor, 1, 'oh@gsb.columbia.edu');
       await authenticate(a, 2, 'ab1234@columbia.edu');

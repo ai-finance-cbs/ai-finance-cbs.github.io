@@ -1,5 +1,5 @@
 import { classSeed, extendDemo } from './class-demo.js';
-import { OWNER, extractUni, fakeAuthAllowed, normalizeUni, resolveRole } from './core.js';
+import { OWNER, extractUni, fakeAuthAllowed, resolveRole } from './core.js';
 const KEY = 'b8403-demo-state-v3';
 const SESSION = 'b8403-demo-user-v1';
 // Synthetic examples only. Actual assignment text must never enter public assets.
@@ -23,7 +23,7 @@ export function createDemo() {
     const actor_role = data.test_accounts.find(t => t.email === u.email)?.role || resolveRole(u.email, linkedUni || (u.email.endsWith('@columbia.edu') ? u.uni : null), data.roster, data.allowlist);
     const preview = actor_role === 'instructor' && u.preview_uni ? { uni: u.preview_uni, name: data.roster.find(r => r.uni === u.preview_uni)?.name || `Test student ${u.preview_uni}` } : null;
     const role = preview ? 'student' : actor_role;
-    return { email: u.email, uni: preview?.uni || linkedUni || u.uni, role, actor_role, view_as: preview, needs_uni: role === 'unlisted' && !u.uni && u.email.endsWith('@gsb.columbia.edu') };
+    return { email: u.email, uni: preview?.uni || linkedUni || u.uni, role, actor_role, view_as: preview };
   };
   const requireRole = (admin = false) => {
     const a = access();
@@ -41,13 +41,6 @@ export function createDemo() {
       sessionStorage.setItem(SESSION, JSON.stringify({ email, uni: role === 'test' ? 'test1' : extractUni(email) })); return access();
     },
     async signOut() { sessionStorage.removeItem(SESSION); },
-    async claimUni(value) {
-      if (access()?.view_as) throw new Error('Student preview is read-only.');
-      const u = user(); const uni = normalizeUni(value);
-      if (!u || !u.email.endsWith('@gsb.columbia.edu') || u.uni) throw new Error('UNI cannot be changed.');
-      if (!read().student_accounts.some(a => a.email === u.email && a.uni === uni)) throw new Error('Ask the instructor to link your CBS email to your UNI.');
-      u.uni = uni; sessionStorage.setItem(SESSION, JSON.stringify(u)); return access();
-    },
     async assignments() { requireRole(); return read().assignments.filter(visible); },
     async files() { requireRole(); return read().files.filter(visible).map(({ data, ...row }) => row); },
     async adminData() { requireRole(true); const d = read(); return { roster: d.roster, allowlist: d.allowlist }; },

@@ -1,6 +1,6 @@
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
 import { renderClassPage, renderRosterTable } from './class-ui.js';
-import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, normalizeUni, parseRoster, safeReturnPath, validatePdf } from './core.js';
+import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, parseRoster, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
@@ -29,12 +29,9 @@ function outlineChanged() {
   }
 }
 function updateModal() {
-  const needsUni = !!state.access?.needs_uni;
-  dialog.querySelector('[data-uni-form]').hidden = !needsUni;
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
   dialog.querySelector('[data-contact]').hidden = state.access?.role !== 'unlisted';
-  if (needsUni) showMessage('Enter your Columbia UNI to check the class list.');
-  else if (state.access?.role === 'unlisted') showMessage('You are not on the class list.');
+  if (state.access?.role === 'unlisted') showMessage('You are not on the class list.');
 }
 
 // Google Identity Services: Google's own button opens a window that names this site, not the database.
@@ -77,7 +74,6 @@ function openLogin(destination) {
   showMessage(''); updateModal();
   if (!dialog.open) dialog.showModal();
   setupGsi();
-  if (state.access?.needs_uni) dialog.querySelector('input[name=uni]').focus();
 }
 async function finishSignIn() {
   await refresh();
@@ -94,7 +90,6 @@ function showGate() {
   if (!state.access) root.append(el('p', 'Sign in to see course materials.'), button('Sign in with Columbia UNI', () => openLogin()));
   else if (state.access.role === 'unlisted') {
     root.append(el('p', 'You are not on the class list.'), el('p', 'For access, contact the instructor.'), el('a', OWNER, { href: `mailto:${OWNER}` }));
-    if (state.access.needs_uni) root.append(el('p'), button('Enter your UNI', () => openLogin()));
   } else root.append(el('p', INSTRUCTOR_PAGES.includes(root.dataset.page) ? 'This page is for instructors.' : 'Your role does not have access to this page.'));
   outlineChanged();
 }
@@ -345,12 +340,6 @@ dialog.querySelector('[data-google]').addEventListener('click', async e => {
   } catch (error) { showMessage(error.message); }
   finally { e.target.disabled = false; }
 });
-dialog.querySelector('[data-uni-form]').addEventListener('submit', async e => {
-  e.preventDefault(); const b = e.target.querySelector('button'); b.disabled = true;
-  try { const uni = normalizeUni(e.target.elements.uni.value); if (!uni) throw new Error('Enter a UNI such as ab1234.'); await state.backend.claimUni(uni); await finishSignIn(); }
-  catch (error) { showMessage(error.message); }
-  finally { b.disabled = false; }
-});
 async function init() {
   const params = new URLSearchParams(location.search);
   const requested = params.get('fakeauth');
@@ -374,7 +363,6 @@ async function init() {
     });
     const oauthError = params.get('error_description');
     if (oauthError) { openLogin(); showMessage('Google sign-in was cancelled or could not finish. Please try again.'); }
-    else if (state.access?.needs_uni) openLogin();
     else if (params.has('code') || sessionStorage.getItem('b8403-return')) {
       if (member()) await finishSignIn(); else if (state.access) openLogin();
     }
