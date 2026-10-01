@@ -667,7 +667,6 @@ caption { margin-bottom:6px; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .class-tools main { padding:calc(var(--topbar) + 24px) 28px 0; }
 body.class-tools .content { max-width:1180px; }
-.class-tools .topbar .brand-title { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
 .class-tools .outline-title { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
 .class-tools .subnav-empty { display:none; }
 .class-tools .page-heading { margin-bottom:8px; }
