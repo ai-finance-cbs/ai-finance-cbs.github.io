@@ -45,7 +45,8 @@ async function sha256Hex(text) {
 }
 async function setupGsi() {
   const slot = dialog.querySelector('[data-gsi]');
-  if (!config.googleClientId || state.backend?.demo || !state.backend?.signInWithGoogleToken || slot.dataset.ready) return;
+  // Google only accepts this button on the real site address, not the local preview.
+  if (location.hostname === '127.0.0.1' || !config.googleClientId || state.backend?.demo || !state.backend?.signInWithGoogleToken || slot.dataset.ready) return;
   try {
     await loadGsi();
     const raw = crypto.randomUUID() + crypto.randomUUID();

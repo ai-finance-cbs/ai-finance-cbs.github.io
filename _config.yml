@@ -6,7 +6,7 @@ markdown: kramdown
 plugins: []
 # Public browser credentials only. Never paste a service_role or secret key here.
 supabase_url: "https://czamlkthqbnkmwdprlvo.supabase.co"
-google_client_id: ""   # set to the Google client ID once its JavaScript origins are saved
+google_client_id: "418538489374-9crq6gcp3ru2oennkenenh1t09pcns5h.apps.googleusercontent.com"
 supabase_publishable_key: "sb_publishable_yngPiZGAK49IC8HBA9Xrug_-Bsbf38i"
 exclude:
   - supabase
