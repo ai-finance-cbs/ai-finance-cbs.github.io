@@ -65,3 +65,23 @@
 - {week: 2, topic: Tools and Agents, level: required, kind: Writing, title: "Agentic Design Patterns", length: "3 min", author: "Andrew Ng", year: 2024, url: "https://www.deeplearning.ai/the-batch/how-agents-can-improve-llm-performance"}
 - {week: 2, topic: Tools and Agents, level: optional, kind: Writing, title: "Why Tool AIs Want to Be Agent AIs", length: "45 min", author: "Gwern Branwen", year: 2016, url: "https://gwern.net/tool-ai"}
 - {week: 2, topic: Tools and Agents, level: optional, kind: Writing, title: "Agents", author: "Julia Wiesinger and others, Google", year: 2024, url: "https://www.kaggle.com/whitepaper-agents"}
+
+# ---- Week 3: Processing Information (Text Sources -> Non-Text Sources -> Data Preparation -> Retrieval and Analysis -> Verification) ----
+- {week: 3, topic: Text Sources, level: required, kind: Writing, title: "Using EDGAR to Research Investments", length: "10 min", author: "SEC", year: "n.d.", url: "https://www.investor.gov/introduction-investing/getting-started/researching-investments/using-edgar-research-investments"}
+- {week: 3, topic: Text Sources, level: required, kind: Writing, title: "Claude Code: The Practical Bridge Between Prompting and AI Agents", length: "7 min", author: "Jeremy Leung", year: 2025, url: "https://aimightbewrong.substack.com/p/claude-code-for-investors"}
+- {week: 3, topic: Text Sources, level: optional, kind: Writing, title: "How to Read a 10-K/10-Q", length: "8 min", author: "SEC", year: "n.d.", url: "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/how-read"}
+- {week: 3, topic: Text Sources, level: optional, kind: Writing, title: "Ontologies and Earnings Calls: Why I Don’t Want to Prompt-and-Pray", length: "22 min", author: "Vitaly Meursault", year: 2025, url: "https://pleasebringstrangethings.substack.com/p/ontologies-and-earnings-calls-why"}
+
+- {week: 3, topic: Non-Text Sources, level: required, kind: Writing, title: "Using NLP to Unlock a Treasure Trove of Alternative Data", length: "7 min", author: "CFA Institute", year: 2024, url: "https://www.cfainstitute.org/insights/articles/using-nlp-to-unlock-treasure-trove-of-alternative-data"}
+- {week: 3, topic: Non-Text Sources, level: optional, kind: Writing, title: "Unstructured Data and AI: Fine-Tuning LLMs to Enhance the Investment Process", length: "report", author: "Brian Pisaneschi", year: 2024, url: "https://rpc.cfainstitute.org/sites/default/files/-/media/documents/article/industry-research/unstructured-data-and-ai.pdf"}
+
+- {week: 3, topic: Data Preparation, level: required, kind: Writing, title: "The Quartz Guide to Bad Data", length: "10 min skim", author: "Christopher Groskopf", year: 2016, url: "https://github.com/Quartz/bad-data-guide"}
+- {week: 3, topic: Data Preparation, level: optional, kind: Writing, title: "Data Cleaning IS Analysis, Not Grunt Work", length: "18 min", author: "Randy Au", year: 2020, url: "https://www.counting-stuff.com/data-cleaning-is-analysis-not-grunt-65949948516031001b3512e5/"}
+
+- {week: 3, topic: Retrieval and Analysis, level: required, kind: Writing, title: "What Is an API?", length: "11 min", author: "Trent Fowler", year: 2025, url: "https://zapier.com/blog/what-is-an-api/"}
+- {week: 3, topic: Retrieval and Analysis, level: required, kind: Writing, title: "A Deep Dive Into MCP and the Future of AI Tooling", length: "12 min", author: "Yoko Li", year: 2025, url: "https://a16z.com/a-deep-dive-into-mcp-and-the-future-of-ai-tooling/"}
+- {week: 3, topic: Retrieval and Analysis, level: optional, kind: Writing, title: "What Is an API? In English, Please.", length: "7 min", author: "Petr Gazarov", year: 2016, url: "https://www.freecodecamp.org/news/what-is-an-api-in-english-please-b880a3214a82/"}
+- {week: 3, topic: Retrieval and Analysis, level: optional, kind: Writing, title: "Introducing the Model Context Protocol", length: "3 min", author: "Anthropic", year: 2024, url: "https://www.anthropic.com/news/model-context-protocol"}
+
+- {week: 3, topic: Verification, level: required, kind: Writing, title: "Why Language Models Hallucinate", length: "6 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/why-language-models-hallucinate/"}
+- {week: 3, topic: Verification, level: required, kind: Writing, title: "Deloitte AI Debacle Seen as Wake-Up Call for Corporate Finance", length: "4 min", author: "Alexei Alexis", year: 2025, url: "https://www.cfodive.com/news/deloitte-ai-debacle-seen-wake-up-call-corporate-finance/802674/"}
