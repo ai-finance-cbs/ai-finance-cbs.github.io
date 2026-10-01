@@ -887,3 +887,6 @@ body.full-tools .content { max-width:none; }
 #lecture-pdfs input[type=datetime-local] { max-width:185px; width:100%; font:inherit; }
 .term-actions { border-top:1px solid #ececec; margin-top:14px; padding-top:12px; }
 .term-actions label { display:block; margin:10px 0; }
+/* ---- 2026-10-01: three reading levels (Required later, Recommended now, Optional); equal-width badges ---- */
+.badge-required { width:86px; }
+.badge-recommended { color:#2F6FB8; border-color:#c6dbf2; background:#f7fafe; }

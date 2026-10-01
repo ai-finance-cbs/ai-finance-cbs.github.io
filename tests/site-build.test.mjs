@@ -42,7 +42,7 @@ test('every legacy address redirects and no active page links to Schedule or ret
   }
 });
 test('required reading templates use each week’s Library data and show an explicit empty state', () => {
-  for(const [week,title,slug] of [[1,'Our AI Future: From Abundance to Apocalypse','economics-of-ai'],[2,'DeepSeek FAQ','ai-infrastructure'],[3,'Readings have not been posted.','processing-information']]) {
+  for(const [week,title,slug] of [[1,'Our AI Future: From Abundance to Apocalypse','economics-of-ai'],[2,'DeepSeek FAQ','ai-infrastructure'],[3,'Using EDGAR to Research Investments','processing-information'],[4,'Readings have not been posted.','predicting-outcomes']]) {
     const html=readFileSync(new URL(`materials/week-${week}/index.html`,output),'utf8');
     assert.ok(html.includes(title)); assert.ok(html.includes(`/library/${slug}/`));
   }

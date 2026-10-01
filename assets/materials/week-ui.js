@@ -129,7 +129,7 @@ export function renderWeek(ctx) {
     }
     const session = data.sessions.find(s => s.week === week);
     const when = session?.starts_at ? courseTime(session.starts_at) : classDate(session?.date);
-    root.append(el('p', `Next class · Week ${week}${when ? ` · ${when}` : ' · Date to be announced'}${session?.room ? ` · ${session.room}` : ''}; the paper quiz covers the required readings.`, { class: 'next-class', 'data-next-class': '' }));
+    root.append(el('p', `Next class · Week ${week}${when ? ` · ${when}` : ' · Date to be announced'}${session?.room ? ` · ${session.room}` : ''}; the paper quiz covers this week’s readings.`, { class: 'next-class', 'data-next-class': '' }));
     if (access.role !== 'auditor') root.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`));
   }
   for (const isClass of [true, false]) {
