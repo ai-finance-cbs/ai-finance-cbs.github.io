@@ -646,3 +646,6 @@ caption { margin-bottom:6px; }
 .xlink { font:500 13px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#2F6FB8; text-decoration:none; border:1px solid #9dbfe6; background:#f3f8fd; border-radius:999px; padding:7px 12px; white-space:nowrap; }
 .xlink:hover { background:#e6f0fa; }
 .page-heading .h1-row + * { margin-top:14px; }
+/* cross-link: plain text, not a pill */
+.xlink { border:0 !important; background:none !important; padding:0 !important; border-radius:0; font:400 14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; color:var(--muted); text-decoration:underline; text-decoration-color:#d5dbe2; text-underline-offset:3px; align-self:flex-end; margin-bottom:6px; }
+.xlink:hover { color:#2F6FB8; text-decoration-color:#2F6FB8; }
