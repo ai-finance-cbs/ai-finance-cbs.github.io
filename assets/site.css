@@ -649,3 +649,5 @@ caption { margin-bottom:6px; }
 /* cross-link: plain text, not a pill */
 .xlink { border:0 !important; background:none !important; padding:0 !important; border-radius:0; font:400 14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; color:var(--muted); text-decoration:underline; text-decoration-color:#d5dbe2; text-underline-offset:3px; align-self:flex-end; margin-bottom:6px; }
 .xlink:hover { color:#2F6FB8; text-decoration-color:#2F6FB8; }
+.kicker-sep { color:#c5ccd4; margin:0 8px; }
+.kicker .xlink { font:400 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:0; align-self:auto; }

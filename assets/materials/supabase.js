@@ -34,11 +34,12 @@ export async function createBackend(config) {
       const session = checked(await client.auth.getSession());
       if (!session.session) return null;
       const { user } = checked(await client.auth.getUser());
-      if (!user || !isColumbiaEmail(user.email || '') || !user.email_confirmed_at || user.app_metadata.provider !== 'google') {
-        await client.auth.signOut(); throw new Error('Use a Columbia Google account ending in @columbia.edu or @gsb.columbia.edu.');
-      }
-      // Database checks repeat the email, provider, roster, and allowlist checks.
-      return checked(await client.rpc('get_access'));
+      const refuse = async () => { await client.auth.signOut(); throw new Error('Use a Columbia Google account ending in @columbia.edu or @gsb.columbia.edu.'); };
+      if (!user || !user.email_confirmed_at || user.app_metadata.provider !== 'google') await refuse();
+      // The database decides who is allowed: Columbia accounts plus a short private list of test accounts.
+      const result = await client.rpc('get_access');
+      if (result.error) { if (!isColumbiaEmail(user.email || '')) await refuse(); throw result.error; }
+      return result.data;
     },
     async signIn(redirectTo) { checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })); },
     // Google's own sign-in window (shows the course site's name) hands back an ID token.
