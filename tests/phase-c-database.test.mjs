@@ -63,10 +63,10 @@ test('export gates closure; only the service can record it; purge keeps grades a
 test('rollover, export, purge, and storage reporting deny every non-instructor and preview',()=>fixture(async h=>{
   for(const who of ['anon','a','grader','auditor','outside']) {
     await h.as(who);
-    for(const [name,args] of [['open_term',['Spring 2028']],['close_previous_term',[TERM]],['term_export_manifest',[TERM]],['term_purge_manifest',[TERM]],['staff_overview',[]],['record_term_export',[TERM,0,0]],['record_term_purge',[TERM]]])await assert.rejects(h.rpc(name,...args),/Instructor|permission denied/);
+    for(const [name,args] of [['open_term',['Spring 2028']],['close_previous_term',[TERM]],['term_export_manifest',[TERM]],['term_purge_manifest',[TERM]],['staff_overview',[]],['lecture_orphans',[]],['record_term_export',[TERM,0,0]],['record_term_purge',[TERM]]])await assert.rejects(h.rpc(name,...args),/Instructor|permission denied/);
   }
   await h.as('teacher');await h.rpc('set_student_preview','aa1001');
-  for(const [name,args] of [['open_term',['Spring 2028']],['close_previous_term',[TERM]],['term_export_manifest',[TERM]],['term_purge_manifest',[TERM]],['staff_overview',[]]])await assert.rejects(h.rpc(name,...args),/read-only/);
+  for(const [name,args] of [['open_term',['Spring 2028']],['close_previous_term',[TERM]],['term_export_manifest',[TERM]],['term_purge_manifest',[TERM]],['staff_overview',[]],['lecture_orphans',[]]])await assert.rejects(h.rpc(name,...args),/read-only/);
   await h.rpc('set_student_preview',null);await assert.rejects(h.rpc('close_previous_term',TERM),/archived/);
 }));
 
@@ -76,4 +76,19 @@ test('storage overview counts object metadata, and purge scopes paths to one clo
   await h.as('teacher');assert.equal((await h.rpc('staff_overview')).storage_bytes,768);
   await h.rpc('open_term','Spring 2028');await h.as('service');await h.rpc('record_term_export',TERM,0,0);await h.as('teacher');await h.rpc('close_previous_term',TERM);
   assert.deepEqual((await h.rpc('term_purge_manifest',TERM)).objects,[{bucket:'submissions',path:'spring-2027/orphan.pdf'}]);
+}));
+
+
+test('lecture orphan list excludes references in active, archived, and closed terms; export exposes only its objects',()=>fixture(async h=>{
+  await h.as('owner');await h.rows('alter table storage.objects add column metadata jsonb');
+  await h.rows("insert into lecture_files(week,title,storage_path) values(1,'Old notes','week-1/old.pdf')");
+  await h.rows("insert into storage.objects(bucket_id,name,metadata) values('lecture-notes','week-1/old.pdf','{\"size\":10}'),('lecture-notes','legacy/orphan.pdf','{\"size\":20}'),('submissions','ignore.pdf','{\"size\":30}')");
+  await h.as('teacher');await h.rpc('open_term','Spring 2028');
+  await h.rows("insert into lecture_files(week,title,storage_path) values(2,'New notes','week-2/new.pdf')");
+  await h.as('owner');await h.rows("insert into storage.objects(bucket_id,name,metadata) values('lecture-notes','week-2/new.pdf','{\"size\":40}')");
+  await h.as('teacher');assert.deepEqual((await h.rpc('term_export_manifest',TERM)).storage_objects,[{bucket:'lecture-notes',path:'week-1/old.pdf',size:10}]);
+  const expected=[{path:'legacy/orphan.pdf',size:20}];assert.deepEqual(await h.rpc('lecture_orphans'),expected);
+  await h.as('service');await h.rpc('record_term_export',TERM,1,10,JSON.stringify([{path:'missing.pdf'}]));
+  await h.as('teacher');const term=(await h.rpc('staff_overview')).terms.find(t=>t.id===TERM);assert.equal(term.file_count,1);assert.equal(term.byte_count,10);assert.deepEqual(term.missing_files,[{path:'missing.pdf'}]);
+  await h.rpc('close_previous_term',TERM);assert.deepEqual(await h.rpc('lecture_orphans'),expected);
 }));

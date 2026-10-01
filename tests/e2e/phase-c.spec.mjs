@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter=async(page,role,slug)=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
 const pdf=name=>({name,mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nPhase C\n%%EOF')});
 test.beforeEach(async({page})=>{
+  await page.route('https://cdn.jsdelivr.net/npm/fflate@0.8.3/esm/browser.js',route=>route.fulfill({contentType:'text/javascript',body:readFileSync('node_modules/fflate/esm/browser.js','utf8')}));
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.setFixedTime(new Date('2027-01-26T13:00:00Z'));
 });
@@ -68,7 +69,7 @@ test('Settings manages New York times, linked modes, blocked submitted changes, 
 test('Submit lists all nine upload items, shares inline validation, and respects graded, preview, and archived locks',async({page})=>{
   await seed(page);await enter(page,'student','submit');
   expect(await page.locator('[data-submit-code]').evaluateAll(nodes=>nodes.map(n=>n.dataset.submitCode))).toEqual(['M1','M2','M3','M4','M5','FP','O1','O2','O3']);
-  const first=page.locator('#submit-M1');await expect(first.getByRole('link',{name:'Week 1',exact:true})).toHaveAttribute('href','/materials/week-1/#milestone-1');
+  const first=page.locator('#submit-M1');await expect(first.getByRole('link',{name:'M1 · Demo milestone 1',exact:true})).toHaveAttribute('href','/materials/week-1/#milestone-1');
   await first.getByRole('button',{name:'Submit',exact:true}).click();await expect(first.locator('[data-submission-status]')).toHaveText('Choose a file to submit.');
   await first.getByLabel('Submission file',{exact:true}).setInputFiles(pdf('survey.pdf'));await first.getByRole('button',{name:'Submit',exact:true}).click();await expect(first.locator('[data-submission-status]')).toContainText('survey.pdf');
   const prototype=page.locator('#submit-FP');await prototype.getByLabel('Prototype HTTPS link').fill('http://bad.example');await prototype.getByRole('button',{name:'Submit',exact:true}).click();await expect(prototype.locator('[data-submission-status]')).toHaveText('Link must start with https://.');

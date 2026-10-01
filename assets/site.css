@@ -890,3 +890,19 @@ body.full-tools .content { max-width:none; }
 /* ---- 2026-10-01: three reading levels (Required later, Recommended now, Optional); equal-width badges ---- */
 .badge-required { width:86px; }
 .badge-recommended { color:#2F6FB8; border-color:#c6dbf2; background:#f7fafe; }
+
+/* Submit is a single ledger, with the shared upload controls in its final column. */
+.class-tools #materials-root .submit-item { display:grid; grid-template-columns:minmax(210px,1.3fr) 160px 85px minmax(140px,1fr) 235px; align-items:center; gap:16px; padding:10px 0; min-height:52px; }
+.class-tools #materials-root .submit-item h2, .class-tools #materials-root .submit-item p { margin:0; font-size:12px; }
+.class-tools #materials-root .submit-item h2 { font-size:13px; line-height:1.4; }
+.submit-item .submission-mode { font-weight:400; }
+.submit-item .submission-box { margin:0; min-width:0; }
+.submit-item .submission-row { gap:8px; justify-content:flex-end; }
+.submit-item .submission-status { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.class-tools #materials-root #submit-format-hint { margin:0 0 14px; }
+@media(max-width:1099px) {
+  .class-tools #materials-root .submit-item { grid-template-columns:minmax(0,1fr) auto; gap:8px 14px; }
+  .submit-item h2 { grid-column:1/-1; }
+  .submit-item .submission-status { grid-column:1; }
+  .submit-item .submission-box { grid-column:1/-1; }
+}

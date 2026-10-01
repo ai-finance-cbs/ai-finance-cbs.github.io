@@ -28,11 +28,9 @@ export function groupOverride(data, item, uni, submission) {
   const grade = data.grades.find(g => g.item_id === item.id && g.uni === uni);
   return grade?.score == null || Number(grade.score) !== Number(baseline.score);
 }
-// Optional items have no week column. Their deadline links to the next dated class.
-export function submissionWeek(code, item = {}, sessions = []) {
+// Optional tasks are independent of the weekly milestones.
+export function submissionWeek(code) {
   if (code === 'FP') return 6;
-  if (/^M[1-5]$/.test(code)) return Number(code[1]);
-  const due = Date.parse(item.due_at);
-  return sessions.filter(s => s.week >= 1 && s.week <= 6 && Date.parse(s.starts_at || s.date) >= due).sort((a,b) => a.week - b.week)[0]?.week || 6;
+  return /^M[1-5]$/.test(code) ? Number(code[1]) : null;
 }
 export const SUBMIT_CODES = ['M1','M2','M3','M4','M5','FP','O1','O2','O3'];

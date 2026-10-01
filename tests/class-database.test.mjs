@@ -322,6 +322,7 @@ const tables = [
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
 const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge'];
 const fnCases = {
+  lecture_orphans: [],
   open_term: ['Spring 2028'],
   close_previous_term: ['spring-2027'],
   staff_overview: [],

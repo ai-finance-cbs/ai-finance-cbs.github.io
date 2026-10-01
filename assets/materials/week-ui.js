@@ -16,40 +16,51 @@ const block = (title, id) => {
 };
 function submissionBlock({ data, access, path, backend, refresh }, code, compact = false) {
   const item = data.submission_items.find(i => gradeCode(i) === code);
-  const week = submissionWeek(code, item, data.sessions);
+  const week = submissionWeek(code);
   const assignment = !code.startsWith('O') && data.assignments.find(a => a.id === week);
   const section = block(compact ? `${code} · ${assignment?.title || item?.title || code}` : 'Milestone', compact ? `submit-${code}` : week === 6 ? 'final-prototype' : `milestone-${week}`);
   section.dataset.submitCode = code;
   section.classList.add('assignment-section');
+  if (compact) {
+    section.classList.add('submit-item');
+    const heading = section.querySelector('h2');
+    if (week) { const link = el('a', heading.textContent, { href: `${path(`week-${week}`)}${week === 6 ? '#final-prototype' : `#milestone-${week}`}` }); heading.replaceChildren(link); }
+  }
   if (!compact) section.append(el('h3', `${code} · ${assignment?.title || item?.title || 'Milestone'}`));
   if (item?.due_at) section.append(el('p', `Due ${courseTime(item.due_at)}`, { class: 'upcoming-meta' }));
-  else section.append(el('p', 'Due time to be announced.', { class: 'upcoming-meta' }));
-  if (compact) section.append(el('a', `Week ${week}`, { href: `${path(`week-${week}`)}${code.startsWith('O') ? '' : week === 6 ? '#final-prototype' : `#milestone-${week}`}` }));
-  else if (assignment) {
-    section.append(el('p', assignment.description, { class: 'assignment-copy' }));
-    for (const [label, text] of [['Deliverable', assignment.deliverable], ['Graded on', assignment.grading]]) {
-      if (text) { const p = el('p', null, { class: 'assignment-copy' }); p.append(el('strong', `${label}: `), document.createTextNode(text)); section.append(p); }
-    }
-  } else section.append(el('p', 'Instructions have not been posted.'));
+  else section.append(el('p', compact ? '' : 'Due time to be announced.', { class: 'upcoming-meta' }));
+  if (!compact) {
+    if (assignment) {
+      section.append(el('p', assignment.description, { class: 'assignment-copy' }));
+      for (const [label, text] of [['Deliverable', assignment.deliverable], ['Graded on', assignment.grading]]) {
+        if (text) { const p = el('p', null, { class: 'assignment-copy' }); p.append(el('strong', `${label}: `), document.createTextNode(text)); section.append(p); }
+      }
+    } else section.append(el('p', 'Instructions have not been posted.'));
+  }
   if (!item) return section;
   const group = ownGroup(data, item, access.uni);
-  section.append(el('p', item.mode === 'individual' ? 'Individual' : `Group submission${group ? `: Group ${group.number}` : ''}`, { class: 'submission-mode' }));
+  section.append(el('p', item.mode === 'individual' ? 'Individual' : compact ? (group ? `Group ${group.number}` : 'Group') : `Group submission${group ? `: Group ${group.number}` : ''}`, { class: 'submission-mode' }));
   const submission = ownSubmission(data, item, access.uni);
   const status = el('p', '', { class: 'submission-status', role: 'status', 'data-submission-status': '' });
   const showStatus = () => {
     status.replaceChildren(document.createTextNode(submissionStatus(submission)));
     if (submission) {
-      status.append(document.createTextNode(` · ${submission.file_name || submission.link} · ${courseTime(submission.submitted_at)}`));
+      status.append(document.createTextNode(` · ${submission.file_name || submission.link}${compact ? '' : ` · ${courseTime(submission.submitted_at)}`}`));
       if (submission.link) status.append(document.createTextNode(' · '), el('a', 'Open submission', { href: submission.link, target: '_blank', rel: 'noopener noreferrer' }));
     }
   };
   showStatus();
+  status.title = status.textContent;
+  if (compact) section.append(status);
   if (item.locked || submission?.locked) {
+    if (compact) { status.textContent = 'Graded, locked.'; return section; }
     const locked = el('div', null, { class: 'submission-box', 'data-submission-locked': '' });
     locked.append(el('p', 'Graded, locked.'), status); section.append(locked); return section;
   }
   if (item.mode === 'group' && !group && access.role === 'student') {
-    section.append(el('p', 'Join a group first.'), el('a', 'Go to Groups', { href: path('groups') }), status); return section;
+    if (compact) status.replaceChildren(el('a', 'Join a group first', { href: path('groups') }));
+    else section.append(el('p', 'Join a group first.'), el('a', 'Go to Groups', { href: path('groups') }), status);
+    return section;
   }
   if (item.kind === 'none') return section;
   const form = el('form', null, { class: 'submission-box' });
@@ -62,8 +73,8 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
     choose = el('button', 'Choose file', { type: 'button', class: 'materials-button' });
     choose.addEventListener('click', () => input.click());
     const filename = el('span', 'No file selected', { class: 'selected-file-name', 'data-selected-file': '' });
-    input.addEventListener('change', () => { filename.textContent = input.files[0]?.name || 'No file selected'; });
-    row.append(choose, filename, input);
+    input.addEventListener('change', () => { filename.textContent = input.files[0]?.name || 'No file selected'; if (compact) { status.textContent = filename.textContent; status.title = filename.textContent; } });
+    row.append(choose); if (!compact) row.append(filename); row.append(input);
   } else {
     input.placeholder = 'https://';
     row.append(input);
@@ -74,8 +85,8 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   disable(!writable);
   form.noValidate = true;
   const hint = el('p', item.kind === 'file' ? 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB' : 'Use an HTTPS video link.', { class: 'submission-hint', id: `submission-hint-${item.id}` });
-  input.setAttribute('aria-describedby', hint.id);
-  form.append(row, status, hint);
+  input.setAttribute('aria-describedby', compact ? 'submit-format-hint' : hint.id);
+  if (compact) form.append(row); else form.append(row, status, hint);
   let saving = false;
   form.addEventListener('submit', async event => {
     event.preventDefault(); if (!writable || saving) return;
@@ -158,6 +169,7 @@ export function renderWeek(ctx) {
 }
 
 export function renderSubmit(ctx) {
+  ctx.root.append(el('p', 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB. FP: HTTPS video link.', { id:'submit-format-hint', class:'submission-hint' }));
   for (const code of SUBMIT_CODES) {
     if (ctx.data.submission_items.some(i => gradeCode(i) === code && ['file','link'].includes(i.kind))) ctx.root.append(submissionBlock(ctx, code, true));
   }

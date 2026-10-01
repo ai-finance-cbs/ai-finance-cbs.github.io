@@ -281,7 +281,8 @@ Migration 009 is live in the Phase C base at `01b1e4c`. Phase C leaves migration
 
 ## Phase C: staff tools and Submit
 
-Phase C starts from live main at `01b1e4c`, including its blue class and red staff menus.
+Phase C starts from `01b1e4c` and merges main at `ba28fbb` during review round 1.
+It retains the blue class and red staff menus, updated readings, and Recommended reading labels.
 Class tools use the full content width. The header dimensions remain unchanged.
 The current course has 16 grading items. Layout tests also verify capacity for a seventeenth item at 1280px and 1440px.
 Score columns use compact codes, maxima, and Instructor-only release checkboxes.
@@ -293,9 +294,9 @@ Migration 010 records group-grade baselines from this release forward. It does n
 
 Students use **Submit** for M1–M5, FP, and O1–O3. It shares the week-page submission controls and backend checks.
 Auditors cannot open Submit. Graded, preview, and archived records retain their existing locks.
-Milestone links point to their corresponding weeks; FP points to Week 6.
-Optional items have no week field. Their links use the next session on or after the deadline, falling back to Week 6.
-Confirm those optional week assignments before publication if a fixed mapping is wanted.
+Each Submit item occupies one row. The format hint appears once above the list.
+Milestone titles link to their corresponding weeks; FP links to Week 6.
+O1–O3 have no week association or week link. Due times appear only when set in Settings.
 
 Session, item, group deadline, and file release inputs use New York time, independent of the computer's time zone.
 Ambiguous November times and nonexistent March times produce inline errors.
@@ -313,7 +314,8 @@ Gradebook, staff Attendance, and Roster provide a term filter. Older terms are r
 5. For the previous term, select **Export grades and submissions**. Save the downloaded ZIP.
 6. The ZIP contains `grades.csv`, `manifest.json`, current submissions, retained on-time submissions, and lecture PDFs.
 7. Links, comments, and saved group memberships remain in the manifest. CSV includes removed roster members who still have grades.
-8. The function records export completion only after every archive entry succeeds. A failed export does not enable closing.
+8. The browser builds the ZIP and starts its download, then sends completion counts to the function.
+   The function verifies those counts against its signed manifest before recording success.
 9. Confirm that you saved the export, then select **Close previous term**. This ends student access to that term.
 10. To remove its stored files, confirm the separate **Purge stored files** action. Metadata and audit records remain.
 
@@ -321,7 +323,28 @@ There is no automatic close or purge. Storage removal uses the Supabase Storage 
 A purge failure leaves completion unrecorded. Retrying removes remaining objects and records completion only when none remain.
 The service alone can call `record_term_export` and `record_term_purge`; browser roles cannot forge those records.
 All term actions deny Graders, Students, Auditors, unlisted users, anonymous users, and Instructor preview.
-The ZIP streams server-side, holding one file at a time. The browser saves the completed download as a Blob.
+The function returns CSV, metadata, and file links signed for 300 seconds. It signs URLs in batches of 100.
+The browser downloads files, checks sizes, and builds the ZIP with pinned `fflate@0.8.3` from cdn.jsdelivr.net.
+Library API reference: [fflate ZIP documentation](https://github.com/101arrowz/fflate#usage).
+File bytes and ZIP processing never enter the export function.
+The server signs a completion ticket bound to the Instructor, term, file count, byte count, and missing-file list.
+The ticket lasts one hour. Altered counts, altered missing lists, expired tickets, and other actors are rejected.
+Download, ZIP, and save failures do not send a completion record. Expired file URLs can be renewed.
+The browser holds the archive locally; it does not upload the ZIP to another service.
+
+Missing objects appear in `manifest.json` under `missing_files`. Export continues with the available files.
+Settings shows the recorded file count, source-file size, and missing-file count next to Close.
+The size excludes CSV, metadata, and ZIP overhead. A zero-file export still contains CSV and metadata.
+The browser cannot verify that a downloaded file reached your disk. The separate saved-export confirmation remains required.
+
+**One hosted export dry run is required before relying on close/purge.**
+After a separately authorized publication, save and open a hosted export with the available files and missing-file list.
+Check its recorded counts and size. This local task does not perform that hosted dry run.
+
+In **Settings → Files**, select **List unreferenced files** to inspect unused lecture-notes objects.
+Select **Delete listed files**, then confirm, to remove them through the existing caller-scoped cleanup action.
+The listing checks references across active, archived, and closed terms. Cleanup checks references again before each deletion.
+Preview and all non-Instructor roles are denied. Referenced files always require their normal deletion workflow.
 The storage line reports used bytes against 1 GB. It does not create an additional upload quota.
 The public term label remains part of the static site configuration and needs review for each new course offering.
 

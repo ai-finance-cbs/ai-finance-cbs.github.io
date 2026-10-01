@@ -379,8 +379,7 @@ function renderTermAdmin(overview) {
     const row=el('section',null,{id:`term-${term.id}`,class:'term-actions','data-term':term.id});row.append(el('h3',term.title),el('p',term.status));
     const progress=formStatus(row);
     const exportButton=button('Export grades and submissions',()=>runAction(exportButton,progress,async()=>{
-      const result=await state.backend.exportTerm(term.id);
-      const a=el('a',null,{href:result.url,download:result.filename,rel:'noopener noreferrer'});a.click();
+      await state.backend.exportTerm(term.id,text=>{progress.textContent=text;});
     },'Export ready. Save the downloaded ZIP before closing this term.',true));
     if(term.status==='archived-readable') {
       row.append(exportButton);
@@ -388,7 +387,10 @@ function renderTermAdmin(overview) {
       const close=button('Close previous term',()=>runAction(close,progress,()=>state.backend.closePreviousTerm(term.id),'Term closed. Purge remains a separate action.',true));
       close.disabled=true;confirmed.addEventListener('change',()=>close.disabled=!confirmed.checked || !term.exported_at);
       row.append(close);
-      if(term.exported_at) row.append(el('p',`Export recorded ${new Date(term.exported_at).toLocaleDateString('en-US',{timeZone:'America/New_York'})}`));
+      if(term.exported_at) {
+        row.append(el('p',`Export recorded ${new Date(term.exported_at).toLocaleDateString('en-US',{timeZone:'America/New_York'})} · ${term.file_count} files · ${formatBytes(term.byte_count)}`,{'data-export-summary':''}));
+        if(term.missing_files?.length)row.append(el('p',`${term.missing_files.length} files missing`,{'data-missing-files':''}));
+      }
     } else if(!term.purged_at) {
       const confirmed=field(row,'Delete this closed term’s stored files','purge-confirm',false,'checkbox');
       const purge=button('Purge stored files',()=>runAction(purge,progress,()=>state.backend.purgeTerm(term.id),'Stored files purged. Audit metadata retained.',true));
@@ -398,6 +400,23 @@ function renderTermAdmin(overview) {
   }
 }
 
+function formatBytes(bytes) {
+  return bytes<1024 ? `${bytes} bytes` : bytes<1048576 ? `${(bytes/1024).toFixed(1)} KB` : `${(bytes/1048576).toFixed(1)} MB`;
+}
+function renderOrphanTools(parent) {
+  const results=el('div',null,{'data-orphan-files':''}),status=formStatus(results);
+  const scan=button('List unreferenced files',()=>runAction(scan,status,async()=>{
+    const files=await state.backend.lectureOrphans();results.replaceChildren(status);
+    results.append(el('p',`${files.length} unreferenced files`));
+    if(!files.length)return;
+    const list=el('ul');for(const file of files)list.append(el('li',`${file.path}${file.size==null?'':` · ${formatBytes(file.size)}`}`));results.append(list);
+    const remove=button('Delete listed files',async()=>{
+      if(!await confirmInline(remove,`Delete these ${files.length} unreferenced files?`))return;
+      runAction(remove,status,async()=>{for(const file of files)await state.backend.cleanupLectureOrphan(file.path);results.replaceChildren(status);},'Unreferenced files deleted.',true);
+    });results.append(remove);
+  },'File list ready.'));
+  parent.append(scan,results);
+}
 function renderFileAdmin(files) {
   const s = section('Files', 'lecture-pdfs');
   const form = newForm('file-form');
@@ -435,6 +454,7 @@ function renderFileAdmin(files) {
   }
   if (files.length) s.append(wrapTable(t));
   else s.append(el('p', 'No lecture PDFs uploaded.', { class: 'tool-help' }));
+  renderOrphanTools(s);
 }
 function renderAssignmentAdmin(rows) {
   const s = section('Assignment text and access', 'assignment-editor');

@@ -1,17 +1,5 @@
 import { canWrite, toCsv, gradeTotal, gradeCode } from './class-core.js';
-// The local fake returns a small, uncompressed archive with the same downloadable contract.
-function demoZip(entries) {
-  const parts=[],central=[];let offset=0;
-  for(const [name,text] of entries) {
-    const filename=new TextEncoder().encode(name),bytes=new TextEncoder().encode(text);
-    let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}crc=(crc^0xffffffff)>>>0;
-    const local=new Uint8Array(30+filename.length),v=new DataView(local.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint32(14,crc,true);v.setUint32(18,bytes.length,true);v.setUint32(22,bytes.length,true);v.setUint16(26,filename.length,true);local.set(filename,30);
-    const dir=new Uint8Array(46+filename.length),d=new DataView(dir.buffer);d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint32(16,crc,true);d.setUint32(20,bytes.length,true);d.setUint32(24,bytes.length,true);d.setUint16(28,filename.length,true);d.setUint32(42,offset,true);dir.set(filename,46);
-    parts.push(local,bytes);central.push(dir);offset+=local.length+bytes.length;
-  }
-  const end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);v.setUint32(12,central.reduce((n,b)=>n+b.length,0),true);v.setUint32(16,offset,true);
-  return new Blob([...parts,...central,end],{type:'application/zip'});
-}
+import { exportTermArchive } from './term-export.js';
 export function extendTerms({readAll,saveAll,access}) {
   const requireInstructor=()=>{const a=access();if(!canWrite(a)||a.role!=='instructor')throw new Error('Instructor access required. Preview is read-only.');};
   return {
@@ -35,14 +23,34 @@ export function extendTerms({readAll,saveAll,access}) {
       d.items.push(...d.items.filter(i=>i.term_id===old.id).map(i=>({...i,id:next++,term_id:id,released:false,due_at:null})));
       saveAll(d);return id;
     },
-    async exportTerm(term) {
+    async exportTerm(term, progress) {
       requireInstructor();const d=readAll(),t=d.terms.find(t=>t.id===term);
       if(t?.status!=='archived-readable')throw new Error('Export an archived, readable term.');
       const items=d.items.filter(i=>i.term_id===term),grades=d.grades.filter(g=>g.term_id===term);
       const csv=toCsv([['UNI','Name',...items.map(gradeCode),'Total'],...d.roster.filter(r=>r.term_id===term).map(r=>[r.uni,r.name,...items.map(i=>grades.find(g=>g.uni===r.uni&&g.item_id===i.id)?.score??''),gradeTotal(items,grades.filter(g=>g.uni===r.uni)).total])]);
-      const snapshot=Object.fromEntries(['items','grades','submissions','files','roster'].map(key=>[key,d[key].filter(r=>r.term_id===term)]));
-      const url=URL.createObjectURL(demoZip([['grades.csv',csv],['synthetic-snapshot.json',JSON.stringify(snapshot,null,2)]]));setTimeout(()=>URL.revokeObjectURL(url),300000);
-      t.exported_at=new Date().toISOString();saveAll(d);return {url,filename:`${term}.zip`};
+      const metadata=Object.fromEntries(['items','grades','submissions','files','roster'].map(key=>[key,d[key].filter(r=>r.term_id===term).map(({data,on_time_data,...row})=>row)]));
+      metadata.missing_files=[];const files=[];
+      const add=async(bucket,path,name,data)=>{if(!path)return;const entry={bucket,path,name};if(!data)metadata.missing_files.push(entry);else files.push({...entry,url:data,size:(await (await fetch(data)).blob()).size});};
+      for(const row of d.submissions.filter(r=>r.term_id===term)) {
+        await add('submissions',row.storage_path,`submissions/${row.id}/current-${row.file_name}`,row.data);
+        await add('submissions',row.on_time_path,`submissions/${row.id}/on-time-file`,row.on_time_data);
+      }
+      for(const row of d.files.filter(r=>r.term_id===term))await add('lecture-notes',row.storage_path,`lecture-notes/${row.id}.pdf`,row.data);
+      const manifest={csv,metadata,files,file_count:files.length,byte_count:files.reduce((n,f)=>n+f.size,0),ticket:'synthetic'};
+      return exportTermArchive(term,async body=>{
+        requireInstructor();if(body.action==='export')return manifest;
+        if(body.file_count!==manifest.file_count || body.byte_count!==manifest.byte_count)throw new Error('Export counts do not match.');
+        const latest=readAll(),termRow=latest.terms.find(t=>t.id===term);
+        if(termRow.status!=='archived-readable')throw new Error('Term is not available for export.');
+        Object.assign(termRow,{exported_at:new Date().toISOString(),file_count:body.file_count,byte_count:body.byte_count,missing_files:metadata.missing_files});saveAll(latest);
+        return {ok:true};
+      },{progress});
+    },
+    async lectureOrphans() { requireInstructor();return readAll().orphan_files || []; },
+    async cleanupLectureOrphan(path) {
+      requireInstructor();const d=readAll();
+      if(d.files.some(f=>f.storage_path===path))throw new Error('This file has metadata. Use Delete in Settings.');
+      d.orphan_files=(d.orphan_files || []).filter(f=>f.path!==path);saveAll(d);
     },
     async closePreviousTerm(term) {
       requireInstructor();const d=readAll(),t=d.terms.find(t=>t.id===term);

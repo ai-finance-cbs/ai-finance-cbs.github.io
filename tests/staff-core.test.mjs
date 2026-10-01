@@ -16,8 +16,8 @@ test('grading follows submitted members after a move; zero group scores and clea
   d.grades=[];assert.equal(groupOverride(d,item,'b',submission),true);
 });
 
-test('optional task week links use deadlines and fall back to Week 6 when undated',async()=>{
+test('only milestones and FP link to a week; optional tasks never do',async()=>{
   const {submissionWeek}=await import('../assets/materials/staff-core.js');
-  assert.equal(submissionWeek('M4'),4);assert.equal(submissionWeek('FP'),6);assert.equal(submissionWeek('O1'),6);
-  assert.equal(submissionWeek('O2',{due_at:'2027-02-03T13:00:00Z'},[{week:3,starts_at:'2027-02-03T14:00:00Z'},{week:4,starts_at:'2027-02-10T14:00:00Z'}]),3);
+  assert.equal(submissionWeek('M4'),4);assert.equal(submissionWeek('FP'),6);
+  for(const code of ['O1','O2','O3'])assert.equal(submissionWeek(code,{due_at:'2027-02-03T13:00:00Z'},[{week:3,starts_at:'2027-02-03T14:00:00Z'}]),null);
 });

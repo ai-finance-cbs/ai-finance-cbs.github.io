@@ -4,11 +4,12 @@ create table public.term_exports (
   term_id text primary key references public.terms(id),
   exported_at timestamptz not null default clock_timestamp(),
   file_count integer not null check(file_count>=0), byte_count bigint not null check(byte_count>=0),
+  missing_files jsonb not null default '[]' check(jsonb_typeof(missing_files)='array'),
   closed_at timestamptz, purged_at timestamptz
 );
 alter table public.term_exports enable row level security;
 revoke all on public.term_exports from public,anon,authenticated;
-grant select(term_id,exported_at,file_count,byte_count,closed_at,purged_at) on public.term_exports to authenticated;
+grant select(term_id,exported_at,file_count,byte_count,missing_files,closed_at,purged_at) on public.term_exports to authenticated;
 create policy instructor_exports on public.term_exports for select to authenticated using(private.current_role()='instructor');
 create trigger preview_guard before insert or update or delete on public.term_exports for each row execute function private.block_preview_write();
 create trigger change_audit after insert or update or delete on public.term_exports for each row execute function private.audit_class_change();
@@ -43,7 +44,7 @@ create function public.staff_overview() returns jsonb
 language plpgsql stable security definer set search_path='' as $$
 begin
   perform private.assert_writable(); perform private.require_instructor();
-  return jsonb_build_object('terms',(select coalesce(jsonb_agg(to_jsonb(t)||jsonb_build_object('exported_at',e.exported_at,'purged_at',e.purged_at) order by t.created_at,t.id),'[]')
+  return jsonb_build_object('terms',(select coalesce(jsonb_agg(to_jsonb(t)||jsonb_build_object('exported_at',e.exported_at,'purged_at',e.purged_at,'file_count',e.file_count,'byte_count',e.byte_count,'missing_files',e.missing_files) order by t.created_at,t.id),'[]')
     from public.terms t left join public.term_exports e on e.term_id=t.id),
     'storage_bytes',(select coalesce(sum(coalesce((to_jsonb(o)->'metadata'->>'size')::bigint,0)),0) from storage.objects o),
     'storage_limit',1073741824);
@@ -55,19 +56,35 @@ begin
   perform private.assert_writable(); perform private.require_instructor();
   if not exists(select 1 from public.terms where id=p_term and status='archived-readable') then raise exception 'Export an archived, readable term.'; end if;
   return private.term_snapshot(p_term,null,'instructor')||private.submission_snapshot(p_term,null,'instructor')||
-    jsonb_build_object('term',(select to_jsonb(t) from public.terms t where id=p_term));
+    jsonb_build_object('term',(select to_jsonb(t) from public.terms t where id=p_term),
+      'storage_objects',(select coalesce(jsonb_agg(jsonb_build_object('bucket',o.bucket_id,'path',o.name,'size',to_jsonb(o)->'metadata'->'size')),'[]')
+        from storage.objects o where
+          (o.bucket_id='submissions' and exists(select 1 from public.submissions s where s.term_id=p_term and o.name in(s.storage_path,s.on_time_path))) or
+          (o.bucket_id='lecture-notes' and exists(select 1 from public.lecture_files f where f.term_id=p_term and f.storage_path=o.name))));
 end $$;
 
 -- Only the file function records a complete export. Browser callers cannot forge this gate.
-create function public.record_term_export(p_term text,p_files integer,p_bytes bigint) returns void
+create function public.record_term_export(p_term text,p_files integer,p_bytes bigint,p_missing jsonb default '[]') returns void
 language plpgsql security definer set search_path='' as $$
 begin
   perform private.assert_writable();
   perform 1 from public.terms where id=p_term and status='archived-readable' for update;
   if not found then raise exception 'Term is not available for export.'; end if;
-  insert into public.term_exports(term_id,file_count,byte_count) values(p_term,p_files,p_bytes)
-    on conflict(term_id) do update set exported_at=clock_timestamp(),file_count=excluded.file_count,byte_count=excluded.byte_count;
+  insert into public.term_exports(term_id,file_count,byte_count,missing_files) values(p_term,p_files,p_bytes,p_missing)
+    on conflict(term_id) do update set exported_at=clock_timestamp(),file_count=excluded.file_count,byte_count=excluded.byte_count,missing_files=excluded.missing_files;
 end $$;
+
+-- Check references in every term, including closed terms. Never expose this list to students.
+create function public.lecture_orphans() returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+begin
+  perform private.assert_writable(); perform private.require_instructor();
+  return (select coalesce(jsonb_agg(jsonb_build_object('path',o.name,'size',to_jsonb(o)->'metadata'->'size') order by o.name),'[]')
+    from storage.objects o where o.bucket_id='lecture-notes'
+      and not exists(select 1 from public.lecture_files f where f.storage_path=o.name));
+end $$;
+revoke all on function public.lecture_orphans() from public,anon,authenticated;
+grant execute on function public.lecture_orphans() to authenticated;
 
 create function public.close_previous_term(p_term text default null) returns void
 language plpgsql security definer set search_path='' as $$
@@ -107,6 +124,6 @@ end $$;
 
 revoke all on function public.open_term(text),public.staff_overview(),public.term_export_manifest(text),public.close_previous_term(text),public.term_purge_manifest(text) from public,anon,authenticated;
 grant execute on function public.open_term(text),public.staff_overview(),public.term_export_manifest(text),public.close_previous_term(text),public.term_purge_manifest(text) to authenticated;
-revoke all on function public.record_term_export(text,integer,bigint),public.record_term_purge(text) from public,anon,authenticated;
-grant execute on function public.record_term_export(text,integer,bigint),public.record_term_purge(text) to service_role;
+revoke all on function public.record_term_export(text,integer,bigint,jsonb),public.record_term_purge(text) from public,anon,authenticated;
+grant execute on function public.record_term_export(text,integer,bigint,jsonb),public.record_term_purge(text) to service_role;
 commit;

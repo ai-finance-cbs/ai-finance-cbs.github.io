@@ -1,29 +1,3 @@
-// Stored ZIP entries need no compression library. Stream one object at a time so the
-// archive does not need to fit in the function's memory. Each upload is capped at 25 MB.
-const encoder = new TextEncoder();
-const crcTable = Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
-const crc32 = bytes => {let crc=0xffffffff;for(const byte of bytes)crc=crcTable[(crc^byte)&255]^(crc>>>8);return (crc^0xffffffff)>>>0;};
-function header(length,signature) {const bytes=new Uint8Array(length),view=new DataView(bytes.buffer);view.setUint32(0,signature,true);return {bytes,view};}
-export async function* zipEntries(entries) {
-  const directory=[];let offset=0;
-  for await(const {name,bytes} of entries) {
-    if(directory.length>=65535 || offset+bytes.length>0xffffffff)throw new Error('Archive exceeds the ZIP size limit.');
-    const filename=encoder.encode(name);
-    const local=header(30+filename.length,0x04034b50);
-    local.view.setUint16(4,20,true);local.view.setUint16(6,0x800,true);
-    const crc=crc32(bytes);
-    local.view.setUint32(14,crc,true);local.view.setUint32(18,bytes.length,true);local.view.setUint32(22,bytes.length,true);local.view.setUint16(26,filename.length,true);local.bytes.set(filename,30);
-    const central=header(46+filename.length,0x02014b50);
-    central.view.setUint16(4,20,true);central.view.setUint16(6,20,true);central.view.setUint16(8,0x800,true);
-    central.view.setUint32(16,crc,true);central.view.setUint32(20,bytes.length,true);central.view.setUint32(24,bytes.length,true);central.view.setUint16(28,filename.length,true);central.view.setUint32(42,offset,true);central.bytes.set(filename,46);
-    directory.push(central.bytes);offset+=local.bytes.length+bytes.length;
-    yield local.bytes;yield bytes;
-  }
-  const start=offset;
-  for(const bytes of directory){offset+=bytes.length;yield bytes;}
-  const end=header(22,0x06054b50);
-  end.view.setUint16(8,directory.length,true);end.view.setUint16(10,directory.length,true);end.view.setUint32(12,offset-start,true);end.view.setUint32(16,start,true);yield end.bytes;
-}
 export function gradesCsv(manifest) {
   const items=manifest.items;
   const csv=rows=>rows.map(row=>row.map(value=>{let text=String(value??'');if(/^[=+@\-\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}).join(',')).join('\r\n');
@@ -36,35 +10,67 @@ export function gradesCsv(manifest) {
   })]);
 }
 const safeName = value => String(value).replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,180);
-export function exportStream(manifest,service,term) {
-  let fileCount=0,byteCount=0;
-  async function* entries() {
-    yield {name:'grades.csv',bytes:encoder.encode(gradesCsv(manifest))};
-    // Links, both timestamps, group snapshots, and comments remain reviewable after file purge.
-    yield {name:'manifest.json',bytes:encoder.encode(JSON.stringify(manifest,null,2))};
-    const files=[];
-    for(const s of manifest.submissions) {
-      const item=manifest.items.find(i=>i.id===s.item_id);
-      const folder=`submissions/${safeName(item?.code || s.item_id)}/${safeName(s.owner_uni || s.group_id)}`;
-      if(s.storage_path)files.push({bucket:'submissions',path:s.storage_path,name:`${folder}/current-${safeName(s.file_name)}`});
-      if(s.on_time_path)files.push({bucket:'submissions',path:s.on_time_path,name:`${folder}/on-time-${safeName(s.on_time_path.split('/').at(-1))}`});
-    }
-    for(const f of manifest.files)files.push({bucket:'lecture-notes',path:f.storage_path,name:`lecture-notes/week-${f.week}/${safeName(f.id)}-${safeName(f.title)}.pdf`});
-    for(const file of files) {
-      const {data,error}=await service.storage.from(file.bucket).download(file.path);
-      if(error || !data)throw new Error('Export could not read a stored file. No export was recorded.');
-      const bytes=new Uint8Array(await data.arrayBuffer());fileCount++;byteCount+=bytes.length;
-      yield {name:file.name,bytes};
+
+const encoder = new TextEncoder();
+const hex = bytes => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2,'0')).join('');
+const digest = async value => hex(await crypto.subtle.digest('SHA-256', encoder.encode(JSON.stringify(value))));
+const key = secret => crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);
+
+// Only metadata and short-lived URLs leave this function. No file bytes or ZIP work run here.
+export async function prepareExport(snapshot, service, secret, actor) {
+  const {storage_objects:objects=[], ...metadata} = snapshot;
+  const stored=new Map(objects.map(o=>[`${o.bucket}/${o.path}`,o]));
+  const candidates=[];
+  for(const s of snapshot.submissions) {
+    const item=snapshot.items.find(i=>i.id===s.item_id);
+    const folder=`submissions/${safeName(item?.code || s.item_id)}/${safeName(s.owner_uni || s.group_id)}`;
+    if(s.storage_path)candidates.push({bucket:'submissions',path:s.storage_path,name:`${folder}/current-${safeName(s.file_name)}`});
+    if(s.on_time_path)candidates.push({bucket:'submissions',path:s.on_time_path,name:`${folder}/on-time-${safeName(s.on_time_path.split('/').at(-1))}`});
+  }
+  for(const f of snapshot.files)candidates.push({bucket:'lecture-notes',path:f.storage_path,name:`lecture-notes/week-${f.week}/${safeName(f.id)}-${safeName(f.title)}.pdf`});
+  const missing_files=[], files=[];
+  for(const file of candidates) {
+    const object=stored.get(`${file.bucket}/${file.path}`);
+    if(!object)missing_files.push(file);
+    else files.push({...file,size:object.size == null ? null : Number(object.size)});
+  }
+  for(const bucket of ['submissions','lecture-notes']) {
+    const selected=files.filter(f=>f.bucket===bucket);
+    for(let i=0;i<selected.length;i+=100) {
+      const batch=selected.slice(i,i+100);
+      const {data,error}=await service.storage.from(bucket).createSignedUrls(batch.map(f=>f.path),300,{download:true});
+      if(error || !data)throw new Error('Could not prepare export downloads. Retry.');
+      for(const file of batch) {
+        const signed=data.find(row=>row.path===file.path);
+        if(signed?.error && /not.found|does not exist/i.test(String(signed.error.message || signed.error))) {
+          missing_files.push({bucket:file.bucket,path:file.path,name:file.name});
+          files.splice(files.indexOf(file),1);
+        } else if(!signed?.signedUrl || signed.error)throw new Error('Could not prepare an export file. Retry.');
+        else {
+          if(!Number.isSafeInteger(file.size) || file.size<0)throw new Error('Stored file size is unavailable. Retry after checking Storage metadata.');
+          file.url=signed.signedUrl;
+        }
+      }
     }
   }
-  async function* complete() {
-    yield* zipEntries(entries());
-    const {error}=await service.rpc('record_term_export',{p_term:term,p_files:fileCount,p_bytes:byteCount});
-    if(error)throw new Error('Export could not be recorded. Retry before closing the term.');
-  }
-  const iterator=complete();
-  return new ReadableStream({
-    async pull(controller){try{const next=await iterator.next();if(next.done)controller.close();else controller.enqueue(next.value);}catch(error){controller.error(error);}},
-    async cancel(){await iterator.return();},
-  });
+  missing_files.sort((a,b)=>a.name.localeCompare(b.name));
+  metadata.missing_files=missing_files;
+  const csv=gradesCsv(snapshot), file_count=files.length, byte_count=files.reduce((n,f)=>n+f.size,0);
+  const manifest_id=await digest({metadata,csv,files:files.map(({url,...f})=>f)});
+  const receipt={term:snapshot.term.id,actor,manifest_id,file_count,byte_count,missing_hash:await digest(missing_files),expires_at:Date.now()+3600000};
+  const payload=JSON.stringify(receipt);
+  const signature=hex(await crypto.subtle.sign('HMAC',await key(secret),encoder.encode(payload)));
+  return {csv,metadata,files,file_count,byte_count,manifest_id,ticket:{payload,signature},expires_in:300};
+}
+
+export async function verifyExport(body, secret, actor) {
+  const {payload,signature}=body.ticket || {};
+  if(typeof payload!=='string' || payload.length>2000 || !/^[a-f0-9]{64}$/.test(signature || ''))throw new Error('Prepare the export before recording it.');
+  const bytes=Uint8Array.from(signature.match(/../g),s=>parseInt(s,16));
+  if(!await crypto.subtle.verify('HMAC',await key(secret),bytes,encoder.encode(payload)))throw new Error('Invalid export receipt.');
+  const receipt=JSON.parse(payload);
+  if(receipt.actor!==actor || receipt.term!==body.term_id || receipt.expires_at<Date.now())throw new Error('Export receipt expired or belongs to another session or term.');
+  if(!Number.isSafeInteger(body.file_count) || !Number.isSafeInteger(body.byte_count) || body.file_count!==receipt.file_count || body.byte_count!==receipt.byte_count)throw new Error('Export file count or size does not match the manifest.');
+  if(!Array.isArray(body.missing_files) || await digest(body.missing_files)!==receipt.missing_hash)throw new Error('Missing files do not match the manifest.');
+  return receipt;
 }

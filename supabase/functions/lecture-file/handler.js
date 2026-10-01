@@ -1,13 +1,21 @@
 import { courseHandler, canWrite } from '../_shared/course-auth.js';
 export function createHandler(createClient, env) {
   return courseHandler(createClient, env, async ({ body, access, userClient, admin, respond }) => {
-      if (!body || !['download', 'delete', 'cleanup'].includes(body.action)) return respond(400, { error: 'Unknown file action.' });
+      if (!body || !['download', 'delete', 'cleanup', 'orphans'].includes(body.action)) return respond(400, { error: 'Unknown file action.' });
       if (body.action !== 'download' && !canWrite(access, ['instructor'])) return respond(403, { error: 'Instructor access required.' });
+      if (body.action === 'orphans') {
+        const {data,error}=await userClient.rpc('lecture_orphans');
+        return error ? respond(409,{error:'Could not list unreferenced files.'}) : respond(200,{files:data});
+      }
       let file;
       if (body.action === 'cleanup') {
-        if (typeof body.path !== 'string' || !/^week-[0-7]\/[0-9a-f-]{36}\.pdf$/.test(body.path)) return respond(400, { error: 'Invalid storage path.' });
+        if (typeof body.path !== 'string' || !body.path || body.path.length>1024 || /[\x00-\x1f\\]/.test(body.path) || body.path.split('/').some(p=>!p || p==='.' || p==='..')) return respond(400,{error:'Invalid storage path.'});
+        if (!/^week-[0-7]\/[0-9a-f-]{36}\.pdf$/.test(body.path)) {
+          const {data,error}=await userClient.rpc('lecture_orphans');
+          if(error || !data?.some(file=>file.path===body.path))return respond(409,{error:'This path is not an unreferenced file.'});
+        }
         const { data: existing, error } = await userClient.from('lecture_files').select('id').eq('storage_path', body.path).maybeSingle();
-        if (error || existing) return respond(409, { error: 'This file has metadata. Use Delete on Files.' });
+        if (error || existing) return respond(409, { error: 'This file has metadata. Use Delete in Settings.' });
         file = { storage_path: body.path };
       } else {
         if (typeof body.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.id)) return respond(400, { error: 'Invalid file ID.' });
