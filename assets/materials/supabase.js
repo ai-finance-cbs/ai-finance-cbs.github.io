@@ -41,6 +41,8 @@ export async function createBackend(config) {
       return checked(await client.rpc('get_access'));
     },
     async signIn(redirectTo) { checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })); },
+    // Google's own sign-in window (shows the course site's name) hands back an ID token.
+    async signInWithGoogleToken(token, nonce) { checked(await client.auth.signInWithIdToken({ provider: 'google', token, nonce })); },
     async signOut() { checked(await client.auth.signOut()); },
     async claimUni(value) { return checked(await client.rpc('claim_uni', { proposed_uni: value })); },
     async assignments() { return checked(await client.from('assignments').select('*').order('id')); },

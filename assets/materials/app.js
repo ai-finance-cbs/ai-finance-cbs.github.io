@@ -29,10 +29,46 @@ function updateModal() {
   if (needsUni) showMessage('Enter your Columbia UNI to check the class list.');
   else if (state.access?.role === 'unlisted') showMessage('You are not on the class list.');
 }
+
+// Google Identity Services: Google's own button opens a window that names this site, not the database.
+let gsiReady = null;
+function loadGsi() {
+  gsiReady ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = resolve; s.onerror = () => reject(new Error('Google sign-in could not load.')); document.head.append(s);
+  });
+  return gsiReady;
+}
+async function sha256Hex(text) {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function setupGsi() {
+  const slot = dialog.querySelector('[data-gsi]');
+  if (!config.googleClientId || state.backend?.demo || !state.backend?.signInWithGoogleToken || slot.dataset.ready) return;
+  try {
+    await loadGsi();
+    const raw = crypto.randomUUID() + crypto.randomUUID();
+    window.google.accounts.id.initialize({
+      client_id: config.googleClientId, nonce: await sha256Hex(raw), ux_mode: 'popup', auto_select: false,
+      callback: async ({ credential }) => {
+        try {
+          if (!sessionStorage.getItem('b8403-return')) sessionStorage.setItem('b8403-return', location.pathname + location.search + location.hash);
+          await state.backend.signInWithGoogleToken(credential, raw); await finishSignIn();
+        } catch (error) { showMessage(error.message); }
+      },
+    });
+    window.google.accounts.id.renderButton(slot, { type: 'standard', theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'rectangular', width: 300 });
+    slot.hidden = false; slot.dataset.ready = '1';
+    dialog.querySelector('[data-google]').hidden = true;
+    dialog.querySelector('[data-google-fallback]').hidden = false;
+  } catch { /* keep the original redirect button */ }
+}
 function openLogin(destination) {
   if (destination) sessionStorage.setItem('b8403-return', safeReturnPath(destination, location.origin, `${config.base}/`));
   showMessage(''); updateModal();
   if (!dialog.open) dialog.showModal();
+  setupGsi();
   if (state.access?.needs_uni) dialog.querySelector('input[name=uni]').focus();
 }
 async function finishSignIn() {
@@ -248,6 +284,7 @@ document.querySelector('[data-signout]').addEventListener('click', async () => {
   try { await state.backend?.signOut(); await refresh(); }
   catch (error) { openLogin(); showMessage(`Sign out could not finish. ${error.message}`); }
 });
+dialog.querySelector('[data-google-fallback]').addEventListener('click', () => dialog.querySelector('[data-google]').click());
 dialog.querySelector('[data-google]').addEventListener('click', async e => {
   e.target.disabled = true;
   try {
