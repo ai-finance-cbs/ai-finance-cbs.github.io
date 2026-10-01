@@ -24,7 +24,7 @@ export function courseHandler(createClient, env, action) {
       try { body = await request.json(); } catch { return respond(400,{error:'Provide a JSON request.'}); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return respond(400,{error:'Provide a JSON request.'});
       const admin = () => createClient(env('SUPABASE_URL'),env('SUPABASE_SERVICE_ROLE_KEY'),options);
-      return await action({body,access,userClient,admin,respond});
+      return await action({body,access,userClient,admin,respond,actor:identity.user.id});
     } catch { return respond(500,{error:'File operation failed. Check the function configuration and try again.'}); }
   };
 }

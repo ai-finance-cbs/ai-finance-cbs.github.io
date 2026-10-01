@@ -1,4 +1,6 @@
-import { studentGradeRows, submissionStatus } from './week-core.js';
+import { renderGradePanel } from './grade-panel.js';
+import { gradingSubmission, groupOverride, newYorkInput, newYorkTime } from './staff-core.js';
+import { courseTime, studentGradeRows, submissionStatus } from './week-core.js';
 import {
   canWrite,
   gradeTotal,
@@ -10,6 +12,7 @@ import {
   toCsv,
 } from './class-core.js';
 let selectedGradeItem = 'all';
+let selectedGradeCell = null;
 const studentQueries = new Map();
 const el = (tag, text, attrs = {}) => {
   const n = document.createElement(tag);
@@ -148,6 +151,7 @@ export function renderClassPage(ctx) {
   root.append(status);
   let saving = false;
   const run = async (task, text, rerender = true) => {
+    if (!canWrite(access)) { status.textContent = 'Archived terms and preview are read-only.'; return false; }
     if (saving) return false;
     saving = true;
     status.textContent = 'Saving…';
@@ -178,15 +182,6 @@ export function renderClassPage(ctx) {
     return s;
   };
   if (page === 'attendance') {
-    root.append(
-      el(
-        'p',
-        grading
-          ? 'Quiz scores mark attendance present. Manual changes override the quiz result.'
-          : 'Your attendance and released grades appear here.',
-        { class: 'tool-help' },
-      ),
-    );
     if (grading) {
       const { t, body, head } = table(['Student', ...data.sessions.map((s) => `Week ${s.week}`)]);
       const classUnis = new Set(data.roster.map(r => r.uni));
@@ -204,19 +199,7 @@ export function renderClassPage(ctx) {
         });
         if (admin) cell.append(date);
         else cell.append(el('span', s.date || 'Date TBA', { class: 'session-date' }));
-        const markAll = button('Mark all present', () => {
-            if (confirm(`Mark all ${data.roster.length} students present for Week ${s.week}?`))
-              run(
-                () =>
-                  backend.saveAttendance(
-                    s.week,
-                    data.roster.map((r) => ({ uni: r.uni, status: 'present' })),
-                  ),
-                'Attendance saved.',
-              );
-          });
-        markAll.setAttribute('aria-label', `Mark all present: Week ${s.week}`);
-        cell.append(markAll);
+
       });
       const totals = el('tr', null, { class: 'attendance-totals' });
       totals.append(el('th', 'Class totals', { scope: 'row' }));
@@ -292,6 +275,7 @@ export function renderClassPage(ctx) {
       });
       s.append(form);
       root.append(s);
+      if (!canWrite(access)) root.querySelectorAll('.attendance-grid input, .attendance-grid select, #attendance-import input, #attendance-import select, #attendance-import button').forEach(n => n.disabled = true);
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
       t.classList.add('student-attendance-grid');
@@ -324,7 +308,9 @@ export function renderClassPage(ctx) {
       list.append(row);
     }
     const released = data.items.filter(i => i.released);
-    root.append(el('p', `Released points: ${gradeTotal(released, data.grades).total}. Optional points are capped at 15; course totals at 100.`, { class: 'tool-help' }), list);
+    const total = el('section', null, { class: 'student-grade grade-total', 'data-grade-total': '', title: 'Optional points capped at 15; course total capped at 100.' });
+    total.append(el('h2', 'Total'), el('p', `${gradeTotal(released, data.grades).total} / 100`, { class: 'grade-score' }));
+    list.append(total); root.append(list);
   }
   if (page === 'groups') {
     if (admin) {
@@ -344,7 +330,7 @@ export function renderClassPage(ctx) {
       labeled(form, 'Group set title', title);
       labeled(form, 'Number of groups', count);
       labeled(form, 'Maximum group size', max);
-      labeled(form, 'Optional deadline (your local time)', deadline);
+      labeled(form, 'Optional deadline (New York)', deadline);
       const submit = button('Create group set', () => {});
       submit.type = 'submit';
       form.append(submit);
@@ -356,7 +342,7 @@ export function renderClassPage(ctx) {
               title: title.value.trim(),
               count: Number(count.value),
               max_size: Number(max.value),
-              deadline: deadline.value ? new Date(deadline.value).toISOString() : null,
+              deadline: newYorkTime(deadline.value),
             }),
           'Group set created.',
         );
@@ -385,28 +371,21 @@ export function renderClassPage(ctx) {
       s.append(
         el(
           'p',
-          `${open ? 'Open for sign-up' : 'Sign-up closed'} · Maximum ${set.max_size} per group${set.deadline ? ` · Deadline ${new Date(set.deadline).toLocaleString()}` : ''}`,
+          `${open ? 'Open for sign-up' : 'Sign-up closed'} · Maximum ${set.max_size} per group${set.deadline ? ` · Deadline ${courseTime(set.deadline)}` : ''}`,
         ),
       );
       if (admin) {
         const deadline = input(
           'datetime-local',
           `${set.title} deadline`,
-          set.deadline
-            ? new Date(
-                new Date(set.deadline).getTime() -
-                  new Date(set.deadline).getTimezoneOffset() * 60000,
-              )
-                .toISOString()
-                .slice(0, 16)
-            : '',
+          newYorkInput(set.deadline),
         );
         s.append(
           button(set.is_open ? `Lock ${set.title}` : `Open ${set.title}`, () =>
             run(() => backend.updateSet(set.id, !set.is_open, set.deadline), 'Group set updated.'),
           ),
         );
-        labeled(s, 'Deadline (your local time)', deadline);
+        labeled(s, 'Deadline (New York)', deadline);
         s.append(
           button(`Save deadline for ${set.title}`, () =>
             run(
@@ -414,7 +393,7 @@ export function renderClassPage(ctx) {
                 backend.updateSet(
                   set.id,
                   set.is_open,
-                  deadline.value ? new Date(deadline.value).toISOString() : null,
+                  newYorkTime(deadline.value),
                 ),
               'Deadline saved.',
             ),
@@ -500,20 +479,13 @@ export function renderClassPage(ctx) {
     }
   }
   if (page === 'gradebook') {
-    root.append(
-      el(
-        'p',
-        'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across. Blank scores are ungraded.',
-        { class: 'tool-help' },
-      ),
-    );
     const legend = disclosure('Legend', 'grade-legend');
     const legendList = el('ul');
     for (const item of data.items) {
       const note = item.optional ? ' · Optional tasks are capped at 15 points total.' : item.quiz_week ? ' · A quiz score marks attendance present.' : '';
       legendList.append(el('li', `${gradeCode(item)} → ${item.title} → ${item.max_points} points${note}`));
     }
-    legend.append(legendList);
+    legend.append(el('p', 'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across; F2 opens the submission panel. Blank scores are ungraded. S = Submitted; L = Late; • = a score differs from the group grade.'), legendList);
     root.append(legend);
     const filter = options(
       [['all', 'All grading items'], ...data.items.map((i) => [i.id, gradeCode(i)])],
@@ -521,9 +493,19 @@ export function renderClassPage(ctx) {
       'Gradebook item',
     );
     filter.title = 'Jump to one grading item or show all columns.';
-    const content = el('div');
+    const workspace = el('div', null, { class: 'gradebook-workspace' });
+    const content = el('div', null, { class: 'gradebook-content' });
+    const panel = el('aside', null, { class: 'grade-panel', 'aria-labelledby': 'grade-panel-title' }); panel.hidden = true;
+    workspace.append(content, panel);
     const changes = new Map();
-    root.append(content);
+    root.append(workspace);
+    const openPanel = (item, student) => {
+      selectedGradeCell = { item: item.id, uni: student.uni }; workspace.classList.add('panel-open');
+      renderGradePanel({ panel, data, item, student, backend, readOnly: !canWrite(access),
+        save: async (task, message) => { if (changes.size) throw new Error('Save grid changes before grading in the panel.'); if (!await run(task, message)) throw new Error(status.textContent); },
+        close: () => { selectedGradeCell = null; panel.hidden = true; workspace.classList.remove('panel-open'); },
+      });
+    };
     function draw() {
       changes.clear();
       content.replaceChildren();
@@ -535,7 +517,6 @@ export function renderClassPage(ctx) {
       const { t, body, head } = table([
         'Student',
         ...items.map(gradeCode),
-        'Optional capped',
         'Total',
       ]);
       t.classList.add('gradebook-grid');
@@ -547,11 +528,12 @@ export function renderClassPage(ctx) {
       });
       if (admin)
         items.forEach((item, index) => {
-          const label = el('label', 'Released', { class: 'release-label' }),
+          const label = el('label', null, { class: 'release-label', title: `Released: ${item.title}` }),
             check = input('checkbox', `Release ${item.title}`);
           check.checked = item.released;
           check.addEventListener('change', () => {
-            if (changes.size && !confirm('Discard unsaved scores and change release status?')) {
+            if (changes.size) {
+              status.textContent = 'Save scores before changing release status.';
               check.checked = !check.checked;
               return;
             }
@@ -596,6 +578,12 @@ export function renderClassPage(ctx) {
               next.select();
             }
           });
+          td.dataset.gradeCell = `${r.uni}:${item.id}`;
+          td.addEventListener('click', () => openPanel(item, r));
+          n.addEventListener('keydown', e => { if (e.key === 'F2') { e.preventDefault(); openPanel(item, r); panel.querySelector('input')?.focus(); } });
+          const submission = gradingSubmission(data, item, r.uni);
+          if (submission) td.append(el('span', submission.late ? 'L' : 'S', { class: 'submission-mark', title: submission.late ? 'Late' : 'Submitted', 'aria-label': submission.late ? 'Late' : 'Submitted' }));
+          if (groupOverride(data, item, r.uni, submission)) td.append(el('span', '•', { class: 'override-mark', title: 'Score differs from group grade', 'aria-label': 'Score differs from group grade' }));
           td.append(n);
           tr.append(td);
           cellRow.push(n);
@@ -606,8 +594,7 @@ export function renderClassPage(ctx) {
           data.grades.filter((g) => g.uni === r.uni),
         );
         tr.append(
-          el('td', total.bonus),
-          el('td', `${total.total}${total.missing ? ' (incomplete)' : ''}`),
+          el('td', total.total, { title: `${total.missing} ungraded items; optional points capped at ${total.bonus}.`, class: 'gradebook-total' }),
         );
         body.append(tr);
       });
@@ -702,9 +689,14 @@ export function renderClassPage(ctx) {
       const csv = disclosure('Import scores CSV', 'grade-import');
       csv.append(form);
       content.append(csv);
+      if (!canWrite(access)) {
+        content.querySelectorAll('input[data-grade], .release-label input, #grade-import input, #grade-import button').forEach(n => n.disabled = true);
+        save.disabled = true;
+      }
     }
     filter.addEventListener('change', () => {
-      if (changes.size && !confirm('Discard unsaved scores and change the selected item?')) {
+      if (changes.size) {
+        status.textContent = 'Save scores before changing the selected item.';
         filter.value = selectedGradeItem;
         return;
       }
@@ -712,5 +704,9 @@ export function renderClassPage(ctx) {
       draw();
     });
     draw();
+    if (selectedGradeCell) {
+      const item = data.items.find(i => i.id === selectedGradeCell.item), student = data.roster.find(r => r.uni === selectedGradeCell.uni);
+      if (item && student) openPanel(item, student); else selectedGradeCell = null;
+    }
   }
 }

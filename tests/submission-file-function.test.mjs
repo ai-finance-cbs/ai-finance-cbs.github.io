@@ -104,7 +104,7 @@ test('expired sweeps require instructor access and use server-selected paths',as
   const x=setup({access:{role:'instructor'},expired:['expired.pdf','superseded.pdf']});
   assert.equal((await x.run({action:'sweep',paths:['victim.pdf']})).status,200);
   assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:['expired.pdf','superseded.pdf']}]);
-  assert.equal((await x.run({action:'purge'})).status,409,'Export and close belong to Phase C.');
+  assert.equal((await x.run({action:'purge'})).status,400,'Purge requires an explicit term and the export/close gate.');
   const expired=setup({pending:{expires_at:'2020-01-01'}});
   assert.equal((await expired.run({action:'finish',pending_id:ID})).status,409);
   assert.equal(expired.calls.some(c=>c.download),false);

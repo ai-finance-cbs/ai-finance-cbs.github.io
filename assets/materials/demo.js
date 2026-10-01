@@ -1,3 +1,4 @@
+import { extendTerms } from './term-demo.js';
 import { announcementText } from './upcoming-core.js';
 import { extendSubmissions, termData, mergeTerm, normalizeTerms } from './submission-demo.js';
 import { classSeed, extendDemo } from './class-demo.js';
@@ -40,6 +41,7 @@ export function createDemo() {
   };
   const visible = row => { const a = requireRole(); return (a.role !== 'auditor' || row.auditor_visible) && (!('storage_path' in row) || ['instructor','grader'].includes(a.role) || row.released || (row.release_at && new Date(row.release_at).getTime() <= Date.now())); };
   return {
+    ...extendTerms({ readAll, saveAll, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
     demo: true,
@@ -78,7 +80,7 @@ export function createDemo() {
       const category = fields.category ?? 'notes';
       if (!['in_class', 'notes'].includes(category)) throw new Error('Choose In-class files or Lecture notes.');
       const data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
-      const d = read(); const id = crypto.randomUUID(); d.files.push({ id, ...fields, category, storage_path: `${id}.pdf`, created_at: new Date().toISOString(), data }); save(d);
+      const d = read(); const id = crypto.randomUUID(); d.files.push({ id, ...fields, category, file_size: file.size, storage_path: `${id}.pdf`, created_at: new Date().toISOString(), data }); save(d);
     },
     async setFileRelease(id, released, release_at = null) { requireRole(true); const d = read(); Object.assign(d.files.find(f => f.id === id), { released, release_at }); save(d); },
     async setFileVisibility(id, value) { requireRole(true); const d = read(); d.files = d.files.map(f => f.id === id ? { ...f, auditor_visible: value } : f); save(d); },

@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–008 are live, as confirmed by Simon before Phase B. Migration 009 remains local and unapplied.
+Migrations 001–009 are live on main at `01b1e4c`. Phase C migrations 010–011 remain local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -39,8 +39,8 @@ Only an instructor can read the private test-account list. Test emails are never
 4. For a CBS email alias, verify its owner, then use **Settings → CBS account links** to link the email and UNI.
 5. `uni@columbia.edu` accounts use their verified email UNI automatically.
 6. Self-entered CBS UNIs no longer grant access. Earlier self-claims must receive an instructor-approved account link.
-7. **Files** manages PDF uploads, auditor visibility, and deletion. Maximum PDF size remains 20 MB.
-8. **Settings** has five collapsible sections: announcements, access, assignments, CBS links, and read-only test accounts.
+7. **Settings → Files** manages PDF uploads, categories, release times, Auditor visibility, and deletion. Maximum PDF size remains 20 MB.
+8. **Settings** also contains session times, submission settings, storage usage, and manual term rollover.
 9. **Attendance** edits six session dates and records present, absent, or excused statuses.
 10. Open **Import attendance CSV** for a UNI column or one UNI per line. Imports mark listed students present only.
 11. **Groups** creates sets with a group count, maximum size, optional deadline, and open/closed state.
@@ -62,9 +62,9 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Grading staff see a small `QN` marker. Its tooltip explains the source; `*` marks a manual override. Students see the source only after quiz release. Manual changes retain precedence.
 10. **Quiz / clear** removes a manual override. It restores present when that week's quiz score exists.
 11. Clearing a quiz removes automatic attendance. It retains manual attendance and removes the quiz source label.
-12. Only Instructor can release an item. Students see released items under **Attendance → My grades**.
+12. Only Instructor can release an item. Students see released scores and comments under **Grades**.
 13. Core maximum is 100. Optional points cap at 15. Overall total caps at 100.
-14. Totals use recorded scores and mark incomplete records. Student totals include released items only.
+14. Totals use recorded scores. The Total tooltip identifies ungraded items. Student totals include released items only.
 
 ## Database and function review
 
@@ -79,11 +79,11 @@ Only an instructor can read the private test-account list. Test emails are never
 9. Preview uses the same student projection and returns other members' UNI fields as null.
 10. Definer functions use an empty search path and revoke PUBLIC execution. Internal helpers remain private.
 11. The file handler now checks `instructor`. Deploying it with the old migration would reject instructor file writes.
-12. Phase A migrations and file functions are live. A later publication must apply migration 009 before the Phase B browser changes.
+12. Migrations 001–009 are live. A later authorized release must apply 010–011 and publish the updated submission-file function.
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply migrations 001–009 in order after review.
+For a fresh database, apply migrations 001–011 in order after review.
 Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
 The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
@@ -171,7 +171,7 @@ The merged `77b18e5` header uses 148px on desktop and 136px on phones.
 Desktop title/menu/submenu start at 15/54/91px. Navigation scrolls internally when necessary.
 The geometry test includes Upcoming across 14 pages, seven account states, and five widths.
 Screenshots and check output for this change live in `evidence/upcoming/`.
-Migrations 001–008 are now live. Migration 009 remains local and unapplied.
+Migrations 001–009 are now live. Phase C migrations 010–011 remain local and unapplied.
 
 ## Phase A: terms, submissions, and group grades
 
@@ -183,8 +183,8 @@ Spring 2027 is the initial active term. Each course record carries a `term_id`.
 Instructions remain in `assignments`; they also have term keys to preserve old course content.
 Students can read their own active or archived-readable terms. Closed terms exclude students.
 Staff can read older terms through `classData(termId)`. All editing methods target the active term.
-Term creation, export, close, and purge remain Phase C, unit U10.
-The file function currently refuses `purge`; it cannot delete a term without the export-and-close workflow.
+Phase C adds manual term creation, export, close, and purge.
+The file function refuses purge until an Instructor has exported and closed the selected term.
 
 The shared file authentication code is `supabase/functions/_shared/course-auth.js`.
 Both `lecture-file` and the new `submission-file` import it.
@@ -276,5 +276,77 @@ The migration grants authenticated callers only category insertion and updates, 
 There are no new functions or policies. Migrations 006–008 remain unchanged.
 The Files upload form now selects the category explicitly. Titles no longer control grouping.
 
-Apply 009 before publishing these browser changes in a later authorized release.
-This task creates and tests the migration locally only. It does not apply it to the hosted database.
+Migration 009 is live in the Phase C base at `01b1e4c`. Phase C leaves migrations 001–009 unchanged.
+
+
+## Phase C: staff tools and Submit
+
+Phase C starts from `01b1e4c` and merges main at `ba28fbb` during review round 1.
+It retains the blue class and red staff menus, updated readings, and Recommended reading labels.
+Class tools use the full content width. The header dimensions remain unchanged.
+The current course has 16 grading items. Layout tests also verify capacity for a seventeenth item at 1280px and 1440px.
+Score columns use compact codes, maxima, and Instructor-only release checkboxes.
+Click a grade cell, or press F2, to open its submission panel. Keyboard hints are inside Legend.
+The panel shows current and retained on-time work, timestamps, scores, and comments.
+**Grade group** copies the score and comment to the members saved with the submission.
+Later group changes do not change that list. A dot identifies scores differing from the last recorded group grade.
+Migration 010 records group-grade baselines from this release forward. It does not invent baselines for older grades.
+
+Students use **Submit** for M1–M5, FP, and O1–O3. It shares the week-page submission controls and backend checks.
+Auditors cannot open Submit. Graded, preview, and archived records retain their existing locks.
+Each Submit item occupies one row. The format hint appears once above the list.
+Milestone titles link to their corresponding weeks; FP links to Week 6.
+O1–O3 have no week association or week link. Due times appear only when set in Settings.
+
+Session, item, group deadline, and file release inputs use New York time, independent of the computer's time zone.
+Ambiguous November times and nonexistent March times produce inline errors.
+Item kind, mode, and linked group set cannot change after completed submissions exist.
+A group item requires a linked set. File categories use the existing migration 009 field.
+The old `/materials/files/` address redirects to Settings. File posting offers Weeks 1–6 only.
+Gradebook, staff Attendance, and Roster provide a term filter. Older terms are read-only.
+
+### Manual term workflow
+
+1. In **Settings → Term rollover**, enter a new term name and confirm **Open term**.
+2. This archives the previous active term. It copies items, instructions, group templates, and six session slots.
+3. Dates, release flags, group sign-up, roster, memberships, submissions, attendance, and grades are not carried forward.
+4. Replace the new term's roster. Set its dates, due times, group sign-up, and release times separately.
+5. For the previous term, select **Export grades and submissions**. Save the downloaded ZIP.
+6. The ZIP contains `grades.csv`, `manifest.json`, current submissions, retained on-time submissions, and lecture PDFs.
+7. Links, comments, and saved group memberships remain in the manifest. CSV includes removed roster members who still have grades.
+8. The browser builds the ZIP and starts its download, then sends completion counts to the function.
+   The function verifies those counts against its signed manifest before recording success.
+9. Confirm that you saved the export, then select **Close previous term**. This ends student access to that term.
+10. To remove its stored files, confirm the separate **Purge stored files** action. Metadata and audit records remain.
+
+There is no automatic close or purge. Storage removal uses the Supabase Storage API and database-selected paths.
+A purge failure leaves completion unrecorded. Retrying removes remaining objects and records completion only when none remain.
+The service alone can call `record_term_export` and `record_term_purge`; browser roles cannot forge those records.
+All term actions deny Graders, Students, Auditors, unlisted users, anonymous users, and Instructor preview.
+The function returns CSV, metadata, and file links signed for 300 seconds. It signs URLs in batches of 100.
+The browser downloads files, checks sizes, and builds the ZIP with pinned `fflate@0.8.3` from cdn.jsdelivr.net.
+Library API reference: [fflate ZIP documentation](https://github.com/101arrowz/fflate#usage).
+File bytes and ZIP processing never enter the export function.
+The server signs a completion ticket bound to the Instructor, term, file count, byte count, and missing-file list.
+The ticket lasts one hour. Altered counts, altered missing lists, expired tickets, and other actors are rejected.
+Download, ZIP, and save failures do not send a completion record. Expired file URLs can be renewed.
+The browser holds the archive locally; it does not upload the ZIP to another service.
+
+Missing objects appear in `manifest.json` under `missing_files`. Export continues with the available files.
+Settings shows the recorded file count, source-file size, and missing-file count next to Close.
+The size excludes CSV, metadata, and ZIP overhead. A zero-file export still contains CSV and metadata.
+The browser cannot verify that a downloaded file reached your disk. The separate saved-export confirmation remains required.
+
+**One hosted export dry run is required before relying on close/purge.**
+After a separately authorized publication, save and open a hosted export with the available files and missing-file list.
+Check its recorded counts and size. This local task does not perform that hosted dry run.
+
+In **Settings → Files**, select **List unreferenced files** to inspect unused lecture-notes objects.
+Select **Delete listed files**, then confirm, to remove them through the existing caller-scoped cleanup action.
+The listing checks references across active, archived, and closed terms. Cleanup checks references again before each deletion.
+Preview and all non-Instructor roles are denied. Referenced files always require their normal deletion workflow.
+The storage line reports used bytes against 1 GB. It does not create an additional upload quota.
+The public term label remains part of the static site configuration and needs review for each new course offering.
+
+Migrations `010_staff_grading.sql` and `011_term_rollover.sql` require review before a later authorized publication.
+No hosted changes occur during local tests. Test evidence belongs in `evidence/phase-c/`.

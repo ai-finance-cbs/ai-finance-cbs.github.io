@@ -12,6 +12,7 @@ LEARN.md
 tools/*
 !tools/build.sh
 !tools/dev.sh
+!tools/test-server.py
 !tools/create-materials-seed.rb
 README.md
 

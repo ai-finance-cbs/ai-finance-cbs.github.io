@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {phaseDatabase,TERM} from './helpers/phase-a.mjs';
 let h;
 before(async()=>{h=await phaseDatabase();});after(async()=>h?.db.close());
-async function clear(){await h.as('owner');await h.db.exec('delete from pending_uploads; delete from submissions; delete from grades; delete from attendance; delete from group_memberships; delete from class_groups; update grade_items set group_set_id=null,due_at=null,released=false; delete from group_sets');}
+async function clear(){await h.as('owner');await h.db.exec('delete from group_grade_records; delete from pending_uploads; delete from submissions; delete from grades; delete from attendance; delete from group_memberships; delete from class_groups; update grade_items set group_set_id=null,due_at=null,released=false; delete from group_sets');}
 async function group(item=2){await h.as('teacher');const set=await h.rpc('create_group_set','Team',2,4,null);const groups=(await h.rpc('class_data')).groups.filter(g=>g.set_id===set);await h.rpc('configure_grade_item',item,item===6?'link':'file','group',set,null);for(const who of ['a','b','c','d']){await h.as(who);await h.rpc('choose_group',set,groups[0].id);}return {set,groups};}
 async function due(item,date){await h.as('owner');await h.rows('update grade_items set due_at=$1 where id=$2',[date,item]);}
 async function startAt(p,date){await h.as('owner');await h.rows('update pending_uploads set started_at=$1 where id=$2',[date,p.id]);}

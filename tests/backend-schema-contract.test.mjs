@@ -87,3 +87,14 @@ test('review 12: existing staff tools use the new RPC signatures and term-scoped
   who='a';await h.as('a');await backend.getAccess();assert.equal((await backend.classData()).grades[0].comment,'Comment');
   await assert.rejects(backend.saveGrades([{uni:'aa1001',item_id:1,score:9}]),/Grading/);
 });
+
+test('Phase C adapter keeps term settings and rollover RPC names aligned with database grants',async()=>{
+  who='teacher';await h.as('teacher');await backend.getAccess();
+  const overview=await backend.staffOverview();assert.equal(overview.storage_limit,1073741824);
+  await backend.setSessionTimes(1,'2027-03-15T13:00:00Z','2027-03-15T16:00:00Z');
+  assert.equal(new Date((await backend.classData()).sessions[0].starts_at).toISOString(),'2027-03-15T13:00:00.000Z');
+  const next=await backend.openTerm('Spring 2028');await backend.getAccess();assert.equal(next,'spring-2028');assert.equal((await backend.classData()).term_id,next);
+  await assert.rejects(backend.closePreviousTerm(TERM),/export before closing/);
+  await h.as('service');await h.rpc('record_term_export',TERM,0,0);await h.as('teacher');await backend.closePreviousTerm(TERM);
+  assert.equal((await backend.terms()).find(t=>t.id===TERM).status,'closed');
+});
