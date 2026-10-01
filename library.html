@@ -2,7 +2,7 @@
 title: Library
 permalink: /library/
 ---
-<p class="lead">The Library collects the readings, podcasts, and videos for each week of the course. Items marked Required are what to finish before class; the rest are there if you want to go further. Start with the Prelude before the first session. The Coda holds material beyond the syllabus.</p>
+<p class="lead">The Library collects the readings, podcasts, and videos for each week of the course. Items marked Recommended are the ones to read before class; Optional items are there if you want to go further. Start with the Prelude before the first session. The Coda holds material beyond the syllabus.</p>
 <ul class="library-index">
   {% for s in site.data.library %}
   <li><a href="{{ '/library/' | append: s.slug | append: '/' | relative_url }}">{{ s.title }}</a><span>{% if s.week > 0 and s.week < 99 %}{{ s.kicker }}{% endif %}</span></li>

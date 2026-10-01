@@ -1,9 +1,9 @@
 {% if include.week > 0 and include.week < 7 %}
 {% assign library = site.data.library | where: 'week', include.week | first %}
-{% assign readings = site.data.materials | where: 'week', include.week | where: 'level', 'required' %}
+{% assign wk = site.data.materials | where: 'week', include.week %}{% assign req = wk | where: 'level', 'required' %}{% assign rec = wk | where: 'level', 'recommended' %}{% assign readings = req | concat: rec %}
 <template data-week-readings><section class="week-block" id="required-readings" data-reading-block>
 <h2>Readings</h2>
-<p><a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Required readings in the Library</a></p>
+<p><a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Readings in the Library</a></p>
 {% if readings.size == 0 %}<p class="upcoming-meta">Readings have not been posted.</p>{% endif %}
 <ul class="upcoming-readings">{% for item in readings %}<li>{% if item.url %}<a href="{{ item.url | escape }}">{{ item.title | escape }}</a>{% else %}{{ item.title | escape }}{% endif %}<span class="upcoming-meta">{{ item.author | escape }}{% if item.year %} ({{ item.year }}){% endif %}{% if item.length %} · {{ item.length | escape }}{% endif %}</span></li>{% endfor %}</ul>
 </section></template>{% endif %}

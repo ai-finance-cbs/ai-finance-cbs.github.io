@@ -45,17 +45,17 @@ mark();
 // Keep unannounced links visibly labelled and prevent an unexpected jump to the page top.
 document.querySelectorAll('[data-pending]').forEach(link => link.addEventListener('click', e => e.preventDefault()));
 
-// Library: "Show required only" hides optional materials on the page.
+// Library: "Hide optional" hides optional materials on the page.
 const reqToggle = document.querySelector('.required-toggle');
 if (reqToggle) reqToggle.addEventListener('click', () => {
   const on = reqToggle.getAttribute('aria-pressed') !== 'true';
   reqToggle.setAttribute('aria-pressed', String(on));
-  reqToggle.textContent = on ? 'Show all materials' : 'Show required only';
+  reqToggle.textContent = on ? 'Show all materials' : 'Hide optional';
   document.querySelectorAll('.material[data-level="optional"]').forEach(li => { li.hidden = on; });
   // a topic with only optional items says so while filtered
   document.querySelectorAll('.topic-block').forEach(t => {
     const hasItems = t.querySelector('.material');
-    const hasReq = t.querySelector('.material[data-level="required"]');
+    const hasReq = t.querySelector('.material:not([data-level="optional"])');
     const note = t.querySelector('.material-empty');
     if (hasItems) note.hidden = !(on && !hasReq);
   });

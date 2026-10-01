@@ -852,3 +852,7 @@ body.class-tools .content { max-width:1180px; }
 .topnav li[data-zone="staff"] a { color:#8C2F39; }
 .topnav li[data-zone="staff"] a[aria-current="page"] { color:#8C2F39; border-bottom-color:#8C2F39; }
 .topnav li[data-zone] a:hover { border-bottom-color:currentColor; }
+
+/* ---- 2026-10-01: three reading levels (Required later, Recommended now, Optional); equal-width badges ---- */
+.badge-required { width:86px; }
+.badge-recommended { color:#2F6FB8; border-color:#c6dbf2; background:#f7fafe; }
