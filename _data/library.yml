@@ -22,7 +22,7 @@
   slug: processing-information
   week: 3
   kicker: Week 3
-  topics: [Data Sources, Data Preparation, Retrieval and Analysis, Verification]
+  topics: [Text Sources, Non-Text Sources, Data Preparation, Retrieval and Analysis, Verification]
 - title: Predicting Outcomes
   slug: predicting-outcomes
   week: 4
