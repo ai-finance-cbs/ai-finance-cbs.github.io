@@ -5,8 +5,16 @@ import { createBackend } from '../assets/materials/supabase.js';
 import { checkSubmissionFile } from '../assets/materials/submission-core.js';
 import { gradeCode } from '../assets/materials/class-core.js';
 const KEY='b8403-demo-state-v3',USER='b8403-demo-user-v1';
+let uploads;
 const pdf=()=>new File(['%PDF-1.7\nDemo\n%%EOF'],'work.pdf',{type:'application/pdf'});
 beforeEach(()=>{
+  uploads=[];
+  globalThis.XMLHttpRequest=class {
+    constructor(){this.upload={};this.headers={};}
+    open(method,url){this.method=method;this.url=url;}
+    setRequestHeader(k,v){this.headers[k]=v;}
+    send(file){uploads.push({method:this.method,url:this.url,headers:this.headers,file});queueMicrotask(()=>{this.upload.onprogress?.({lengthComputable:true,loaded:62,total:100});this.status=200;this.onload();});}
+  };
   const values=new Map();globalThis.sessionStorage={getItem:k=>values.get(k) || null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
   globalThis.window={location:new URL('http://127.0.0.1:4173/materials/?demo=1')};
   globalThis.FileReader=class {readAsDataURL(file){file.arrayBuffer().then(bytes=>{this.result=`data:${file.type};base64,${Buffer.from(bytes).toString('base64')}`;this.onload();});}};
@@ -80,7 +88,7 @@ test('browser file precheck rejects invalid signatures, types and sizes before a
 test('real browser adapter scopes term reads and routes upload finish and download through the file service',async()=>{
   const calls=[],pending={id:'pending-id',storage_path:'server-path.pdf'};
   const client={
-    auth:{getSession:async()=>({data:{session:{}}}),getUser:async()=>({data:{user:{email:'ab1234@columbia.edu',email_confirmed_at:'yes',app_metadata:{provider:'google'}}}})},
+    auth:{getSession:async()=>({data:{session:{access_token:'student-token'}}}),getUser:async()=>({data:{user:{email:'ab1234@columbia.edu',email_confirmed_at:'yes',app_metadata:{provider:'google'}}}})},
     rpc:async(name,args)=>{calls.push({rpc:name,args});return {data:name==='get_access'?{role:'student',term_id:'spring-2027'}:name==='begin_submission'?pending:{}};},
     storage:{from:bucket=>({upload:async(path,file,options)=>{calls.push({bucket,path,options});return {};}})},
     functions:{invoke:async(name,{body})=>{calls.push({function:name,body});return {data:{url:'https://signed.example'}};}},
@@ -90,14 +98,16 @@ test('real browser adapter scopes term reads and routes upload finish and downlo
   await b.getAccess();await b.files();await b.sessions();await b.assignments();await b.classData('spring-2026');
   assert.ok(calls.some(c=>c.rpc==='class_data' && c.args.p_term==='spring-2026'));
   assert.ok(calls.filter(c=>c.table).every(c=>c.column==='term_id' && c.value==='spring-2027'));
-  await b.submitFile(1,pdf());await b.submissionUrl('submission-id','on-time');await b.gradeGroup(2,'group-id',8,'Comment');
-  assert.deepEqual(calls.find(c=>c.bucket),{bucket:'submissions',path:'server-path.pdf',options:{contentType:'application/pdf',cacheControl:'0',upsert:false}});
+  await b.submitFile(1,pdf());await b.submissionUrl('submission-id','on-time');await b.deleteSubmission('submission-id');await b.gradeGroup(2,'group-id',8,'Comment');
+  assert.equal(uploads[0].method,'POST'); assert.equal(uploads[0].url,'https://db.example/storage/v1/object/submissions/server-path.pdf');
+  assert.equal(uploads[0].headers['Content-Type'],'application/pdf'); assert.equal(uploads[0].headers['x-upsert'],'false');
   assert.deepEqual(calls.filter(c=>c.function),[
     {function:'submission-file',body:{action:'finish',pending_id:'pending-id'}},
     {function:'submission-file',body:{action:'download',id:'submission-id',version:'on-time'}},
+    {function:'submission-file',body:{action:'delete',id:'submission-id'}},
   ]);
   assert.equal(calls.some(c=>c.rpc==='finish_submission'),false);
-  const fake=createDemo();for(const method of ['terms','setSessionTimes','configureItem','beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','submissionUrl','sweepSubmissions','gradeGroup','setFileRelease'])assert.equal(typeof fake[method],typeof b[method],method);
+  const fake=createDemo();for(const method of ['terms','setSessionTimes','configureItem','beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission','submissionUrl','sweepSubmissions','gradeGroup','setFileRelease'])assert.equal(typeof fake[method],typeof b[method],method);
 });
 
 test('review 7/8: demo preview switches directly and normalizes Windows file MIME labels',async()=>{
@@ -112,11 +122,11 @@ test('review 7/8: demo preview switches directly and normalizes Windows file MIM
   }
 });
 test('review 8: real adapter uses extension-derived MIME for both begin and Storage upload',async()=>{
-  const seen=[];window.supabase={createClient:()=>({rpc:async(name,args)=>{seen.push(args);return {data:{id:'p',storage_path:'path'}};},storage:{from:()=>({upload:async(path,file,options)=>{seen.push(options);return {};}})}})};
+  const seen=[];window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'student-token'}}})},rpc:async(name,args)=>{seen.push(args);return {data:{id:'p',storage_path:'path'}};},storage:{from:()=>({upload:async(path,file,options)=>{seen.push(options);return {};}})}})};
   const b=await createBackend({url:'https://db.example',key:'public'});
   for(const [name,type,expected] of [['work.zip','application/x-zip-compressed','application/zip'],['work.docx','','application/vnd.openxmlformats-officedocument.wordprocessingml.document']]) {
     const file=new File([new Uint8Array([0x50,0x4b,3,4])],name,{type}),p=await b.beginSubmission(4,file);
-    await b.uploadSubmissionFile(p,file);assert.equal(seen.at(-2).p_type,expected);assert.equal(seen.at(-1).contentType,expected);
+    await b.uploadSubmissionFile(p,file);assert.equal(seen.at(-1).p_type,expected);assert.equal(uploads.at(-1).headers['Content-Type'],expected);
   }
 });
 test('review 1/3/4/5: demo prevents group hopping and early grades while limiting student metadata',async()=>{
@@ -150,4 +160,25 @@ test('file category is explicit in demo uploads and does not change titles or ac
   await assert.rejects(b.uploadFile(pdf(),{week:1,title:'Invalid',category:'other'}),/Choose/);
   await b.pickRole('auditor');assert.deepEqual((await b.classData()).files.map(f=>f.category),['in_class']);
   await assert.rejects(b.uploadFile(pdf(),{week:3,title:'No',category:'in_class'}),/access/);
+});
+
+test('demo deletion enforces caller ownership and cancels a pending replacement',async()=>{
+  const b=createDemo();await b.pickRole('student');const first=await b.submitFile(4,pdf()),pending=await b.beginSubmission(4,pdf());
+  for(const role of ['instructor','grader','auditor','unlisted']){await b.pickRole(role);await assert.rejects(b.deleteSubmission(first.submission.id),/Access required/);}
+  await b.pickRole('instructor');await b.setPreview('ab1234');await assert.rejects(b.deleteSubmission(first.submission.id),/read-only/);await b.setPreview(null);
+  sessionStorage.setItem(USER,JSON.stringify({email:'cd5678@columbia.edu',uni:'cd5678'}));await assert.rejects(b.deleteSubmission(first.submission.id),/access required/);
+  await b.pickRole('student');assert.equal((await b.deleteSubmission(first.submission.id)).deleted,true);
+  await assert.rejects(b.finishSubmission(pending.id),/expired|superseded/);assert.equal((await b.classData()).submissions.length,0);
+});
+
+test('a rejected XHR never calls finish and reports the original upload error',async()=>{
+  const calls=[];
+  globalThis.XMLHttpRequest=class {
+    constructor(){this.upload={};}
+    open(){}setRequestHeader(){}
+    send(){queueMicrotask(()=>{this.status=403;this.responseText=JSON.stringify({message:'Storage permission denied.'});this.onload();});}
+  };
+  window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'student-token'}}})},rpc:async()=>({data:{id:'pending-id',storage_path:'server-path'}}),functions:{invoke:async()=>{calls.push('finish');return {data:{}};}}})};
+  const b=await createBackend({url:'https://db.example',key:'public'});
+  await assert.rejects(b.submitFile(4,pdf()),/Storage permission denied/);assert.deepEqual(calls,[]);
 });

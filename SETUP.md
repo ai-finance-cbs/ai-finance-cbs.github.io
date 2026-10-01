@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–011 are live on main at `941e288`. Phase D migration 012 remains local and unapplied.
+Migrations 001–011 are live. Main is now `4536849`; Phase D 012 and Phase E 013 remain local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -83,7 +83,7 @@ Only an instructor can read the private test-account list. Test emails are never
 13. Real Google GIS, OAuth fallback, hosted RLS, and hosted PDF storage still need that reviewer's smoke test.
 
 No hosted migration, function deployment, keychain access, account creation, or push occurred in this task.
-For a fresh database, apply migrations 001–012 in order after review.
+For a fresh database, apply migrations 001–013 in order after review.
 Legacy seeds using `observer_visible` belong before `003`. The older generator targets the schema after `003` and before `006`.
 The current ignored `supabase/private/seed.sql` uses explicit term values and belongs after 006–008.
 Keep seeds and real roster files out of Git and `_site`.
@@ -383,3 +383,41 @@ Timestamps and UUIDs remain server-owned. No browser role can write directly to 
 Local demo notes and three synthetic speakers are available only through the loopback demo.
 Real notes and contacts never belong in static page files or JavaScript.
 Phase D screenshots and test logs belong in `evidence/phase-d/`.
+
+
+## Phase E: upload progress, deletion, and compact Speakers
+
+This branch includes main `4536849` and the unshipped Phase D work.
+Migration `013_delete_submission.sql` is new. Migrations 001–012 are unchanged in this phase.
+A later authorized release needs migrations 012–013, the updated `submission-file` function, and the browser assets.
+No database push or deployment occurred during this task.
+
+Week pages and Submit show a thin upload bar under the selected filename.
+The percentage comes from actual `XMLHttpRequest.upload` byte events. Demo mode simulates the same callback.
+The request uses the student's current token and POSTs to the existing pending Storage path, with upsert disabled.
+The file extension supplies the normalized MIME. The 25 MB limit and pending-path Storage policy remain in force.
+The finish function still checks file contents and records Storage `created_at` before accepting the submission.
+Choose file and Submit remain disabled through upload and finish. An inline failure hides the bar and enables retry.
+
+**Delete submission** is available to the student owner or a current group member before the due time.
+An unset due time permits deletion. Any grade, including zero, blocks deletion.
+Preview, archived terms, other students, Instructors, Graders, Auditors, and unlisted or anonymous callers cannot delete work.
+The control asks for inline confirmation and then returns the status to **Not submitted**.
+File and link submissions follow the same rule. The database checks the deadline again after waiting for locks.
+
+`delete_submission` takes the same group-set and owner locks as upload completion and grading.
+It re-reads the submission after waiting, cancels that owner's pending replacements, and removes the row atomically.
+The audit trigger retains the old row and actor. A fresh upload started after deletion gets a new submission ID.
+The function's service client removes current, retained on-time, and cancelled-pending objects selected by SQL.
+Browser-supplied paths are ignored. SQL excludes objects still referenced by any submission or pending upload.
+As with replacement cleanup, a Storage removal failure leaves deletion committed and returns `cleanup_pending`.
+The existing orphan sweep retries these objects during the next valid upload finish or an Instructor sweep.
+An upload already streaming when deletion commits may leave an orphan for that sweep, but cannot become a submission.
+
+Speakers uses one compact row for all fields and actions. Optional notes appear underneath in muted text.
+Twelve sample speakers, each with a one-line note, fit the 1440 × 900 test viewport, including the footer.
+Inline edits and confirmation can expand the selected row. Narrow screens wrap fields without horizontal page scrolling.
+Screenshots and logs are in `evidence/phase-e/`.
+
+API references: [Supabase standard uploads](https://supabase.com/docs/guides/storage/uploads/standard-uploads)
+and [MDN upload progress events](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequestUpload).

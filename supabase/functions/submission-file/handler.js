@@ -5,7 +5,16 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PENDING_FIELDS='id,term_id,item_id,owner_uni,group_id,uploader_id,storage_path,file_name,file_size,mime_type,started_at,expires_at';
 export function createHandler(createClient, env) {
   return courseHandler(createClient,env,async ({body,access,userClient,admin,respond,actor}) => {
-    if (!['finish','download','sweep','purge','export','record'].includes(body.action)) return respond(400,{error:'Unknown file action.'});
+    if (!['finish','download','sweep','purge','export','record','delete'].includes(body.action)) return respond(400,{error:'Unknown file action.'});
+    if (body.action==='delete') {
+      if (!canWrite(access,['student'])) return respond(403,{error:'Active student access required. Preview is read-only.'});
+      if (!UUID.test(body.id || '')) return respond(400,{error:'Invalid submission ID.'});
+      const {data:paths,error}=await userClient.rpc('delete_submission',{p_id:body.id});
+      if (error) return respond(409,{error:error.message});
+      const cleanupError=paths?.length ? (await admin().storage.from('submissions').remove(paths)).error : null;
+      // As with replacements, committed deletions stay successful. The orphan sweep retries failed cleanup.
+      return respond(200,{deleted:true,cleanup_pending:!!cleanupError});
+    }
     if (body.action==='download') {
       if (!['student','grader','instructor'].includes(access.role)) return respond(403,{error:'Submission access required.'});
       if (!UUID.test(body.id || '')) return respond(400,{error:'Invalid submission ID.'});

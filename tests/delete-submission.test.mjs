@@ -1,0 +1,95 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { phaseDatabase, TERM } from './helpers/phase-a.mjs';
+import { createHandler } from '../supabase/functions/submission-file/handler.js';
+let h;
+before(async () => { h=await phaseDatabase(); });
+after(async () => h?.db.close());
+const submit = async (who='a',item=1) => { const p=await h.begin(who,item); return {p,s:(await h.finish(p,who)).submission}; };
+
+test('before-due deletion returns only SQL paths, cancels pending work, and audits the old row', async () => {
+  await h.as('teacher'); await h.rpc('configure_grade_item',1,'file','individual',null,'2099-01-01');
+  const {p,s}=await submit(), replacement=await h.begin('a',1), receipt=await h.verify(replacement);
+  await h.as('a'); const paths=await h.rpc('delete_submission',s.id);
+  assert.deepEqual(paths.sort(),[p.storage_path,replacement.storage_path].sort());
+  assert.equal((await h.rpc('class_data')).submissions.length,0);
+  await assert.rejects(h.rpc('finish_submission',replacement.id,receipt),/Pending upload not found/);
+  await h.as('teacher'); const audit=(await h.rows("select * from audit_log where table_name='submissions' and operation='DELETE' order by id desc"))[0];
+  assert.equal(audit.actor_email,'aa1001@columbia.edu'); assert.equal(audit.old_row.id,s.id); assert.equal(audit.old_row.storage_path,p.storage_path); assert.equal(audit.new_row,null);
+  await h.as('owner'); assert.equal((await h.rows('select id from pending_uploads where id=$1',[replacement.id])).length,0);
+});
+
+test('delete rejects all forbidden roles, preview, peers, and direct table writes without changing the file', async () => {
+  const {s}=await submit();
+  for (const who of ['teacher','grader','auditor','outside','anon','b']) {
+    await h.as(who); await assert.rejects(h.rpc('delete_submission',s.id),/access required|permission denied/i,who);
+    await assert.rejects(h.rows('delete from submissions where id=$1',[s.id]),/permission denied/,who);
+  }
+  await h.as('teacher'); await h.rpc('set_student_preview','aa1001');
+  await assert.rejects(h.rpc('delete_submission',s.id),/read-only/); await h.rpc('set_student_preview',null);
+  await h.as('a'); assert.equal((await h.rpc('class_data')).submissions[0].id,s.id);
+  await h.rpc('delete_submission',s.id);
+});
+
+test('deadline and zero-score locks reject deletion; deadline equality is forbidden', async () => {
+  const {s}=await submit();
+  await h.as('teacher'); await h.rpc('configure_grade_item',1,'file','individual',null,'2020-01-01');
+  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/deadline/);
+  await h.as('owner'); await h.rows('update grade_items set due_at=clock_timestamp() where id=1');
+  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/deadline/);
+  await h.as('teacher'); await h.rpc('configure_grade_item',1,'file','individual',null,null);
+  await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:0}]));
+  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/Graded, locked/);
+  await h.as('teacher'); await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:null}]));
+  await h.as('a'); await h.rpc('delete_submission',s.id);
+});
+
+test('unset due time permits deleting both current and retained on-time objects; a clean resubmission still works', async () => {
+  const first=await submit();
+  await h.as('teacher'); await h.rpc('configure_grade_item',1,'file','individual',null,'2020-01-01');
+  const late=await submit(); assert.equal(late.s.on_time_path,first.p.storage_path);
+  await h.as('teacher'); await h.rpc('configure_grade_item',1,'file','individual',null,null);
+  await h.as('a'); assert.deepEqual((await h.rpc('delete_submission',late.s.id)).sort(),[first.p.storage_path,late.p.storage_path].sort());
+  const fresh=await submit(); assert.notEqual(fresh.s.id,late.s.id); assert.equal(fresh.s.on_time_path,null);
+  await h.rpc('delete_submission',fresh.s.id);
+});
+
+test('a current teammate may delete a group link; a removed member or other group may not', async () => {
+  await h.as('teacher'); const set=await h.rpc('create_group_set','Deletion group',2,4,null), groups=(await h.rpc('class_data')).groups.filter(g=>g.set_id===set);
+  await h.rpc('configure_grade_item',6,'link','group',set,null);
+  for (const uni of ['aa1001','bb1002']) await h.rpc('choose_group',set,groups[0].id,uni);
+  await h.rpc('choose_group',set,groups[1].id,'cc1003');
+  await h.as('a'); const {submission:s}=await h.rpc('submit_link',6,'https://example.test/video');
+  await h.as('c'); await assert.rejects(h.rpc('delete_submission',s.id),/access required/);
+  await h.as('teacher'); await h.rpc('choose_group',set,groups[1].id,'aa1001');
+  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/access required/);
+  await h.as('b'); assert.deepEqual(await h.rpc('delete_submission',s.id),[]);
+  assert.equal((await h.rpc('class_data')).submissions.length,0);
+});
+
+test('file service deletion removes actual current and retained objects selected by SQL, never browser paths', async () => {
+  const first=await submit();
+  await h.as('teacher');await h.rpc('configure_grade_item',1,'file','individual',null,'2020-01-01');
+  const next=await submit();
+  await h.as('teacher');await h.rpc('configure_grade_item',1,'file','individual',null,null);
+  await h.as('owner');await h.rows("insert into storage.objects(bucket_id,name) values('submissions','victim.pdf')");
+  const caller={auth:{getUser:async()=>({data:{user:{id:'caller'}}})},rpc:async(name,args={})=>{
+    await h.as('a');try{return {data:await h.rpc(name,...Object.values(args))};}catch(error){return {error};}
+  }};
+  const service={storage:{from:bucket=>({remove:async paths=>{
+    assert.equal(bucket,'submissions');assert.deepEqual(paths.sort(),[first.p.storage_path,next.p.storage_path].sort());
+    await h.as('owner');await h.rows('delete from storage.objects where bucket_id=$1 and name=any($2::text[])',[bucket,paths]);return {};
+  }})}};
+  const handler=createHandler((_url,key)=>key==='service'?service:caller,name=>({SUPABASE_URL:'https://db.example',SUPABASE_ANON_KEY:'public',SUPABASE_SERVICE_ROLE_KEY:'service'})[name]);
+  const response=await handler(new Request('https://function.example/submission-file',{method:'POST',headers:{authorization:'Bearer local',origin:'http://127.0.0.1:4173','content-type':'application/json'},body:JSON.stringify({action:'delete',id:next.s.id,paths:['victim.pdf']})}));
+  assert.equal(response.status,200);assert.equal((await response.json()).deleted,true);
+  await h.as('owner');assert.equal((await h.rows('select id from submissions where id=$1',[next.s.id])).length,0);
+  assert.equal((await h.rows('select name from storage.objects where name=any($1::text[])',[[first.p.storage_path,next.p.storage_path]])).length,0);
+  assert.equal((await h.rows("select name from storage.objects where name='victim.pdf'")).length,1);
+});
+
+test('archived work cannot be deleted after opening the next term', async () => {
+  const {s}=await submit(); await h.as('teacher'); await h.rpc('open_term','Spring 2028');
+  await h.as('a'); await assert.rejects(h.rpc('delete_submission',s.id),/Archived term is read-only/);
+  await h.as('teacher'); assert.equal((await h.rpc('class_data',TERM)).submissions[0].id,s.id);
+});

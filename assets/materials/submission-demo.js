@@ -83,8 +83,11 @@ export function extendSubmissions({read,save,access,allTerms}) {
       const p={id:crypto.randomUUID(),term_id:d.term_id,item_id:id,owner_uni:owner,group_id:group,uploader:access().uni,storage_path:`${d.term_id}/${id}/${group || owner}/${crypto.randomUUID()}.${ext}`,file_name:file.name,file_size:file.size,mime_type:type,started_at:new Date().toISOString(),expires_at:new Date(Date.now()+900000).toISOString()};
       d.pending_uploads.push(p);save(d);return p;
     },
-    async uploadSubmissionFile(pending,file) {
-      requireRole(['student']);await checkSubmissionFile(file);const d=read(),p=d.pending_uploads.find(p=>p.id===pending.id && p.uploader===access().uni);
+    async uploadSubmissionFile(pending,file,onProgress) {
+      requireRole(['student']);await checkSubmissionFile(file);
+      // Delay only the progress-enabled UI path. Direct setup calls remain fast.
+      if (onProgress) for (const percent of [0,24,62,88,100]) { onProgress(percent); await new Promise(resolve=>setTimeout(resolve,120)); }
+      requireRole(['student']);const d=read(),p=d.pending_uploads.find(p=>p.id===pending.id && p.uploader===access().uni);
       if(!p || new Date(p.expires_at)<=new Date())throw new Error('Pending upload expired or superseded.');
       if(file.size!==p.file_size || submissionContentType(file)!==p.mime_type)throw new Error('File metadata does not match.');
       p.object_created_at=new Date().toISOString();
@@ -98,7 +101,17 @@ export function extendSubmissions({read,save,access,allTerms}) {
       const result=store(d,p.item_id,'file',{storage_path:p.storage_path,file_name:p.file_name,file_size:p.file_size,started_at:p.started_at,object_created_at:p.object_created_at,data:p.data});
       d.pending_uploads=d.pending_uploads.filter(x=>x.id!==id);save(d);return result;
     },
-    async submitFile(id,file) {await checkSubmissionFile(file);const p=await this.beginSubmission(id,file);await this.uploadSubmissionFile(p,file);return this.finishSubmission(p.id);},
+    async submitFile(id,file,onProgress) {await checkSubmissionFile(file);const p=await this.beginSubmission(id,file);await this.uploadSubmissionFile(p,file,onProgress);return this.finishSubmission(p.id);},
+    async deleteSubmission(id) {
+      requireRole(['student']);const d=read(),s=d.submissions.find(s=>s.id===id);
+      if(!s)throw new Error('Submission unavailable.');
+      const i=d.items.find(i=>i.id===s.item_id),o=target(d,s.item_id,i?.kind);
+      if(s.owner_uni!==o.owner || s.group_id!==o.group)throw new Error('Submission access required.');
+      if(i.due_at && Date.now()>=new Date(i.due_at).getTime())throw new Error('The deadline has passed. This submission cannot be deleted.');
+      d.submissions=d.submissions.filter(row=>row.id!==id);
+      d.pending_uploads=d.pending_uploads.filter(p=>p.item_id!==s.item_id || (s.group_id ? p.group_id!==s.group_id : p.owner_uni!==s.owner_uni));
+      save(d);return {deleted:true,cleanup_pending:false};
+    },
     async submitLink(id,link) {
       requireRole(['student']);if(link.length>2000 || !/^https:\/\/[^/\s?#]+[^\s]*$/.test(link))throw new Error('Use a valid https:// video link.');
       const d=read(),result=store(d,id,'link',{link,started_at:new Date().toISOString()});save(d);return result;

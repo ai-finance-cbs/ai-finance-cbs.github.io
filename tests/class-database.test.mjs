@@ -324,6 +324,7 @@ const tables = [
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
 const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge'];
 const fnCases = {
+  delete_submission: ['00000000-0000-0000-0000-000000000099'],
   save_instructor_note: [1, 'Denied'],
   save_speaker: [null, 'Denied', '', '', null, 'Idea', '', ''],
   delete_speaker: ['00000000-0000-0000-0000-000000000099'],
@@ -506,7 +507,8 @@ test('each role calls each public function, including guessed identities and gra
             ...(who === 'grader' ? ['save_grades', 'save_attendance'] : []),
           ];
     for (const [fn, args] of Object.entries(fnCases)) {
-      if (who === 'a' && fn === 'finish_submission') await assert.rejects(rpc(fn,...args), /Pending upload not found/);
+      if (who === 'a' && fn === 'delete_submission') await assert.rejects(rpc(fn,...args), /Submission unavailable/);
+      else if (who === 'a' && fn === 'finish_submission') await assert.rejects(rpc(fn,...args), /Pending upload not found/);
       else if (who === 'a' && fn === 'submit_link') await assert.rejects(rpc(fn,...args), /Join a group first/);
       else if (who === 'grader' && fn === 'grade_group') await assert.rejects(rpc(fn,...args), /Group does not belong/);
       else if (allowed.includes(fn)) await rpc(fn, ...args);

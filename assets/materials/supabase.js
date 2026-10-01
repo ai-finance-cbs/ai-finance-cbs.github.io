@@ -1,4 +1,5 @@
 import { noteValues, speakerValues } from './prep-core.js';
+import { uploadStorageFile } from './storage-upload.js';
 import { exportTermArchive } from './term-export.js';
 import { checkSubmissionFile, submissionContentType } from './submission-core.js';
 import { isColumbiaEmail } from './core.js';
@@ -60,18 +61,20 @@ export async function createBackend(config) {
     async setSessionTimes(week, startsAt, endsAt) { return rpc('set_session_times', { p_week: week, p_start: startsAt, p_end: endsAt }); },
     async configureItem(id, fields) { return rpc('configure_grade_item', { p_item:id, p_kind:fields.kind, p_mode:fields.mode, p_group_set:fields.group_set_id || null, p_due:fields.due_at || null }); },
     async beginSubmission(item, file) { return rpc('begin_submission', { p_item:item, p_name:file.name, p_size:file.size, p_type:submissionContentType(file) }); },
-    async uploadSubmissionFile(pending, file) {
+    async uploadSubmissionFile(pending, file, onProgress) {
       await checkSubmissionFile(file);
-      checked(await client.storage.from('submissions').upload(pending.storage_path, file, { contentType:submissionContentType(file), cacheControl:'0', upsert:false }));
+      const { session } = checked(await client.auth.getSession());
+      await uploadStorageFile({ ...config, token:session?.access_token, path:pending.storage_path, file, contentType:submissionContentType(file), onProgress });
     },
     async finishSubmission(pendingId) { return fileAction({ action:'finish', pending_id:pendingId }, 'submission-file'); },
-    async submitFile(item, file) {
+    async submitFile(item, file, onProgress) {
       await checkSubmissionFile(file);
       const pending = await this.beginSubmission(item, file);
-      await this.uploadSubmissionFile(pending, file);
+      await this.uploadSubmissionFile(pending, file, onProgress);
       return this.finishSubmission(pending.id);
     },
     async submitLink(item, link) { return rpc('submit_link', { p_item:item, p_link:link }); },
+    async deleteSubmission(id) { return fileAction({ action:'delete', id }, 'submission-file'); },
     async submissionUrl(id, version = 'current') { return (await fileAction({ action:'download', id, version }, 'submission-file')).url; },
     async sweepSubmissions() { return fileAction({ action:'sweep' }, 'submission-file'); },
     async gradeGroup(item, group, score, comment = null) { return rpc('grade_group', { p_item:item, p_group:group, p_score:score, p_comment:comment }); },

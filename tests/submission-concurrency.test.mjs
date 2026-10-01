@@ -101,3 +101,40 @@ test('real PostgreSQL early zero scores serialize against the first individual a
 
   }
 }));
+
+for(const first of ['delete','finish']) test(`real PostgreSQL ${first} wins concurrent group delete versus finish without reviving deleted work`,{timeout:30000},async()=>database(async({h,owner,a,b})=>{
+  await h.as('teacher');const set=await h.rpc('create_group_set','Delete race',1,4,null),group=(await h.rpc('class_data')).groups.find(g=>g.set_id===set).id;
+  await h.rpc('configure_grade_item',2,'file','group',set,null);
+  for(const uni of ['aa1001','bb1002'])await h.rpc('choose_group',set,group,uni);
+  const original=await h.begin('a',2),saved=await h.finish(original);
+  const pending=await h.begin('b',2),receipt=await h.verify(pending);
+  await h.as('owner');
+  const actor=first==='delete'?a:b,competitor=first==='delete'?b:a,wait=await waits(owner,competitor);
+  await actor.query('begin');
+  if(first==='delete') {
+    const paths=await rpc(a,'delete_submission',saved.submission.id);
+    assert.deepEqual(paths.sort(),[original.storage_path,pending.storage_path].sort());
+    const competing=rpc(b,'finish_submission',pending.id,receipt).then(value=>({value}),error=>({error}));
+    await wait();await a.query('commit');assert.match((await competing).error?.message || '',/expired|superseded|not found/i);
+  } else {
+    await rpc(b,'finish_submission',pending.id,receipt);
+    const competing=rpc(a,'delete_submission',saved.submission.id).then(value=>({value}),error=>({error}));
+    await wait();await b.query('commit');
+    const result=await competing;assert.equal(result.error,undefined);assert.deepEqual(result.value,[pending.storage_path]);
+  }
+  assert.equal((await owner.query('select * from submissions')).rows.length,0);
+  assert.equal((await owner.query('select * from pending_uploads')).rows.length,0);
+  const logs=(await owner.query("select * from audit_log where table_name='submissions' and operation='DELETE'")).rows;
+  assert.equal(logs.length,1);assert.equal(logs[0].old_row.storage_path,first==='delete'?original.storage_path:pending.storage_path);
+  // A deliberate upload started after deletion is a new submission, with a new ID.
+  const fresh=await h.begin('a',2),accepted=await h.finish(fresh);assert.notEqual(accepted.submission.id,saved.submission.id);
+}));
+
+test('real PostgreSQL deletion waits for grading and then refuses a newly locked submission',{timeout:30000},async()=>database(async({h,owner,a,grader})=>{
+  const pending=await h.begin(),saved=await h.finish(pending);
+  await h.as('owner');const wait=await waits(owner,a);
+  await grader.query('begin');await rpc(grader,'save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:0}]));
+  const competing=rpc(a,'delete_submission',saved.submission.id).then(value=>({value}),error=>({error}));
+  await wait();await grader.query('commit');assert.match((await competing).error?.message || '',/Graded, locked/);
+  assert.equal((await owner.query('select storage_path from submissions')).rows[0].storage_path,pending.storage_path);
+}));

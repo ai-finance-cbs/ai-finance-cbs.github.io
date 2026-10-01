@@ -114,8 +114,9 @@ export function renderSpeakers({ root, rows, backend, confirmInline }) {
     for (const row of matches) {
       const item = el('section', null, { class:'speaker-row', 'data-speaker-id':row.id });
       const heading = el('div', null, { class:'speaker-heading' });
-      heading.append(el('h2', row.name), el('span', row.status, { class:'speaker-status' }));
-      if (row.week) heading.append(el('span', `Week ${row.week}`));
+      heading.append(el('h2', row.name));
+      for (const key of ['affiliation','topic']) heading.append(el('span', row[key], { class:`speaker-${key}` }));
+      heading.append(el('span', row.week ? `Week ${row.week}` : '', { class:'speaker-week' }), el('span', row.status, { class:'speaker-status' }));
       const actions = el('div', null, { class:'speaker-actions' });
       const remove = button('Delete', async () => {
         if (!await confirmInline(remove, `Delete ${row.name}?`)) return;
@@ -124,14 +125,11 @@ export function renderSpeakers({ root, rows, backend, confirmInline }) {
         catch (e) { status.textContent = e.message; remove.disabled = false; }
       });
       actions.append(button('Edit', () => edit(item, row)), remove);
-      item.append(heading);
-      for (const key of ['affiliation','topic']) if (row[key]) item.append(el('p', row[key], { class:`speaker-${key}` }));
-      if (row.contact) {
-        const contact = el('p'), url = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact) ? `mailto:${row.contact}` : row.contact;
-        contact.append(safePrepLink(url) ? el('a', row.contact, { href:url, rel:'noopener noreferrer' }) : document.createTextNode(row.contact)); item.append(contact);
-      }
+      const contact = el('span', null, { class:'speaker-contact' }), url = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact) ? `mailto:${row.contact}` : row.contact;
+      contact.append(safePrepLink(url) ? el('a', row.contact, { href:url, rel:'noopener noreferrer' }) : document.createTextNode(row.contact));
+      heading.append(contact, actions); item.append(heading);
       if (row.notes) item.append(el('p', row.notes, { class:'speaker-notes' }));
-      item.append(actions); list.append(item);
+      list.append(item);
     }
   }
   filter.addEventListener('input', draw); draw();

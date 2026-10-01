@@ -42,6 +42,7 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   section.append(el('p', item.mode === 'individual' ? 'Individual' : compact ? (group ? `Group ${group.number}` : 'Group') : `Group submission${group ? `: Group ${group.number}` : ''}`, { class: 'submission-mode' }));
   const submission = ownSubmission(data, item, access.uni);
   const status = el('p', '', { class: 'submission-status', role: 'status', 'data-submission-status': '' });
+  const stateLine = el('div', null, { class:'submission-state' }); stateLine.append(status);
   const showStatus = () => {
     status.replaceChildren(document.createTextNode(submissionStatus(submission)));
     if (submission) {
@@ -51,7 +52,7 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   };
   showStatus();
   status.title = status.textContent;
-  if (compact) section.append(status);
+  if (compact) section.append(stateLine);
   if (item.locked || submission?.locked) {
     if (compact) { status.textContent = 'Graded, locked.'; return section; }
     const locked = el('div', null, { class: 'submission-box', 'data-submission-locked': '' });
@@ -67,27 +68,54 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   const row = el('div', null, { class: 'submission-row' });
   const input = el('input', null, { id: `submission-${item.id}`, type: item.kind === 'link' ? 'url' : 'file', 'aria-label': item.kind === 'link' ? 'Prototype HTTPS link' : 'Submission file' });
   const save = el('button', submission ? 'Replace submission' : 'Submit', { type: 'submit', class: 'materials-button' });
-  let choose;
+  const progress = el('div', null, { class:'submission-progress', 'data-upload-progress':'' }); progress.hidden = true;
+  const meter = el('progress', null, { max:'100', value:'0', 'aria-label':'File upload progress' });
+  const progressText = el('span', '', { 'data-upload-percent':'' }); progress.append(meter, progressText);
+  let choose, remove;
   if (item.kind === 'file') {
     input.accept = '.pdf,.docx,.xlsx,.pptx,.zip'; input.hidden = true;
     choose = el('button', 'Choose file', { type: 'button', class: 'materials-button' });
     choose.addEventListener('click', () => input.click());
     const filename = el('span', 'No file selected', { class: 'selected-file-name', 'data-selected-file': '' });
     input.addEventListener('change', () => { filename.textContent = input.files[0]?.name || 'No file selected'; if (compact) { status.textContent = filename.textContent; status.title = filename.textContent; } });
-    row.append(choose); if (!compact) row.append(filename); row.append(input);
+    row.append(choose);
+    if (!compact) { const selected = el('div', null, { class:'selected-file' }); selected.append(filename, progress); row.append(selected); }
+    else stateLine.append(progress);
+    row.append(input);
   } else {
     input.placeholder = 'https://';
     row.append(input);
   }
   row.append(save);
   const writable = access.role === 'student' && canWrite(access);
-  const disable = value => { for (const control of [input, choose, save]) if (control) control.disabled = value; };
+  const disable = value => { for (const control of [input, choose, save, remove]) if (control) control.disabled = value; };
   disable(!writable);
   form.noValidate = true;
   const hint = el('p', item.kind === 'file' ? 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB' : 'Use an HTTPS video link.', { class: 'submission-hint', id: `submission-hint-${item.id}` });
   input.setAttribute('aria-describedby', compact ? 'submit-format-hint' : hint.id);
-  if (compact) form.append(row); else form.append(row, status, hint);
+  if (compact) form.append(row); else form.append(row, stateLine, hint);
   let saving = false;
+  if (submission && writable && (!item.due_at || Date.now() < new Date(item.due_at).getTime())) {
+    const actions = el('span', null, { class:'submission-delete' });
+    remove = el('button', 'Delete submission', { type:'button', class:'text-action' });
+    remove.addEventListener('click', () => {
+      if (saving) return;
+      saving = true; disable(true);
+      const prompt = el('span', `Delete ${submission.file_name || submission.link}?`, { class:'inline-confirm', 'data-delete-confirm':'' });
+      const confirm = el('button', 'Delete', { type:'button', class:'materials-button' });
+      const cancel = el('button', 'Cancel', { type:'button', class:'materials-button' });
+      const finish = () => { prompt.remove(); saving = false; disable(!writable); };
+      cancel.addEventListener('click', finish);
+      confirm.addEventListener('click', async () => {
+        confirm.disabled = true; cancel.disabled = true; status.textContent = 'Deleting…';
+        try { await backend.deleteSubmission(submission.id); await refresh(); }
+        catch (error) { status.textContent = error.message; }
+        finally { finish(); }
+      });
+      prompt.append(confirm, cancel); actions.append(prompt); cancel.focus();
+    });
+    actions.append(remove); stateLine.append(actions);
+  }
   form.addEventListener('submit', async event => {
     event.preventDefault(); if (!writable || saving) return;
     saving = true; disable(true); status.textContent = 'Submitting…';
@@ -98,10 +126,15 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
         await backend.submitLink(item.id, link);
       } else {
         if (!input.files[0]) throw new Error('Choose a file to submit.');
-        await backend.submitFile(item.id, input.files[0]);
+        if (compact) { status.textContent = input.files[0].name; status.title = input.files[0].name; }
+        await backend.submitFile(item.id, input.files[0], percent => {
+          progress.hidden = false; meter.value = percent;
+          progressText.textContent = `Uploading ${percent}%`;
+        });
       }
       await refresh();
     } catch (error) {
+      progress.hidden = true;
       status.textContent = error.message;
       // Another member or grader may have changed the owner while this page was open.
       if (/graded.*locked/i.test(error.message)) {
@@ -110,6 +143,7 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
         return;
       }
     } finally {
+      progress.hidden = true;
       saving = false;
       if (!status.hasAttribute('data-submission-locked')) disable(!writable);
     }
