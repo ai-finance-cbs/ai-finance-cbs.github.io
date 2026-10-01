@@ -1,3 +1,4 @@
+import { SUBMIT_CODES, submissionWeek } from './staff-core.js';
 import { canWrite, gradeCode } from './class-core.js';
 import { classDate } from './upcoming-core.js';
 import { courseTime, ownGroup, ownSubmission, submissionStatus, fileReleased, inClassFile } from './week-core.js';
@@ -13,16 +14,18 @@ const block = (title, id) => {
   section.append(el('h2', title));
   return section;
 };
-function milestone({ data, access, path, backend, refresh }, week) {
-  const code = week === 6 ? 'FP' : `M${week}`;
+function submissionBlock({ data, access, path, backend, refresh }, code, compact = false) {
   const item = data.submission_items.find(i => gradeCode(i) === code);
-  const assignment = data.assignments.find(a => a.id === week);
-  const section = block('Milestone', week === 6 ? 'final-prototype' : `milestone-${week}`);
+  const week = submissionWeek(code, item, data.sessions);
+  const assignment = !code.startsWith('O') && data.assignments.find(a => a.id === week);
+  const section = block(compact ? `${code} · ${assignment?.title || item?.title || code}` : 'Milestone', compact ? `submit-${code}` : week === 6 ? 'final-prototype' : `milestone-${week}`);
+  section.dataset.submitCode = code;
   section.classList.add('assignment-section');
-  section.append(el('h3', `${code} · ${assignment?.title || item?.title || 'Milestone'}`));
+  if (!compact) section.append(el('h3', `${code} · ${assignment?.title || item?.title || 'Milestone'}`));
   if (item?.due_at) section.append(el('p', `Due ${courseTime(item.due_at)}`, { class: 'upcoming-meta' }));
   else section.append(el('p', 'Due time to be announced.', { class: 'upcoming-meta' }));
-  if (assignment) {
+  if (compact) section.append(el('a', `Week ${week}`, { href: `${path(`week-${week}`)}${code.startsWith('O') ? '' : week === 6 ? '#final-prototype' : `#milestone-${week}`}` }));
+  else if (assignment) {
     section.append(el('p', assignment.description, { class: 'assignment-copy' }));
     for (const [label, text] of [['Deliverable', assignment.deliverable], ['Graded on', assignment.grading]]) {
       if (text) { const p = el('p', null, { class: 'assignment-copy' }); p.append(el('strong', `${label}: `), document.createTextNode(text)); section.append(p); }
@@ -127,7 +130,7 @@ export function renderWeek(ctx) {
     const session = data.sessions.find(s => s.week === week);
     const when = session?.starts_at ? courseTime(session.starts_at) : classDate(session?.date);
     root.append(el('p', `Next class · Week ${week}${when ? ` · ${when}` : ' · Date to be announced'}${session?.room ? ` · ${session.room}` : ''}; the paper quiz covers the required readings.`, { class: 'next-class', 'data-next-class': '' }));
-    if (access.role !== 'auditor') root.append(milestone(ctx, week));
+    if (access.role !== 'auditor') root.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`));
   }
   for (const isClass of [true, false]) {
     const section = block(isClass ? 'In-class files' : 'Lecture notes', isClass ? 'in-class-files' : 'lecture-notes');
@@ -152,4 +155,10 @@ export function renderWeek(ctx) {
   }
   const readings = document.querySelector('[data-week-readings]');
   if (readings) root.append(readings.content.cloneNode(true));
+}
+
+export function renderSubmit(ctx) {
+  for (const code of SUBMIT_CODES) {
+    if (ctx.data.submission_items.some(i => gradeCode(i) === code && ['file','link'].includes(i.kind))) ctx.root.append(submissionBlock(ctx, code, true));
+  }
 }

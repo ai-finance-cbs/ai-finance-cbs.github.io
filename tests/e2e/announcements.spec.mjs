@@ -26,7 +26,8 @@ test('instructor posts, edits, and deletes short announcements with literal text
   await page.getByRole('button',{name:'Save announcement',exact:true}).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Announcement saved.');
   await editor.locator('.announcement-editor summary').click();
-  page.once('dialog', d => d.accept()); await page.getByRole('button',{name:'Delete announcement',exact:true}).click();
+  await page.getByRole('button',{name:'Delete announcement',exact:true}).click();
+  await page.getByRole('button',{name:'Confirm',exact:true}).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Announcement deleted.');
   await page.goto('/materials/week-1/'); await ready(page);
   await expect(page.locator('#week-announcements')).toHaveCount(0);

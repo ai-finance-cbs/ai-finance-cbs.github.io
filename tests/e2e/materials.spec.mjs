@@ -15,11 +15,13 @@ async function switchRole(page, role) {
   await page.getByRole('button', { name: 'Use demo role' }).click();
 }
 async function upload(page, title, shared = false) {
+  if (!await page.locator('#lecture-pdfs').evaluate(n => n.open)) await page.locator('#lecture-pdfs > summary').click();
   await page.getByLabel('File title', { exact: true }).fill(title);
   await page.getByLabel('Lecture PDF (maximum 20 MB)').setInputFiles({ name: 'notes.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF') });
   await page.locator('#file-form').getByLabel('Visible to auditors').setChecked(shared);
   await page.getByRole('button', { name: 'Upload PDF', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('PDF uploaded.');
+  await expect(page.getByRole('link', { name:title, exact:true })).toBeVisible();
 }
 test('signed-out syllabus links open one modal and retain their intended milestone', async ({ page }) => {
   await page.goto('/syllabus/week-2/'); await ready(page);
@@ -83,7 +85,8 @@ test('auditor sees no milestones and only shared PDFs, including after a visibil
   await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page);
   await expect(page.locator('.assignment-section')).toHaveCount(0);
   await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: 'Private PDF', exact: true })).toHaveCount(0);
-  await switchRole(page, 'instructor'); await page.goto('/materials/files/'); await ready(page);
+  await switchRole(page, 'instructor'); await page.goto('/materials/settings/'); await ready(page);
+  await page.locator('#lecture-pdfs > summary').click();
   await page.getByRole('button', { name: 'Hide Shared PDF from auditors', exact: true }).click(); await expect(page.locator('[data-admin-status]')).toHaveText('File visibility updated.');
   await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
@@ -108,7 +111,7 @@ test('fakeauth query and stored demo session are inert on the live hostname', as
     await route.fulfill({ response });
   });
   await page.addInitScript(() => { sessionStorage.setItem('b8403-demo-enabled', '1'); sessionStorage.setItem('b8403-demo-user-v1', JSON.stringify({ email: 'oh@gsb.columbia.edu' })); });
-  await page.goto('https://ai-finance-cbs.github.io/materials/files/?fakeauth=instructor'); await ready(page);
+  await page.goto('https://ai-finance-cbs.github.io/materials/settings/?fakeauth=instructor'); await ready(page);
   await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.');
   await expect(page.locator('#roster-form')).toHaveCount(0);
   await page.locator('.auth-controls [data-login]').click(); await expect(page.locator('[data-demo-controls]')).toBeHidden();
@@ -144,8 +147,8 @@ test('invalid roster leaves the class list intact and instructor can delete uplo
   await expect(page.getByRole('button', { name: 'Replace roster', exact: true })).toHaveCount(0);
   await expect(page.locator('#class-roster')).toContainText('3 students on the class list.');
   await page.goto('/materials/files/'); await ready(page); await upload(page, 'Delete this PDF');
-  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Delete Delete this PDF', exact: true }).click();
+  await page.getByRole('button',{name:'Confirm',exact:true}).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('PDF deleted.');
   await page.goto('/materials/week-1/'); await ready(page);
   await expect(page.getByRole('link', { name: 'Delete this PDF', exact: true })).toHaveCount(0);

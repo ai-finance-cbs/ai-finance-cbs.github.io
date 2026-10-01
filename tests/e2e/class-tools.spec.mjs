@@ -29,7 +29,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
   ]);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.locator('[data-view-picker]')).toBeHidden();
-  for (const path of ['roster', 'files', 'settings', 'groups', 'grades']) {
+  for (const path of ['roster', 'files', 'settings', 'groups', 'grades', 'submit']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root')).toContainText(/instructors|does not have access/);
@@ -154,6 +154,7 @@ test('view-as matches student content and denies writes even when calling the ba
     'Attendance',
     'Grades',
     'Groups',
+    'Submit',
   ]);
   await page.goto('/materials/groups/');
   await ready(page);
@@ -194,7 +195,7 @@ test('auditor has only Course Materials and cannot open class pages directly', a
     'Staff',
     'Course Materials',
   ]);
-  for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
+  for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings', 'submit']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root input')).toHaveCount(0);

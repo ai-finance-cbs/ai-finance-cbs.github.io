@@ -852,3 +852,38 @@ body.class-tools .content { max-width:1180px; }
 .topnav li[data-zone="staff"] a { color:#8C2F39; }
 .topnav li[data-zone="staff"] a[aria-current="page"] { color:#8C2F39; border-bottom-color:#8C2F39; }
 .topnav li[data-zone] a:hover { border-bottom-color:currentColor; }
+
+/* Class tools use the whole wall; the fixed course header stays identical. */
+body.full-tools .site-sidebar { display:none !important; }
+body.full-tools main { margin-left:0; }
+body.full-tools .content { max-width:none; }
+.full-tools .class-grid-wrap { border:0; border-top:1px solid #ececec; border-bottom:1px solid #ececec; scrollbar-gutter:auto; }
+.gradebook-workspace { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; }
+.gradebook-workspace.panel-open { grid-template-columns:minmax(0,1fr) 300px; }
+.gradebook-content { min-width:0; }
+.grade-panel { border-left:1px solid #ececec; padding:12px 0 12px 20px; overflow-wrap:anywhere; }
+.grade-panel > button:first-child { float:right; margin-bottom:12px; }
+.grade-panel h2 { clear:both; }
+.class-tools .gradebook-grid { table-layout:fixed; width:100%; min-width:1100px; }
+.class-tools .gradebook-grid th, .class-tools .gradebook-grid td { min-width:0; max-width:none; padding:3px 3px; position:relative; text-align:center; }
+.class-tools .gradebook-grid th:first-child { min-width:180px; width:180px; max-width:180px; text-align:left; position:sticky; left:0; }
+.class-tools .gradebook-grid th:last-child { width:54px; }
+.class-tools .gradebook-grid thead th { position:sticky; top:0; }
+.class-tools .gradebook-grid input[type=number] { width:100%; min-width:0; padding:3px 1px; text-align:center; appearance:textfield; }
+.gradebook-grid input::-webkit-inner-spin-button, .gradebook-grid input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.gradebook-grid .release-label { justify-content:center; }
+.submission-mark, .override-mark { position:absolute; top:0; left:4px; font-size:9px; z-index:1; color:#737373; pointer-events:none; }
+.override-mark { left:auto; right:3px; }
+.grade-panel .admin-form { display:block; }
+.grade-panel .tool-label { display:block; margin:12px 0; }
+.grade-panel .materials-button { margin-right:8px; }
+.class-tools #materials-root .grade-total { font-weight:600; }
+.class-tools #materials-root[data-page=submit] .week-block h2 { font-size:15px; text-transform:none; letter-spacing:0; color:#1a1a1a; }
+@media (min-width:1280px) { .class-tools .gradebook-grid { min-width:0; } .panel-open .gradebook-grid th:first-child { width:140px; min-width:140px; max-width:140px; } }
+@media (max-width:819px) { .gradebook-workspace.panel-open { grid-template-columns:minmax(0,1fr); } .grade-panel { border-left:0; border-top:1px solid #ececec; padding:16px 0; } }
+.term-filter { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:12px; }
+.term-filter select { padding:4px; border:1px solid #d8d8d8; background:#fff; font:inherit; }
+#session-times .admin-form h3 { flex:0 0 70px; align-self:center; }
+#lecture-pdfs input[type=datetime-local] { max-width:185px; width:100%; font:inherit; }
+.term-actions { border-top:1px solid #ececec; margin-top:14px; padding-top:12px; }
+.term-actions label { display:block; margin:10px 0; }

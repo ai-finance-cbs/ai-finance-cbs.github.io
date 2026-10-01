@@ -59,7 +59,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
     if (a.role === 'auditor') return { ...shared, sessions:d.sessions, attendance:[], items:[], grades:[], sets:[], groups:[], members:[] };
     if (a.role === 'grader')
       return {
-        ...shared, sets:d.sets, groups:d.groups, members:d.members.map(m => ({...m,name:students.find(r => r.uni === m.uni)?.name,email:null})),
+        ...shared, group_grades:d.group_grades, sets:d.sets, groups:d.groups, members:d.members.map(m => ({...m,name:students.find(r => r.uni === m.uni)?.name,email:null})),
         roster: students.map(({ uni, name }) => ({ uni, name })),
         sessions: d.sessions,
         attendance: d.attendance,
@@ -68,7 +68,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       };
     return {
       ...shared,
-      ...(admin ? { roster: students } : {}),
+      ...(admin ? { roster: students, group_grades:d.group_grades } : {}),
       sessions: d.sessions,
       attendance: d.attendance
         .filter((r) => admin || r.uni === a.uni)

@@ -27,12 +27,12 @@ test('role pages and preview write controls match the server contract', () => {
       'settings',
     ],
     grader: ['landing', 'week', 'gradebook', 'attendance'],
-    student: ['landing', 'week', 'grades', 'attendance', 'groups'],
+    student: ['landing', 'week', 'grades', 'attendance', 'groups', 'submit'],
     auditor: ['landing', 'week'],
     unlisted: [],
   };
   for (const [role, pages] of Object.entries(expected))
-    for (const page of [...expected.instructor, 'grades'])
+    for (const page of [...expected.instructor, 'grades', 'submit'])
       assert.equal(pageAllowed(page, { role }), pages.includes(page), `${role}: ${page}`);
   const preview = { role: 'student', actor_role: 'instructor', view_as: { uni: 'ab1234' } };
   assert.equal(canWrite(preview), false);

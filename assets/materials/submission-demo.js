@@ -1,6 +1,6 @@
 import { canWrite, gradeCode, scoreValue } from './class-core.js';
 import { checkSubmissionFile, submissionContentType, defaultSubmissionItem, safeSubmission } from './submission-core.js';
-const arrays=['roster','assignments','sessions','attendance','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads'];
+const arrays=['roster','assignments','sessions','attendance','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads','group_grades'];
 export function normalizeTerms(d) {
   d.terms ||= [{id:'spring-2027',title:'Spring 2027',status:'active'}];
   const active=d.terms.find(t=>t.status==='active')?.id || 'spring-2027';
@@ -71,6 +71,7 @@ export function extendSubmissions({read,save,access,allTerms}) {
       requireRole(['instructor']); const d=read(),i=d.items.find(i=>i.id===id);if(!i)throw new Error('Invalid item.');
       if(!['file','link','none'].includes(fields.kind) || !['individual','group'].includes(fields.mode) || (fields.group_set_id && (fields.mode!=='group' || !d.sets.some(s=>s.id===fields.group_set_id))))throw new Error('Invalid item settings.');
       if(d.submissions.some(s=>s.item_id===id) && ['kind','mode','group_set_id'].some(k=>i[k]!==fields[k]))throw new Error('Submission mode cannot change after work has been submitted.');
+      if(fields.mode==='group' && !fields.group_set_id)throw new Error('Choose a group set for group submissions.');
       Object.assign(i,fields);save(d);
     },
     async beginSubmission(id,file) {
@@ -116,6 +117,8 @@ export function extendSubmissions({read,save,access,allTerms}) {
       if(comment?.length>10000)throw new Error('Comment is too long.');
       const value=score==null?null:scoreValue(score,i.max_points);
       for(const uni of s.member_unis){d.grades=d.grades.filter(g=>g.item_id!==id || g.uni!==uni);if(value!=null)d.grades.push({uni,item_id:id,score:value,comment});}
+      d.group_grades=d.group_grades.filter(g=>g.item_id!==id || g.group_id!==group);
+      d.group_grades.push({item_id:id,group_id:group,score:value,comment});
       refreshDemoLocks(d,[id]);save(d);
     },
   };

@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
-test('compact attendance keeps simple overrides, class totals, filters, and whole-class batch actions', async ({ page }) => {
+test('compact attendance keeps simple overrides, class totals, filters, without whole-class batch actions', async ({ page }) => {
   await enter(page, 'grader', 'attendance');
   const filter = page.getByRole('searchbox', { name: 'Filter by name or UNI' });
   const cell = page.getByLabel('ab1234 Week 1 attendance', { exact: true });
@@ -26,15 +26,11 @@ test('compact attendance keeps simple overrides, class totals, filters, and whol
     await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(totals);
     await expect(filter).toHaveValue('AB1234');
   }
-  page.once('dialog', async dialog => {
-    expect(dialog.message()).toBe('Mark all 4 students present for Week 1?');
-    await dialog.accept();
-  });
-  await page.getByRole('button', { name: 'Mark all present: Week 1', exact: true }).click();
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('4P0A0E');
+  await expect(page.getByRole('button', { name: /Mark all present/ })).toHaveCount(0);
+  await page.evaluate(async () => { const b=(await import('/assets/materials/demo.js')).createDemo(); await b.saveAttendance(1,[{uni:'cd5678',status:'present'},{uni:'ef9012',status:'present'}]); });
   await cell.selectOption('');
   await expect(cell).toHaveValue('');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('3P0A0E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('2P0A0E');
   await filter.fill('no such student');
   await expect(page.locator('.empty-filter')).toBeVisible();
   await expect(page.locator('.student-count')).toHaveText('0 of 4 students');
@@ -53,7 +49,7 @@ test('compact attendance keeps simple overrides, class totals, filters, and whol
   });
   await enter(page, 'grader', 'attendance');
   await expect(page.locator('.student-count')).toHaveText('3 students');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('2P0A0E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('1P0A0E');
 });
 
 test('a rejected attendance save restores the previous select and permits a retry', async ({ page }) => {
@@ -103,7 +99,7 @@ test('gradebook keyboard entry and filtering retain unsaved scores and show reco
   await page.getByRole('searchbox').fill('ab1234');
   await expect(first).toHaveValue('7');
   await expect(second).toHaveValue('4');
-  await expect(page.locator('tr[data-student]:visible td').last()).toHaveText('11 (incomplete)');
+  await expect(page.locator('tr[data-student]:visible td').last()).toHaveText('11');
   await page.getByLabel('Gradebook item', { exact: true }).selectOption('7');
   await expect(page.locator('input[data-grade]:visible')).toHaveCount(1);
   await expect(page.getByLabel('Release In-class quiz 1', { exact: true })).toBeVisible();
@@ -187,7 +183,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         await grid.evaluate(w => { w.scrollTop = 0; w.scrollLeft = 0; });
       }
       if (section === 'settings') {
-        await expect(page.locator('#materials-root > details')).toHaveCount(5);
+        await expect(page.locator('#materials-root > details')).toHaveCount(9);
         await expect(page.locator('#materials-root > details[open]')).toHaveCount(0);
       }
       await page.screenshot({ path: `evidence/compact-ui/${section}-${width}.png`, fullPage: true });

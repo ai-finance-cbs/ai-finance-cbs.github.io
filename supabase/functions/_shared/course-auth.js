@@ -7,6 +7,7 @@ export function courseHandler(createClient, env, action) {
     const headers = { 'Content-Type':'application/json', 'Cache-Control':'no-store', Vary:'Origin',
       'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods':'POST, OPTIONS' };
     if (origin && origins.has(origin)) headers['Access-Control-Allow-Origin'] = origin;
+    const respondFile = (body, filename) => new Response(body, {status:200,headers:{...headers,'Content-Type':'application/zip','Content-Disposition':`attachment; filename="${filename}"`}});
     const respond = (status, body) => new Response(JSON.stringify(body), {status, headers});
     if (origin && !origins.has(origin)) return respond(403,{error:'Origin not allowed.'});
     if (request.method === 'OPTIONS') return new Response(null,{status:204,headers});
@@ -24,7 +25,7 @@ export function courseHandler(createClient, env, action) {
       try { body = await request.json(); } catch { return respond(400,{error:'Provide a JSON request.'}); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return respond(400,{error:'Provide a JSON request.'});
       const admin = () => createClient(env('SUPABASE_URL'),env('SUPABASE_SERVICE_ROLE_KEY'),options);
-      return await action({body,access,userClient,admin,respond});
+      return await action({body,access,userClient,admin,respond,respondFile});
     } catch { return respond(500,{error:'File operation failed. Check the function configuration and try again.'}); }
   };
 }

@@ -1,10 +1,11 @@
+import { exportStream } from '../_shared/term-export.js';
 import { courseHandler, canWrite } from '../_shared/course-auth.js';
 import { validSubmissionBytes, MAX_BYTES } from '../_shared/submission-files.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PENDING_FIELDS='id,term_id,item_id,owner_uni,group_id,uploader_id,storage_path,file_name,file_size,mime_type,started_at,expires_at';
 export function createHandler(createClient, env) {
-  return courseHandler(createClient,env,async ({body,access,userClient,admin,respond}) => {
-    if (!['finish','download','sweep','purge'].includes(body.action)) return respond(400,{error:'Unknown file action.'});
+  return courseHandler(createClient,env,async ({body,access,userClient,admin,respond,respondFile}) => {
+    if (!['finish','download','sweep','purge','export'].includes(body.action)) return respond(400,{error:'Unknown file action.'});
     if (body.action==='download') {
       if (!['student','grader','instructor'].includes(access.role)) return respond(403,{error:'Submission access required.'});
       if (!UUID.test(body.id || '')) return respond(400,{error:'Invalid submission ID.'});
@@ -16,10 +17,25 @@ export function createHandler(createClient, env) {
       if (signError || !data) return respond(502,{error:'Could not prepare the file. Try again.'});
       return respond(200,{url:data.signedUrl,expiresIn:300});
     }
-    if (body.action==='sweep' || body.action==='purge') {
+    if (body.action==='export' || body.action==='purge') {
       if (!canWrite(access,['instructor'])) return respond(403,{error:'Instructor access required.'});
-      // Closing/export authorization belongs to migration 009 (Phase C). Fail closed until then.
-      if (body.action==='purge') return respond(409,{error:'Term purge requires the export-and-close workflow in Phase C.'});
+      if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(body.term_id || '')) return respond(400,{error:'Choose a valid term.'});
+      const name=body.action==='export'?'term_export_manifest':'term_purge_manifest';
+      const {data:manifest,error}=await userClient.rpc(name,{p_term:body.term_id});
+      if(error || !manifest)return respond(409,{error:error?.message || 'Term operation is not authorized.'});
+      const service=admin();
+      if(body.action==='export')return respondFile(exportStream(manifest,service,body.term_id),`${body.term_id}.zip`);
+      for(const bucket of ['submissions','lecture-notes']) {
+        const paths=manifest.objects.filter(o=>o.bucket===bucket).map(o=>o.path);
+        for(let i=0;i<paths.length;i+=100)if((await service.storage.from(bucket).remove(paths.slice(i,i+100))).error)
+          return respond(502,{error:'Purge stopped before completion. Retry to remove remaining files.'});
+      }
+      const {error:recordError}=await service.rpc('record_term_purge',{p_term:manifest.term_id});
+      if(recordError)return respond(409,{error:'Purge could not be confirmed. Retry.'});
+      return respond(200,{removed:manifest.objects.length});
+    }
+    if (body.action==='sweep') {
+      if (!canWrite(access,['instructor'])) return respond(403,{error:'Instructor access required.'});
       const service=admin();
       const {data:paths,error}=await service.rpc('submission_sweep_candidates',{p_term:access.term_id});
       if (error) return respond(502,{error:'Could not find expired uploads.'});

@@ -151,7 +151,7 @@ test('Grades orders all codes, keeps unreleased comments hidden, caps optional p
   await expect(page.locator('[data-grade-code=M3] .grade-score')).toHaveCount(0);
   await expect(page.locator('#materials-root')).not.toContainText('Hidden comment');
   await expect(page.locator('[data-grade-code=M1] .grade-comment')).toHaveText('Released comment');
-  await expect(page.locator('#materials-root')).toContainText('Released points: 23.');
+  await expect(page.locator('[data-grade-total]')).toHaveText('Total23 / 100');
   await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.pickRole('instructor');await b.releaseItem(3,true);await b.pickRole('student');});
   await page.reload();await ready(page);
   await expect(page.locator('[data-grade-code=M3] .grade-status')).toHaveCount(0);
@@ -192,7 +192,7 @@ test('individual milestones upload without a group and keep the saved filename o
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
   const publicMenu=['Home','Syllabus','Library','Staff'];
-  for(const [role,extra] of Object.entries({student:['Course Materials','Attendance','Grades','Groups'],auditor:['Course Materials'],grader:['Course Materials','Gradebook','Attendance'],instructor:['Course Materials','Groups','Gradebook','Attendance','Roster','Settings']})) {
+  for(const [role,extra] of Object.entries({student:['Course Materials','Attendance','Grades','Groups','Submit'],auditor:['Course Materials'],grader:['Course Materials','Gradebook','Attendance'],instructor:['Course Materials','Groups','Gradebook','Attendance','Roster','Settings']})) {
     await enter(page,role);
     await expect(page.locator('.topnav a:visible')).toHaveText([...publicMenu,...extra]);
     await expect(page.locator('.topnav a[href="/materials/files/"]')).toHaveCount(0);
@@ -236,10 +236,12 @@ test('only the newest notice is open; earlier notices use one collapsed disclosu
 });
 
 test('Files uploads use the category select, preserving titles and grouping by metadata',async({page})=>{
-  await enter(page,'instructor','files');
+  await enter(page,'instructor','settings');
+  await page.locator('#lecture-pdfs > summary').click();
   await expect(page.getByLabel('File category').locator('option')).toHaveText(['Lecture notes','In-class files']);
   for(const [category,title] of [['notes','In-class: a note title'],['in_class','Class handout']]) {
     await page.getByLabel('File category').selectOption(category);
+    if (category === 'in_class') await page.getByLabel('Released now',{exact:true}).check();
     await page.getByLabel('File title',{exact:true}).fill(title);
     await page.getByLabel('Lecture PDF (maximum 20 MB)').setInputFiles(pdf('class.pdf'));
     await page.getByRole('button',{name:'Upload PDF',exact:true}).click();

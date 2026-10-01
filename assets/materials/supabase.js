@@ -37,6 +37,21 @@ export async function createBackend(config) {
       return checked(await query.select('id').single());
     },
     async deleteAnnouncement(id) { return checked(await client.from('announcements').delete().eq('term_id', access.term_id).eq('id', id).select('id').single()); },
+    async staffOverview() { return rpc('staff_overview'); },
+    async openTerm(name) { return rpc('open_term', { p_name:name }); },
+    async closePreviousTerm(term) { return rpc('close_previous_term', { p_term:term }); },
+    async purgeTerm(term) { return fileAction({ action:'purge', term_id:term }, 'submission-file'); },
+    async exportTerm(term) {
+      const { session } = checked(await client.auth.getSession());
+      const response = await fetch(`${config.url}/functions/v1/submission-file`, { method:'POST',
+        headers:{ Authorization:`Bearer ${session.access_token}`, apikey:config.key, 'Content-Type':'application/json' },
+        body:JSON.stringify({action:'export',term_id:term}),
+      });
+      if (!response.ok) throw new Error((await response.json()).error || 'Export failed.');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob); setTimeout(() => URL.revokeObjectURL(url),300000);
+      return { url, filename:`${term}.zip` };
+    },
     async terms() { return checked(await client.from('terms').select('*').order('created_at')); },
     async setSessionTimes(week, startsAt, endsAt) { return rpc('set_session_times', { p_week: week, p_start: startsAt, p_end: endsAt }); },
     async configureItem(id, fields) { return rpc('configure_grade_item', { p_item:id, p_kind:fields.kind, p_mode:fields.mode, p_group_set:fields.group_set_id || null, p_due:fields.due_at || null }); },

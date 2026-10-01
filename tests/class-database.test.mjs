@@ -316,10 +316,19 @@ const tables = [
   'terms',
   'submissions',
   'pending_uploads',
+  'group_grade_records',
+  'term_exports',
 ];
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
-const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates'];
+const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge'];
 const fnCases = {
+  open_term: ['Spring 2028'],
+  close_previous_term: ['spring-2027'],
+  staff_overview: [],
+  term_export_manifest: ['spring-2027'],
+  term_purge_manifest: ['spring-2027'],
+  record_term_export: ['spring-2027',0,0],
+  record_term_purge: ['spring-2027'],
   set_session_times: [1, null, null],
   begin_submission: [4, 'work.pdf', 10, 'application/pdf'],
   finish_submission: ['00000000-0000-0000-0000-000000000099', null],
@@ -437,7 +446,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       );
       for (const sql of [
         `delete from ${t} returning *`,
-        `update ${t} set ${['submissions','pending_uploads','terms'].includes(t) ? 'id=id' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : t === 'grades' ? 'score=score' : 'actor_email=actor_email'} returning *`,
+        `update ${t} set ${['submissions','pending_uploads','terms'].includes(t) ? 'id=id' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : ['grades','group_grade_records'].includes(t) ? 'score=score' : t === 'term_exports' ? 'term_id=term_id' : 'actor_email=actor_email'} returning *`,
       ]) {
         try {
           assert.equal((await rows(sql)).length, 0, `${who}: ${sql}`);

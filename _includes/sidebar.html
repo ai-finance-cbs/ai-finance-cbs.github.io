@@ -28,7 +28,7 @@
         {% endfor %}
         <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
         <li data-materials-member data-zone="class" hidden><a href="{{ '/materials/' | relative_url }}"{% if page.material_week != nil or page.url == '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
-        {% assign student_tabs = 'Attendance,Grades,Groups' | split: ',' %}
+        {% assign student_tabs = 'Attendance,Grades,Groups,Submit' | split: ',' %}
         {% for tab in student_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
         <li {% if tab == 'Groups' %}data-class-member{% else %}data-student-only{% endif %} data-zone="class" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
