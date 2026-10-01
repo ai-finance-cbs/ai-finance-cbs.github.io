@@ -107,6 +107,7 @@ async function refresh() {
   document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !visible.instructor);
   document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !visible.grading);
   document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = state.access?.role !== 'student');
+  document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !visible.class);
   document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
   document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
   const badge = document.querySelector('[data-role]');

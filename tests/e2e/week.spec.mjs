@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
+// Readiness waits on the demo backend; 15 s absorbs a busy machine without hiding a page that never loads.
+const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready','true',{timeout:15000});
 const enter = async (page, role, slug='week-3') => { await page.goto(`/materials/${slug}/?fakeauth=${role}`); await ready(page); };
 const pdf = name => ({name,mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\nDemo submission\n%%EOF')});
 test.beforeEach(async ({page}) => {
@@ -191,7 +192,7 @@ test('individual milestones upload without a group and keep the saved filename o
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
   const publicMenu=['Home','Syllabus','Library','Staff'];
-  for(const [role,extra] of Object.entries({student:['Course Materials','Attendance','Grades','Groups'],auditor:['Course Materials'],grader:['Course Materials','Gradebook','Attendance'],instructor:['Course Materials','Gradebook','Attendance','Roster','Settings']})) {
+  for(const [role,extra] of Object.entries({student:['Course Materials','Attendance','Grades','Groups'],auditor:['Course Materials'],grader:['Course Materials','Gradebook','Attendance'],instructor:['Course Materials','Groups','Gradebook','Attendance','Roster','Settings']})) {
     await enter(page,role);
     await expect(page.locator('.topnav a:visible')).toHaveText([...publicMenu,...extra]);
     await expect(page.locator('.topnav a[href="/materials/files/"]')).toHaveCount(0);

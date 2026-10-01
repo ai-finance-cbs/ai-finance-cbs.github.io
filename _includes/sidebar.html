@@ -27,19 +27,19 @@
                 <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url != '/' and page.url contains item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
         {% endfor %}
         <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
-        <li data-materials-member hidden><a href="{{ '/materials/' | relative_url }}"{% if page.material_week != nil or page.url == '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
+        <li data-materials-member data-zone="class" hidden><a href="{{ '/materials/' | relative_url }}"{% if page.material_week != nil or page.url == '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
         {% assign student_tabs = 'Attendance,Grades,Groups' | split: ',' %}
         {% for tab in student_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-student-only hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li {% if tab == 'Groups' %}data-class-member{% else %}data-student-only{% endif %} data-zone="class" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
         <li class="member-sep" data-grading-member hidden aria-hidden="true"></li>
         {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
         {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-grading-member hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li data-grading-member data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
         {% assign admin_tabs = 'Roster,Settings' | split: ',' %}
         {% for tab in admin_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-materials-admin hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li data-materials-admin data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
       </ul>
     </nav>
