@@ -41,8 +41,8 @@ test('every legacy address redirects and no active page links to Schedule or ret
     assert.doesNotMatch(html, /(?:href|xlink_url)=["'][^"']*\/(?:schedule\/|materials\/(?:upcoming|assignments|lecture-notes)\/)/,file);
   }
 });
-test('required reading templates use each week’s Library data and show an explicit empty state', () => {
-  for(const [week,title,slug] of [[1,'Our AI Future: From Abundance to Apocalypse','economics-of-ai'],[2,'DeepSeek FAQ','ai-infrastructure'],[3,'Using EDGAR to Research Investments','processing-information'],[4,'Readings have not been posted.','predicting-outcomes']]) {
+test('week reading templates use each week’s Library data', () => {
+  for(const [week,title,slug] of [[1,'Our AI Future: From Abundance to Apocalypse','economics-of-ai'],[2,'DeepSeek FAQ','ai-infrastructure'],[3,'Using EDGAR to Research Investments','processing-information'],[4,'Lies, Damned Lies, and Data Mining','predicting-outcomes'],[5,'PowerPoint Is Evil','persuading-stakeholders'],[6,'Apps, Agents, and Aggregation','future-of-finance']]) {
     const html=readFileSync(new URL(`materials/week-${week}/index.html`,output),'utf8');
     assert.ok(html.includes(title)); assert.ok(html.includes(`/library/${slug}/`));
   }
