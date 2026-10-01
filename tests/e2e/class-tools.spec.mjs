@@ -51,6 +51,7 @@ test('grader enters quiz scores by column and CSV; attendance shows quiz source 
   await page.getByRole('button', { name: 'Save scores', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
   await page.getByLabel('Gradebook item').selectOption('8');
+  await page.locator('#grade-import > summary').click();
   await page.getByLabel('Grade CSV', { exact: true }).setInputFiles({
     name: 'quiz.csv',
     mimeType: 'text/csv',
@@ -107,6 +108,7 @@ test('instructor can import attendance, create and lock groups, and release scor
 }) => {
   await enter(page, 'instructor', 'attendance');
   await page.getByLabel('Week 1 date', { exact: true }).fill('2027-01-25');
+  await page.locator('#attendance-import > summary').click();
   await page.getByLabel('Present UNI CSV').setInputFiles({
     name: 'present.csv',
     mimeType: 'text/csv',

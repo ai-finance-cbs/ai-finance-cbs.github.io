@@ -57,6 +57,7 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
 });
 test('instructor previews roster, replaces it, uploads a PDF, edits text, and manages access', async ({ page }) => {
   await enter(page, 'instructor', '/materials/roster/');
+  await page.locator('#class-roster > summary').click();
   await page.getByLabel('Canvas roster CSV').setInputFiles(fixture); await page.getByRole('button', { name: 'Preview roster' }).click();
   await expect(page.locator('#roster-form')).toContainText('2 valid students. 2 rows need attention.');
   await expect(page.locator('#roster-form')).toContainText('Missing or invalid UNI.');
@@ -65,9 +66,11 @@ test('instructor previews roster, replaces it, uploads a PDF, edits text, and ma
   await expect(page.locator('[data-admin-status]')).toHaveText('Roster replaced: 2 students.');
   await page.goto('/materials/files/'); await ready(page); await upload(page, 'Shared local lecture', true);
   await page.goto('/materials/settings/'); await ready(page);
+  await page.locator('#assignment-editor > summary').click();
   const first = page.locator('#assignment-editor details').first(); await first.locator('summary').click();
   await first.getByLabel('Title', { exact: true }).fill('Edited demo assignment');
   await first.getByRole('button', { name: 'Save assignment' }).click(); await expect(first.getByRole('status')).toHaveText('Assignment saved.');
+  await page.locator('#access-lists > summary').click();
   await page.getByLabel('Columbia email', { exact: true }).fill('newta@gsb.columbia.edu'); await page.getByLabel('Access role').selectOption('instructor');
   await page.getByRole('button', { name: 'Save access', exact: true }).click(); await expect(page.locator('#access-lists')).toContainText('newta@gsb.columbia.edu');
   await page.goto('/materials/assignments/'); await ready(page); await expect(page.locator('.assignment-section').first()).toContainText('Edited demo assignment');
@@ -89,6 +92,7 @@ test('CBS account cannot self-claim and can use an instructor-approved link', as
   await expect(page.locator('[data-uni-form]')).toHaveCount(0);
   await switchRole(page,'instructor');
   await page.goto('/materials/settings/'); await ready(page);
+  await page.locator('#student-accounts > summary').click();
   await page.getByLabel('CBS student email').fill('demo@gsb.columbia.edu'); await page.getByLabel('Roster UNI',{exact:true}).fill('ab1234'); await page.getByRole('button',{name:'Link student account',exact:true}).click();
   await expect(page.locator('#student-accounts')).toContainText('demo@gsb.columbia.edu');
   await switchRole(page,'gsb'); await page.goto('/materials/attendance/'); await ready(page); await expect(page.locator('[data-role]')).toHaveText('Student'); await expect(page.locator('#my-grades')).toContainText('8');
@@ -133,6 +137,7 @@ test('desktop and phone pages fit, keep public navigation, and render without er
 
 test('invalid roster leaves the class list intact and instructor can delete uploaded PDFs', async ({ page }) => {
   await enter(page, 'instructor', '/materials/roster/');
+  await page.locator('#class-roster > summary').click();
   await page.getByLabel('Canvas roster CSV').setInputFiles({ name: 'bad.csv', mimeType: 'text/csv', buffer: Buffer.from('Student,SIS User ID\nMissing UNI,12345') });
   await page.getByRole('button', { name: 'Preview roster' }).click();
   await expect(page.locator('#roster-form')).toContainText('No valid UNIs found.');

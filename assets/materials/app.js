@@ -1,9 +1,11 @@
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
-import { renderClassPage, renderRosterTable } from './class-ui.js';
+import { renderClassPage, renderRosterTable, table, wrapTable } from './class-ui.js';
 import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, parseRoster, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
+document.body.classList.toggle('class-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
+const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
 const state = { backend: null, access: null, version: 0 };
@@ -109,7 +111,10 @@ async function refresh() {
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
   banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);
-  banner.querySelector('[data-preview-name]').textContent = state.access?.view_as ? `Viewing as ${state.access.view_as.name} · ` : '';
+  const previewName = state.access?.view_as ? `Viewing as ${state.access.view_as.name}` : '';
+  banner.querySelector('[data-preview-name]').textContent = previewName;
+  banner.querySelector('[data-preview-name]').title = previewName;
+  document.querySelector('[data-demo-tag]').hidden = !state.backend?.demo;
   document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
@@ -117,33 +122,35 @@ async function refresh() {
   try {
     if (root?.dataset.page === 'assignments') {
       const rows = await state.backend.assignments(); if (version !== state.version) return;
-      root.replaceChildren(); addDemoNotice(root); renderAssignments(rows); outlineChanged();
+      root.replaceChildren(); renderAssignments(rows); outlineChanged();
     } else if (root?.dataset.page === 'lecture-notes') {
       const rows = await state.backend.files(); if (version !== state.version) return;
-      root.replaceChildren(); addDemoNotice(root); renderLectures(rows); outlineChanged();
+      root.replaceChildren(); renderLectures(rows); outlineChanged();
     } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
       const page = root.dataset.page;
       const data = ['files', 'settings'].includes(page) ? null : await state.backend.classData();
       if (version !== state.version) return;
-      root.replaceChildren(); addDemoNotice(root);
+      root.replaceChildren();
       if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: state.access, refresh, startPreview });
       else {
         root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
         if (page === 'roster') {
           const admin = await state.backend.adminData(); if (version !== state.version) return;
-          renderRoster(admin.roster);
+          root.append(el('p', 'Class list, group membership, and attendance totals. View as opens a read-only student preview.', { class: 'tool-help' }));
           renderRosterTable({ root, data, startPreview });
+          renderRoster(admin.roster);
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
         } else if (page === 'settings') {
           const [admin, assignments, tests] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts()]);
           if (version !== state.version) return;
+          root.append(el('p', 'Open a section to manage course access or assignment text.', { class: 'tool-help' }));
           renderAllowlist(admin.allowlist); renderAssignmentAdmin(assignments);
           const links = await state.backend.studentAccounts(); if(version !== state.version) return; renderStudentAccounts(links);
-          const section = el('section', null, { class: 'admin-section', id: 'test-accounts' });
-          section.append(el('h2', 'Test accounts'), el('p', 'These accounts have fixed test access. This list is read-only.'));
+          const testSection = section('Test accounts', 'test-accounts');
+          testSection.append(el('p', 'These accounts have fixed test access. This list is read-only.'));
           const list = el('ul'); for (const t of tests) list.append(el('li', `${t.email} · ${ROLE_LABELS[t.role]}${t.uni ? ` · ${t.uni}` : ''}`));
-          section.append(list); root.append(section);
+          testSection.append(list);
         }
       }
       outlineChanged();
@@ -163,9 +170,6 @@ async function refresh() {
     if (root) root.replaceChildren(el('p', `Could not load materials. ${error.message}`), button('Try again', () => refresh()));
     else console.warn('Course materials could not load.');
   }
-}
-function addDemoNotice(parent) {
-  if (state.backend?.demo) parent.append(el('p', 'Local demo · synthetic examples only. No course data is connected.', { class: 'demo-notice' }));
 }
 function renderAssignments(rows) {
   if (!rows.length) root.append(el('p', state.access.role === 'auditor' ? 'No assignments have been shared with auditors yet.' : 'Assignments have not been posted yet.'));
@@ -207,7 +211,7 @@ function field(form, label, name, value = '', type = 'text') {
   const input = el(type === 'textarea' ? 'textarea' : 'input', null, { id, name });
   if (type !== 'textarea') input.type = type;
   if (type === 'checkbox') { l.className = 'check-label'; input.checked = !!value; l.prepend(input); form.append(l); }
-  else { input.value = value; form.append(l, input); }
+  else { input.value = value; l.className = 'tool-label'; l.append(input); form.append(l); }
   return input;
 }
 function formStatus(form) { const status = el('p', '', { class: 'materials-status', role: 'status' }); form.append(status); return status; }
@@ -217,10 +221,20 @@ async function runAction(control, status, task, success, rerender = false) {
   catch (error) { status.textContent = error.message || 'The change could not be saved. Try again.'; }
   finally { control.disabled = false; }
 }
-function section(title, id) { const s = el('section', null, { class: 'admin-section', id }); s.append(el('h2', title)); root.append(s); return s; }
+function section(title, id) {
+  const collapsible = root.dataset.page === 'settings';
+  const s = el(collapsible ? 'details' : 'section', null, { class: 'admin-section', id });
+  s.append(el(collapsible ? 'summary' : 'h2', title));
+  if (collapsible) {
+    s.open = openSettings.has(id);
+    s.addEventListener('toggle', () => { if (s.open) openSettings.add(id); else openSettings.delete(id); });
+  }
+  root.append(s); return s;
+}
 function newForm(id) { return el('form', null, { class: 'admin-form', id }); }
 function renderRoster(roster) {
-  const s = section('Class roster', 'class-roster');
+  const s = el('details', null, { class: 'tool-disclosure', id: 'class-roster' });
+  s.append(el('summary', 'Replace roster from Canvas CSV')); root.append(s);
   s.append(el('p', `${roster.length} ${roster.length === 1 ? 'student' : 'students'} on the class list. Upload a Canvas People CSV to replace the roster.`));
   const form = newForm('roster-form'); const upload = field(form, 'Canvas roster CSV', 'csv', '', 'file'); upload.accept = '.csv,text/csv'; upload.required = true;
   const previewButton = button('Preview roster'); previewButton.type = 'submit'; const status = formStatus(form); const preview = el('div'); form.append(previewButton, preview);
@@ -242,7 +256,6 @@ function renderRoster(roster) {
     }, 'Preview ready. Review every flagged row before replacing the roster.');
   });
   s.append(form);
-  const details = el('details'); details.append(el('summary', 'Current class list')); const list = el('ul'); for (const row of roster) list.append(el('li', `${row.name || 'Student'} · ${row.uni}`)); details.append(list); s.append(details);
 }
 function renderStudentAccounts(rows) {
   const s=section('CBS account links','student-accounts'), form=newForm('student-account-form');
@@ -256,7 +269,7 @@ function renderAllowlist(rows) {
   const s = section('Role access', 'access-lists'); const form = newForm('allowlist-form');
   const email = field(form, 'Columbia email', 'email', '', 'email'); email.required = true; email.maxLength = 254;
   const label = el('label', 'Access role', { for: 'allow-role' }); const select = el('select', null, { id: 'allow-role' });
-  select.append(el('option', 'Instructor', { value: 'instructor' }), el('option', 'Grader', { value: 'grader' }), el('option', 'Auditor', { value: 'auditor' })); form.append(label, select);
+  select.append(el('option', 'Instructor', { value: 'instructor' }), el('option', 'Grader', { value: 'grader' }), el('option', 'Auditor', { value: 'auditor' })); label.className = 'tool-label'; label.append(select); form.append(label);
   const save = button('Save access'); save.type = 'submit'; const status = formStatus(form); form.append(save);
   form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, async () => {
     const normalized = normalizeEmail(email.value); if (!isColumbiaEmail(normalized)) throw new Error('Use an @columbia.edu or @gsb.columbia.edu email.');
@@ -273,9 +286,11 @@ function renderAllowlist(rows) {
   s.append(list);
 }
 function renderFileAdmin(files) {
-  const s = section('Lecture PDFs', 'lecture-pdfs'); const form = newForm('file-form');
+  root.append(el('p', 'Upload lecture PDFs and choose which files auditors can see.', { class: 'tool-help' }));
+  const s = el('section', null, { id: 'lecture-pdfs' }); root.append(s);
+  const form = newForm('file-form');
   const weekLabel = el('label', 'Week', { for: 'upload-week' }); const week = el('select', null, { id: 'upload-week', name: 'week' }); WEEK_TITLES.forEach((title, i) => week.append(el('option', `Week ${i + 1}: ${title}`, { value: i + 1 })));
-  form.append(weekLabel, week);
+  weekLabel.className = 'tool-label'; weekLabel.append(week); form.append(weekLabel);
   const title = field(form, 'File title', 'title'); title.required = true; title.maxLength = 200;
   const file = field(form, 'Lecture PDF (maximum 20 MB)', 'pdf', '', 'file'); file.accept = '.pdf,application/pdf'; file.required = true;
   const visible = field(form, 'Visible to auditors', 'auditor_visible', false, 'checkbox');
@@ -284,14 +299,20 @@ function renderFileAdmin(files) {
     await validatePdf(file.files[0]); if (!title.value.trim()) throw new Error('Enter a file title.');
     await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), auditor_visible: visible.checked });
   }, 'PDF uploaded.', true); });
-  s.append(form); const list = el('ul', null, { class: 'file-list' });
+  s.append(form); const { t, body } = table(['File', 'Week', 'Access', 'Actions']);
   for (const row of files) {
-    const li = el('li'); li.append(fileLink(row), el('span', `Week ${row.week} · ${row.auditor_visible ? 'Auditor visible' : 'Students and instructors'}`, { class: 'file-meta' }));
+    const tr = el('tr'), name = el('th', null, { scope: 'row' }), actions = el('td');
+    name.append(fileLink(row));
     const toggle = button(row.auditor_visible ? `Hide ${row.title} from auditors` : `Share ${row.title} with auditors`, () => runAction(toggle, status, () => state.backend.setFileVisibility(row.id, !row.auditor_visible), 'File visibility updated.', true));
     const remove = button(`Delete ${row.title}`, () => { if (confirm(`Delete ${row.title}? This removes its stored PDF.`)) runAction(remove, status, () => state.backend.deleteFile(row.id), 'PDF deleted.', true); });
-    li.append(toggle, remove); list.append(li);
+    toggle.setAttribute('aria-label', toggle.textContent); toggle.textContent = row.auditor_visible ? 'Hide from auditors' : 'Share with auditors';
+    remove.setAttribute('aria-label', remove.textContent); remove.textContent = 'Delete';
+    actions.append(toggle, remove);
+    tr.append(name, el('td', row.week), el('td', row.auditor_visible ? 'Auditors included' : 'Class only'), actions);
+    body.append(tr);
   }
-  s.append(list);
+  if (files.length) s.append(wrapTable(t));
+  else s.append(el('p', 'No lecture PDFs uploaded.', { class: 'tool-help' }));
 }
 function renderAssignmentAdmin(rows) {
   const s = section('Assignment text and access', 'assignment-editor');

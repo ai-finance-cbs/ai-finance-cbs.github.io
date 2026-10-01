@@ -5,4 +5,4 @@
     <li><a href="{{ '/materials/lecture-notes/' | relative_url }}"{% if page.url == '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Lecture Notes</a></li>
   </ul>
 </nav>
-{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
+{% elsif include.where contains 'subnav-top' %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}

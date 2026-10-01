@@ -9,6 +9,7 @@ import {
   toCsv,
 } from './class-core.js';
 let selectedGradeItem = 'all';
+const studentQueries = new Map();
 const el = (tag, text, attrs = {}) => {
   const n = document.createElement(tag);
   if (text != null) n.textContent = text;
@@ -31,7 +32,7 @@ function input(type, label, value = '') {
   n.value = value;
   return n;
 }
-function wrapTable(table) {
+export function wrapTable(table) {
   const w = el('div', null, {
     class: 'class-grid-wrap',
     tabindex: '0',
@@ -40,7 +41,7 @@ function wrapTable(table) {
   w.append(table);
   return w;
 }
-function table(headers) {
+export function table(headers) {
   const t = el('table', null, { class: 'class-grid' }),
     head = el('tr'),
     body = el('tbody');
@@ -49,6 +50,43 @@ function table(headers) {
   thead.append(head);
   t.append(thead, body);
   return { t, body, head };
+}
+function studentCell(student) {
+  const cell = el('th', null, { scope: 'row', title: `${student.name || student.uni} (${student.uni})` });
+  const identity = el('span', null, { class: 'student-identity' });
+  identity.append(el('span', student.name || student.uni, { class: 'student-name' }), el('span', student.uni, { class: 'student-uni' }));
+  cell.append(identity);
+  return cell;
+}
+function studentRow(student) {
+  return el('tr', null, { 'data-student': `${student.name || ''} ${student.uni}`.toLowerCase() });
+}
+function studentFilter(t, key) {
+  const bar = el('div', null, { class: 'table-tools' });
+  const search = input('search', 'Filter by name or UNI', studentQueries.get(key) || '');
+  search.placeholder = 'Filter by name or UNI';
+  const count = el('span', '', { class: 'student-count', role: 'status' });
+  const empty = el('tr', null, { class: 'empty-filter' });
+  empty.append(el('td', 'No matching students.', { colspan: t.tHead.rows[0].cells.length }));
+  t.tBodies[0].append(empty);
+  const apply = () => {
+    const rows = [...t.querySelectorAll('[data-student]')];
+    const query = search.value.trim().toLowerCase();
+    rows.forEach(row => row.hidden = !row.dataset.student.includes(query));
+    const shown = rows.filter(row => !row.hidden).length;
+    count.textContent = `${shown}${query ? ` of ${rows.length}` : ''} students`;
+    empty.hidden = shown > 0;
+    studentQueries.set(key, search.value);
+  };
+  search.addEventListener('input', apply);
+  bar.append(search, count);
+  apply();
+  return bar;
+}
+function disclosure(title, id) {
+  const details = el('details', null, { class: 'tool-disclosure', id });
+  details.append(el('summary', title));
+  return details;
 }
 function download(name, rows) {
   const url = URL.createObjectURL(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
@@ -72,19 +110,20 @@ function statusNote(a) {
 }
 export function renderRosterTable(ctx) {
   const { root, data, startPreview } = ctx;
-  const { t, body } = table(['Student', 'UNI', 'Groups', 'Present', 'Preview']);
+  const { t, body } = table(['Student', 'Groups', 'Present', 'Preview']);
   for (const r of data.roster) {
-    const tr = el('tr'),
+    const tr = studentRow(r),
       memberships = data.members.filter((m) => m.uni === r.uni);
     const names = memberships.map(
       (m) =>
         `${data.sets.find((s) => s.id === m.set_id)?.title}: Group ${data.groups.find((g) => g.id === m.group_id)?.number}`,
     );
     const last = el('td');
-    last.append(button(`View as ${r.name || r.uni}`, () => startPreview(r.uni)));
+    const preview = button('View as', () => startPreview(r.uni));
+    preview.setAttribute('aria-label', `View as ${r.name || r.uni}`);
+    last.append(preview);
     tr.append(
-      el('th', (r.name || r.uni) + (r.is_test ? ' (test)' : ''), { scope: 'row' }),
-      el('td', r.uni),
+      studentCell(r),
       el('td', names.join('; ') || 'No group'),
       el(
         'td',
@@ -94,7 +133,7 @@ export function renderRosterTable(ctx) {
     );
     body.append(tr);
   }
-  root.append(wrapTable(t));
+  root.append(studentFilter(t, 'roster'), wrapTable(t));
 }
 export function renderClassPage(ctx) {
   const { root, page, data, backend, access, refresh } = ctx;
@@ -106,16 +145,29 @@ export function renderClassPage(ctx) {
     'data-admin-status': '',
   });
   root.append(status);
+  let saving = false;
   const run = async (task, text, rerender = true) => {
+    if (saving) return false;
+    saving = true;
     status.textContent = 'Saving…';
+    const focusLabel = document.activeElement?.getAttribute('aria-label');
+    const positions = [...root.querySelectorAll('.class-grid-wrap')].map(w => [w.scrollLeft, w.scrollTop]);
     try {
       await task();
       if (rerender) {
         await refresh();
         root.querySelector('[data-admin-status]')?.append(document.createTextNode(text));
+        [...root.querySelectorAll('.class-grid-wrap')].forEach((w, i) => {
+          if (positions[i]) [w.scrollLeft, w.scrollTop] = positions[i];
+        });
+        if (focusLabel) [...root.querySelectorAll('[aria-label]')].find(n => n.getAttribute('aria-label') === focusLabel)?.focus({ preventScroll: true });
       } else status.textContent = text;
+      return true;
     } catch (e) {
       status.textContent = e.message;
+      return false;
+    } finally {
+      saving = false;
     }
   };
   const section = (title, id) => {
@@ -131,24 +183,27 @@ export function renderClassPage(ctx) {
         grading
           ? 'Quiz scores mark attendance present. Manual changes override the quiz result.'
           : 'Your attendance and released grades appear here.',
+        { class: 'tool-help' },
       ),
     );
     if (grading) {
       const { t, body, head } = table(['Student', ...data.sessions.map((s) => `Week ${s.week}`)]);
+      const classUnis = new Set(data.roster.map(r => r.uni));
+      t.classList.add('attendance-grid');
       data.sessions.forEach((s, i) => {
         const cell = head.children[i + 1],
           date = input('date', `Week ${s.week} date`, s.date || '');
-        date.addEventListener('change', () =>
-          run(
+        date.addEventListener('change', async () => {
+          if (await run(
             () => backend.setSessionDate(s.week, date.value || null),
             'Session date saved.',
             false,
-          ),
-        );
+          )) s.date = date.value || null;
+          else date.value = s.date || '';
+        });
         if (admin) cell.append(date);
-        else cell.append(el('p', s.date || 'Date TBA'));
-        cell.append(
-          button(`Mark all present: Week ${s.week}`, () => {
+        else cell.append(el('span', s.date || 'Date TBA', { class: 'session-date' }));
+        const markAll = button('Mark all present', () => {
             if (confirm(`Mark all ${data.roster.length} students present for Week ${s.week}?`))
               run(
                 () =>
@@ -158,18 +213,30 @@ export function renderClassPage(ctx) {
                   ),
                 'Attendance saved.',
               );
-          }),
-        );
+          });
+        markAll.setAttribute('aria-label', `Mark all present: Week ${s.week}`);
+        cell.append(markAll);
       });
+      const totals = el('tr', null, { class: 'attendance-totals' });
+      totals.append(el('th', 'Class totals', { scope: 'row' }));
+      for (const s of data.sessions) {
+        const cell = el('td', null, { 'aria-label': `Week ${s.week} totals` });
+        for (const [value, label] of [['present', 'P'], ['absent', 'A'], ['excused', 'E']]) {
+          const count = data.attendance.filter(a => classUnis.has(a.uni) && a.week === s.week && a.status === value).length;
+          cell.append(el('span', `${count}${label}`, { class: `total-${value}`, title: `${count} ${value}` }));
+        }
+        totals.append(cell);
+      }
+      body.append(totals);
       for (const r of data.roster) {
-        const tr = el('tr');
-        tr.append(el('th', `${r.name || r.uni} (${r.uni})`, { scope: 'row' }));
+        const tr = studentRow(r);
+        tr.append(studentCell(r));
         for (const s of data.sessions) {
           const a = data.attendance.find((a) => a.uni === r.uni && a.week === s.week),
             td = el('td');
           const select = options(
             [
-              ['', 'Use quiz or clear'],
+              ['', 'Quiz / clear'],
               ['present', 'Present'],
               ['absent', 'Absent'],
               ['excused', 'Excused'],
@@ -177,19 +244,27 @@ export function renderClassPage(ctx) {
             a?.status || '',
             `${r.uni} Week ${s.week} attendance`,
           );
-          select.addEventListener('change', () =>
-            run(
+          select.title = 'Use quiz or clear removes the manual override.';
+          select.addEventListener('change', async () => {
+            select.disabled = true;
+            if (!await run(
               () => backend.saveAttendance(s.week, [{ uni: r.uni, status: select.value || null }]),
               'Attendance saved.',
-            ),
-          );
-          td.append(select, el('small', statusNote(a)));
+            )) select.value = a?.status || '';
+            select.disabled = false;
+          });
+          td.append(select);
+          if (a?.source_quiz) {
+            const source = el('span', `Q${a.source_quiz}${a.manual_override ? '*' : ''}`, { class: 'quiz-marker', title: statusNote(a) });
+            source.append(el('span', ` ${statusNote(a)}`, { class: 'sr-only' }));
+            td.append(source);
+          }
           tr.append(td);
         }
         body.append(tr);
       }
-      root.append(wrapTable(t));
-      const s = section('Import attendance', 'attendance-import'),
+      root.append(studentFilter(t, 'attendance'), wrapTable(t));
+      const s = disclosure('Import attendance CSV', 'attendance-import'),
         form = el('form', null, { class: 'admin-form' }),
         week = options(
           data.sessions.map((s) => [s.week, `Week ${s.week}`]),
@@ -215,8 +290,10 @@ export function renderClassPage(ctx) {
         }, 'Present UNIs imported.');
       });
       s.append(form);
+      root.append(s);
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
+      t.classList.add('student-attendance-grid');
       for (const s of data.sessions) {
         const a = data.attendance.find((a) => a.week === s.week),
           tr = el('tr');
@@ -378,13 +455,14 @@ export function renderClassPage(ctx) {
         });
         s.append(form);
       }
-      const list = el('div', null, { class: 'group-list' });
+      const { t, body } = table(['Group', 'Seats left', 'Members', ...(!admin && canWrite(access) && open ? ['Action'] : [])]);
+      t.classList.add('group-grid');
       for (const g of data.groups.filter((g) => g.set_id === set.id)) {
-        const card = el('section', null, { class: 'group-row' }),
+        const row = el('tr'), memberCell = el('td'), actions = el('td'),
           members = data.members.filter((m) => m.group_id === g.id);
-        card.append(
-          el('h3', `Group ${g.number}${own?.group_id === g.id ? ' · Your group' : ''}`),
-          el('p', `${set.max_size - members.length} slots remaining`),
+        row.append(
+          el('th', `Group ${g.number}${own?.group_id === g.id ? ' · Yours' : ''}`, { scope: 'row' }),
+          el('td', `${set.max_size - members.length} / ${set.max_size}`),
         );
         const names = el('ul');
         for (const m of members.filter((m) => m.name)) {
@@ -396,12 +474,14 @@ export function renderClassPage(ctx) {
             );
           names.append(li);
         }
-        card.append(names);
+        memberCell.append(names);
         if (members.length && !members.some((m) => m.name))
-          card.append(el('p', 'Join this group to see teammates.'));
+          memberCell.append(el('span', 'Join to see teammates.'));
+        if (!members.length) memberCell.append(el('span', 'No members yet.'));
+        row.append(memberCell);
         if (!admin && canWrite(access) && open) {
           if (own?.group_id === g.id)
-            card.append(
+            actions.append(
               button(`Leave Group ${g.number} in ${set.title}`, () =>
                 run(() => backend.chooseGroup(set.id, null), 'You left the group.'),
               ),
@@ -412,19 +492,24 @@ export function renderClassPage(ctx) {
               () => run(() => backend.chooseGroup(set.id, g.id), 'Group membership saved.'),
             );
             b.disabled = members.length >= set.max_size;
-            card.append(b);
+            actions.append(b);
           }
+          const action = actions.firstElementChild;
+          action.setAttribute('aria-label', action.textContent);
+          action.textContent = own?.group_id === g.id ? 'Leave' : own ? 'Switch' : 'Join';
+          row.append(actions);
         }
-        list.append(card);
+        body.append(row);
       }
-      s.append(list);
+      s.append(wrapTable(t));
     }
   }
   if (page === 'gradebook') {
     root.append(
       el(
         'p',
-        'Enter scores here or select one item for column entry. Quiz scores also record attendance.',
+        'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across. Blank scores are ungraded.',
+        { class: 'tool-help' },
       ),
     );
     const filter = options(
@@ -432,7 +517,7 @@ export function renderClassPage(ctx) {
       selectedGradeItem,
       'Gradebook item',
     );
-    labeled(root, 'Column entry', filter);
+    filter.title = 'Jump to one grading item or show all columns.';
     const content = el('div');
     const changes = new Map();
     root.append(content);
@@ -444,19 +529,14 @@ export function renderClassPage(ctx) {
             ? data.items
             : data.items.filter((i) => i.id === Number(filter.value)),
         single = items.length === 1 ? items[0] : null;
-      if (single?.quiz_week)
-        content.append(
-          el(
-            'p',
-            `${single.title} records attendance for Week ${single.quiz_week}, including scores of zero. Manual attendance overrides are preserved.`,
-          ),
-        );
       const { t, body, head } = table([
         'Student',
         ...items.map((i) => `${i.title} / ${i.max_points}`),
         'Optional capped',
         'Recorded total',
       ]);
+      t.classList.add('gradebook-grid');
+      head.lastElementChild.title = 'Optional points are capped at 15; the course total is capped at 100. Missing scores are not zeros.';
       if (admin)
         items.forEach((item, index) => {
           const label = el('label', 'Released', { class: 'release-label' }),
@@ -474,8 +554,8 @@ export function renderClassPage(ctx) {
         });
       const cells = [];
       data.roster.forEach((r, rowIndex) => {
-        const tr = el('tr');
-        tr.append(el('th', `${r.name || r.uni} (${r.uni})`, { scope: 'row' }));
+        const tr = studentRow(r);
+        tr.append(studentCell(r));
         const cellRow = [];
         for (const [column, item] of items.entries()) {
           const td = el('td'),
@@ -496,11 +576,14 @@ export function renderClassPage(ctx) {
             status.textContent = `${changes.size} unsaved score changes.`;
           });
           n.addEventListener('keydown', (e) => {
+            if (!['Enter', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+            e.preventDefault();
+            const direction = e.key === 'ArrowUp' ? -1 : 1;
             let next;
-            if (e.key === 'Enter' || e.key === 'ArrowDown') next = cells[rowIndex + 1]?.[column];
-            if (e.key === 'ArrowUp') next = cells[rowIndex - 1]?.[column];
+            for (let row = rowIndex + direction; row >= 0 && row < cells.length; row += direction) {
+              if (!cells[row][column].closest('tr').hidden) { next = cells[row][column]; break; }
+            }
             if (next) {
-              e.preventDefault();
               next.focus();
               next.select();
             }
@@ -520,7 +603,9 @@ export function renderClassPage(ctx) {
         );
         body.append(tr);
       });
-      content.append(wrapTable(t));
+      const toolbar = studentFilter(t, 'gradebook');
+      toolbar.append(filter);
+      content.append(toolbar);
       const save = button('Save scores', () =>
         run(async () => {
           const entries = [...changes.values()].map(({ raw, max, ...e }) => ({
@@ -531,14 +616,8 @@ export function renderClassPage(ctx) {
           await backend.saveGrades(entries);
         }, 'Scores saved.'),
       );
-      content.append(
-        save,
-        el(
-          'p',
-          'Enter or Arrow Down moves to the next student. Tab moves across columns. Blank means ungraded. Optional points cap at 15; totals cap at 100.',
-        ),
-      );
-      content.append(
+      toolbar.append(save);
+      toolbar.append(
         button(single ? `Export ${single.title} CSV` : 'Export gradebook CSV', () => {
           if (single)
             download(`item-${single.id}.csv`, [
@@ -565,6 +644,7 @@ export function renderClassPage(ctx) {
             ]);
         }),
       );
+      content.append(wrapTable(t));
       const form = el('form', null, { class: 'admin-form' }),
         file = input('file', 'Grade CSV');
       file.accept = '.csv';
@@ -613,7 +693,9 @@ export function renderClassPage(ctx) {
           preview.replaceChildren(el('p', error.message));
         }
       });
-      content.append(form);
+      const csv = disclosure('Import scores CSV', 'grade-import');
+      csv.append(form);
+      content.append(csv);
     }
     filter.addEventListener('change', () => {
       if (changes.size && !confirm('Discard unsaved scores and change the selected item?')) {

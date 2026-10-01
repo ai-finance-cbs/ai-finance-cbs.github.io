@@ -11,13 +11,14 @@
   </div>
   <div class="topbar-main">
     <div class="brand-row">
-    <a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a>
+    <div class="brand-heading"><a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a><span class="demo-tag" data-demo-tag hidden>Local demo · synthetic data</span></div>
       <div class="auth-controls" aria-label="Course account">
         <button type="button" class="auth-login" data-login><span class="auth-long">Sign in with Columbia UNI</span><span class="auth-short">Sign in</span></button>
         <span class="role-badge" data-role hidden></span>
+        <div class="preview-banner" data-preview-banner hidden role="status"><span class="preview-pill"><span data-preview-name></span><span class="preview-readonly"> · Read-only</span></span><button type="button" data-preview-exit>Exit</button></div>
+        <label class="view-picker" data-view-picker hidden><span class="sr-only">View as student</span><select data-view-select aria-label="View as student"><option value="">View as student</option></select></label>
         <button type="button" class="auth-signout" data-signout hidden>Sign out</button>
       </div>
-      <label class="view-picker" data-view-picker hidden><span class="sr-only">View as student</span><select data-view-select aria-label="View as student"><option value="">View as student</option></select></label>
     </div>
     <div class="menu-row">
     <nav class="topnav" id="topnav" aria-label="Course pages">
@@ -46,7 +47,6 @@
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>
-<div class="preview-banner" data-preview-banner hidden role="status"><span data-preview-name></span><button type="button" data-preview-exit>Exit</button><span class="preview-readonly">Read-only</span></div>
 <!-- Left pane: outline of the current page (filled in by site.js), then course links. -->
 <aside class="site-sidebar">
   <nav class="page-outline" aria-label="Contents">

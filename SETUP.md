@@ -33,16 +33,16 @@ Only an instructor can read the private test-account list. Test emails are never
 
 ## Instructor workflow
 
-1. Open **Roster**. Choose the Canvas CSV and select **Preview roster**.
+1. Open **Roster → Replace roster from Canvas CSV**. Choose the CSV and select **Preview roster**.
 2. Review valid UNIs and flagged rows. Confirm replacement and select **Replace roster**.
 3. **Settings → Role access** assigns Instructor, Grader, or Auditor by verified Columbia email.
 4. For a CBS email alias, verify its owner, then use **Settings → CBS account links** to link the email and UNI.
 5. `uni@columbia.edu` accounts use their verified email UNI automatically.
 6. Self-entered CBS UNIs no longer grant access. Earlier self-claims must receive an instructor-approved account link.
 7. **Files** manages PDF uploads, auditor visibility, and deletion. Maximum PDF size remains 20 MB.
-8. **Settings** edits assignment text and shows read-only test accounts.
+8. **Settings** has four collapsible sections for access, assignments, CBS links, and read-only test accounts.
 9. **Attendance** edits six session dates and records present, absent, or excused statuses.
-10. Attendance CSVs accept a UNI column or one UNI per line. Imports mark listed students present only.
+10. Open **Import attendance CSV** for a UNI column or one UNI per line. Imports mark listed students present only.
 11. **Groups** creates sets with a group count, maximum size, optional deadline, and open/closed state.
 12. Students may join, switch, or leave while open. Instructors can move or remove students and export membership.
 13. Group availability is public within the class. Names and emails appear to students only for their own teammates.
@@ -52,15 +52,15 @@ Only an instructor can read the private test-account list. Test emails are never
 ## Grading workflow
 
 1. Sign in as Grader or Instructor. Open **Gradebook**.
-2. Choose one item under **Column entry**, or use the full grid.
+2. Choose one item from **All grading items**, or keep the full grid.
 3. Enter scores. Enter or Arrow Down moves to the next student; Tab moves across columns.
 4. Select **Save scores**. Blank cells mean ungraded; zero is a recorded score.
-5. For one item, import a CSV with exactly `uni,score` columns. Preview it, then select **Import scores**.
+5. Open **Import scores CSV**. For one item, use exactly `uni,score` columns. Preview it, then select **Import scores**.
 6. The full-grid export provides a CSV template for multiple items. Unknown or duplicate rows reject the entire import.
 7. Imported blank score cells clear existing scores in those columns.
 8. Quiz 1–5 scores automatically mark Weeks 1–5 present, including scores of zero. Week 6 uses manual attendance.
-9. Grading staff see `from Quiz N`. Students see the source only after quiz release. Manual changes retain precedence.
-10. **Use quiz or clear** removes a manual override. It restores present when that week's quiz score exists.
+9. Grading staff see a small `QN` marker. Its tooltip explains the source; `*` marks a manual override. Students see the source only after quiz release. Manual changes retain precedence.
+10. **Quiz / clear** removes a manual override. It restores present when that week's quiz score exists.
 11. Clearing a quiz removes automatic attendance. It retains manual attendance and removes the quiz source label.
 12. Only Instructor can release an item. Students see released items under **Attendance → My grades**.
 13. Core maximum is 100. Optional points cap at 15. Overall total caps at 100.
@@ -124,3 +124,19 @@ Local catalog checks enforce RLS, function search paths, closed anonymous execut
 The bundled PostgreSQL lacks `plpgsql_check`, so the CLI cannot complete lint. This is a tool limitation, not a clean lint result.
 See `evidence/class-tools/db-lint.txt`. Hosted Supabase security advisor checks remain for the later review.
 Browser reports are in `playwright-report/`; screenshots are in `evidence/class-tools/`.
+
+## Compact class tools
+
+The compact UI uses the existing database and RPCs. It adds no migration.
+Attendance keeps present, absent, and excused overrides. Quiz scores remain the main attendance source.
+
+1. Filter Attendance, Gradebook, and Roster by name or UNI. The count shows matching students.
+2. Attendance totals always cover the full class. **Mark all present** also covers the full class after confirmation.
+3. Manual attendance saves immediately. A failed save restores the previous selection and displays an error.
+4. Filtering the gradebook retains unsaved scores. Enter and arrow keys skip hidden students.
+5. Headers stay visible during vertical table scrolling. Student names and UNIs stay visible during horizontal scrolling.
+6. The header holds the preview name, **Read-only**, and **Exit**, beside the Student badge.
+7. A small header tag identifies local synthetic demos. It does not appear outside demo mode.
+
+`npm run check` includes the compact UI browser tests. Screenshots are written to `evidence/compact-ui/`.
+They cover 1440px and 390px views with a synthetic class. Evidence remains local and Git-ignored.
