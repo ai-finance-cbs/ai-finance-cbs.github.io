@@ -737,8 +737,8 @@ body.class-tools .content { max-width:1180px; }
 .class-tools .page-footer { margin-top:28px; }
 @media (min-width:820px) {
   /* Reserve all three rows, even when a role has fewer links or no submenu. */
-  .topbar-main { display:grid; grid-template-rows:49px 29px 57px; align-content:start; justify-content:normal; gap:0; padding-top:0; min-width:0; }
-  .brand-row { flex-wrap:nowrap; gap:12px; min-width:0; padding-top:12px; align-items:flex-start; }
+  .topbar-main { display:grid; grid-template-rows:54px 37px 57px; align-content:start; justify-content:normal; gap:0; padding-top:0; min-width:0; }
+  .brand-row { flex-wrap:nowrap; gap:12px; min-width:0; padding-top:15px; align-items:flex-start; }
   .brand-heading { flex:1; height:36px; }
   .brand-heading .demo-tag { font-size:9px; line-height:11px; margin-top:1px; }
   .brand-row .course-brand { height:24px; flex-wrap:nowrap; gap:8px; }
@@ -750,7 +750,7 @@ body.class-tools .content { max-width:1180px; }
   .menu-row .topnav ul { flex-wrap:nowrap; gap:0 14px; }
   .menu-row .topnav li { flex-shrink:0; }
   .menu-row .topnav a { display:block; font-size:13px; line-height:18px; padding:0 0 2px; }
-  :root, body.in-library { --topbar:136px; }
+  :root, body.in-library { --topbar:148px; }
   .topbar-main > .subnav-top { display:block; align-self:start; margin:0; padding-top:5px; height:57px !important; min-height:57px !important; }
   .topbar-main > .subnav-top ul { height:38px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .topbar-main > .subnav-top li { flex-shrink:0; }
