@@ -27,7 +27,7 @@ test('file function verifies identity and fixes expiry to 300 seconds', async ()
   assert.equal(response.headers.get('cache-control'), 'no-store');
 });
 test('denied identities, unlisted accounts, and hidden files never reach privileged storage', async () => {
-  for (const [options, status] of [[{ valid: false },401],[{ role: 'unlisted' },403],[{ role: 'observer', visible: false },404]]) {
+  for (const [options, status] of [[{ valid: false },401],[{ role: 'unlisted' },403],[{ role: 'auditor', visible: false },404]]) {
     const { handler, request, calls } = setup(options); assert.equal((await handler(request({ action: 'download', id: ID }))).status, status); assert.deepEqual(calls, []);
   }
 });
@@ -35,7 +35,7 @@ test('only instructors can delete files or clean failed uploads', async () => {
   const student = setup();
   for (const action of ['delete','cleanup']) assert.equal((await student.handler(student.request({ action, id: ID }))).status, 403);
   assert.deepEqual(student.calls, []);
-  const instructor = setup({ role: 'instructor_ta' });
+  const instructor = setup({ role: 'instructor' });
   assert.equal((await instructor.handler(instructor.request({ action: 'delete', id: ID }))).status, 200);
   assert.deepEqual(instructor.calls, ['server-client', { remove: ['week-1/server-path.pdf'] }, 'delete-metadata']);
 });
@@ -47,7 +47,13 @@ test('malformed requests and unapproved origins are rejected', async () => {
   assert.equal((await handler(request(null))).status, 400); assert.deepEqual(calls, []);
 });
 test('storage deletion failure leaves metadata intact for retry', async () => {
-  const { handler, request, calls } = setup({ role: 'instructor_ta', removeError: { message: 'temporary failure' } });
+  const { handler, request, calls } = setup({ role: 'instructor', removeError: { message: 'temporary failure' } });
   assert.equal((await handler(request({ action: 'delete', id: ID }))).status, 502);
   assert.equal(calls.includes('delete-metadata'), false);
+});
+
+test('grader, auditor, unlisted, and student preview cannot mutate file storage',async()=>{
+ for(const role of ['grader','auditor','unlisted','student'])for(const action of ['delete','cleanup']){
+  const x=setup({role});assert.equal((await x.handler(x.request({action,id:ID,path:'week-1/'+ID+'.pdf'}))).status,403);assert.deepEqual(x.calls,[]);
+ }
 });

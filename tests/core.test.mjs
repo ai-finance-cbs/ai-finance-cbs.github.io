@@ -32,13 +32,13 @@ test('CSV rejects invalid quoting, absent UNI columns, ambiguous headers, and em
   assert.equal(parseRoster('Name,UNI\nA,ab1234,extra').issues.length, 1);
   assert.ok(parseRoster('x'.repeat(1_000_001)).errors.length);
 });
-test('role resolution checks domain before allowlist, then instructor/observer before roster', () => {
-  const roster = [{ uni: 'ab1234' }]; const list = [{ email: 'oh@gsb.columbia.edu', role: 'instructor_ta' }, { email: 'ab1234@columbia.edu', role: 'observer' }, { email: 'x@gmail.com', role: 'instructor_ta' }];
-  assert.equal(resolveRole('oh@gsb.columbia.edu', null, roster, list), 'instructor_ta');
+test('role resolution checks domain before allowlist, then instructor/auditor before roster', () => {
+  const roster = [{ uni: 'ab1234' }]; const list = [{ email: 'oh@gsb.columbia.edu', role: 'instructor' }, { email: 'ab1234@columbia.edu', role: 'auditor' }, { email: 'x@gmail.com', role: 'instructor' }];
+  assert.equal(resolveRole('oh@gsb.columbia.edu', null, roster, list), 'instructor');
   assert.equal(resolveRole('ab1234@columbia.edu', null, roster, []), 'student');
-  assert.equal(resolveRole('ab1234@columbia.edu', null, roster, list), 'observer');
+  assert.equal(resolveRole('ab1234@columbia.edu', null, roster, list), 'auditor');
   assert.equal(resolveRole('someone@gsb.columbia.edu', 'ab1234', roster, list), 'student');
-  assert.equal(resolveRole('ab1234@columbia.edu', null, [], list.filter(x => x.role !== 'observer')), 'unlisted');
+  assert.equal(resolveRole('ab1234@columbia.edu', null, [], list.filter(x => x.role !== 'auditor')), 'unlisted');
   assert.equal(resolveRole('x@gmail.com', 'ab1234', roster, list), 'unlisted');
 });
 test('fake authentication is restricted to exact loopback HTTP origin', () => {

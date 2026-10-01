@@ -19,8 +19,8 @@ pairs = block.scan(/<dt>(.*?)<\/dt><dd>(.*?)<\/dd>/m).to_h { |a, b| [plain.call(
 assignments = rows.map { |r| [r['number'], r['title'], "Before Week #{r['number']}", 10, r['description'], r['deliverable'], r['grading']] }
 assignments << [6, 'Show it working', 'Before Week 6', 25, (paragraphs + outline).join("\n\n"), pairs.fetch('Deliverable'), pairs.fetch('Graded on')]
 quote = ->(v) { v.is_a?(Integer) ? v.to_s : "'#{v.gsub("'", "''")}'" }
-sql = "-- PRIVATE LOCAL SEED. Do not commit or copy into public assets.\n-- Milestones: #{milestones}\n-- Final Prototype source: #{source}\n-- Run after 001_course_materials.sql. Existing edits are preserved.\nbegin;\n"
-sql += "insert into public.assignments(id,title,due,points,description,deliverable,grading,observer_visible) values\n"
+sql = "-- PRIVATE LOCAL SEED. Do not commit or copy into public assets.\n-- Milestones: #{milestones}\n-- Final Prototype source: #{source}\n-- Run after 003_class_tools.sql. Existing edits are preserved.\nbegin;\n"
+sql += "insert into public.assignments(id,title,due,points,description,deliverable,grading,auditor_visible) values\n"
 sql += assignments.map { |row| '(' + row.map(&quote).join(',') + ',false)' }.join(",\n")
 sql += "\non conflict (id) do nothing;\ncommit;\n"
 folder = File.join(root, 'supabase/private')

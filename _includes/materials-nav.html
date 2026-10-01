@@ -1,7 +1,8 @@
+{% if page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %}
 <nav class="subnav{{ include.where }}" aria-label="Course materials sections" data-materials-member hidden>
   <ul>
     <li><a href="{{ '/materials/assignments/' | relative_url }}"{% if page.url == '/materials/assignments/' %} aria-current="page"{% endif %}>Assignments</a></li>
     <li><a href="{{ '/materials/lecture-notes/' | relative_url }}"{% if page.url == '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Lecture Notes</a></li>
-    <li data-materials-admin hidden><a href="{{ '/materials/admin/' | relative_url }}"{% if page.url == '/materials/admin/' %} aria-current="page"{% endif %}>Admin</a></li>
   </ul>
 </nav>
+{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}

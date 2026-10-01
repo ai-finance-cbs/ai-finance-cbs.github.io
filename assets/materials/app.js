@@ -1,3 +1,5 @@
+import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
+import { renderClassPage, renderRosterTable } from './class-ui.js';
 import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, normalizeUni, parseRoster, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
@@ -5,6 +7,11 @@ const root = document.getElementById('materials-root');
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
 const state = { backend: null, access: null, version: 0 };
+let previewRoster = [];
+async function startPreview(uni) {
+  try { await state.backend.setPreview(uni); if (['gradebook', ...INSTRUCTOR_PAGES].includes(root?.dataset.page)) location.assign(path('attendance')); else await refresh(); }
+  catch (error) { alert(error.message); }
+}
 const path = name => `${config.base}/materials/${name}/`;
 const member = () => state.access && state.access.role !== 'unlisted';
 const el = (tag, text, attrs = {}) => {
@@ -45,7 +52,7 @@ async function sha256Hex(text) {
 }
 async function setupGsi() {
   const slot = dialog.querySelector('[data-gsi]');
-  // Google only accepts this button on the real site address, not the local preview.
+  // Local review uses the demo or the OAuth fallback.
   if (location.hostname === '127.0.0.1' || !config.googleClientId || state.backend?.demo || !state.backend?.signInWithGoogleToken || slot.dataset.ready) return;
   try {
     await loadGsi();
@@ -88,22 +95,29 @@ function showGate() {
   else if (state.access.role === 'unlisted') {
     root.append(el('p', 'You are not on the class list.'), el('p', 'For access, contact the instructor.'), el('a', OWNER, { href: `mailto:${OWNER}` }));
     if (state.access.needs_uni) root.append(el('p'), button('Enter your UNI', () => openLogin()));
-  } else root.append(el('p', 'This page is for instructors and TAs.'));
+  } else root.append(el('p', INSTRUCTOR_PAGES.includes(root.dataset.page) ? 'This page is for instructors.' : 'Your role does not have access to this page.'));
   outlineChanged();
 }
 async function refresh() {
   const version = ++state.version;
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
-  document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !member());
-  document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = state.access?.role !== 'instructor_ta');
+  const visible = zones(state.access);
+  document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !visible.materials);
+  document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !visible.class);
+  document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !visible.instructor);
+  document.querySelectorAll('[data-grader-only]').forEach(n => n.hidden = state.access?.role !== 'grader');
   document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
   document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
   const badge = document.querySelector('[data-role]');
   badge.hidden = !state.access; badge.textContent = ROLE_LABELS[state.access?.role] || '';
   updateModal();
+  const banner = document.querySelector('[data-preview-banner]');
+  banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);
+  banner.querySelector('[data-preview-name]').textContent = state.access?.view_as ? `Viewing as ${state.access.view_as.name} · ` : '';
+  document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
-  if (root?.dataset.page === 'admin' && state.access.role !== 'instructor_ta') { showGate(); return; }
+  if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
   if (root) root.replaceChildren(el('p', 'Loading course materials…'));
   try {
     if (root?.dataset.page === 'assignments') {
@@ -112,10 +126,38 @@ async function refresh() {
     } else if (root?.dataset.page === 'lecture-notes') {
       const rows = await state.backend.files(); if (version !== state.version) return;
       root.replaceChildren(); addDemoNotice(root); renderLectures(rows); outlineChanged();
-    } else if (root?.dataset.page === 'admin') {
-      const [admin, assignments, files] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.files()]);
+    } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
+      const page = root.dataset.page;
+      const data = ['files', 'settings'].includes(page) ? null : await state.backend.classData();
       if (version !== state.version) return;
-      root.replaceChildren(); addDemoNotice(root); renderAdmin(admin, assignments, files); outlineChanged();
+      root.replaceChildren(); addDemoNotice(root);
+      if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: state.access, refresh, startPreview });
+      else {
+        root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
+        if (page === 'roster') {
+          const admin = await state.backend.adminData(); if (version !== state.version) return;
+          renderRoster(admin.roster);
+          renderRosterTable({ root, data, startPreview });
+        } else if (page === 'files') {
+          const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
+        } else if (page === 'settings') {
+          const [admin, assignments, tests] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts()]);
+          if (version !== state.version) return;
+          renderAllowlist(admin.allowlist); renderAssignmentAdmin(assignments);
+          const links = await state.backend.studentAccounts(); if(version !== state.version) return; renderStudentAccounts(links);
+          const section = el('section', null, { class: 'admin-section', id: 'test-accounts' });
+          section.append(el('h2', 'Test accounts'), el('p', 'These accounts have fixed test access. This list is read-only.'));
+          const list = el('ul'); for (const t of tests) list.append(el('li', `${t.email} · ${ROLE_LABELS[t.role]}${t.uni ? ` · ${t.uni}` : ''}`));
+          section.append(list); root.append(section);
+        }
+      }
+      outlineChanged();
+    }
+    if (visible.instructor) {
+      const data = await state.backend.classData(); if (version !== state.version) return;
+      previewRoster = data.roster;
+      const select = document.querySelector('[data-view-select]'); select.replaceChildren(el('option', 'View as student', { value: '' }));
+      for (const r of previewRoster) select.append(el('option', `${r.name || r.uni} (${r.uni})`, { value: r.uni }));
     }
     if (document.querySelector('[data-week-slides]')) {
       const rows = await state.backend.files(); if (version !== state.version) return;
@@ -131,7 +173,7 @@ function addDemoNotice(parent) {
   if (state.backend?.demo) parent.append(el('p', 'Local demo · synthetic examples only. No course data is connected.', { class: 'demo-notice' }));
 }
 function renderAssignments(rows) {
-  if (!rows.length) root.append(el('p', state.access.role === 'observer' ? 'No assignments have been shared with observers yet.' : 'Assignments have not been posted yet.'));
+  if (!rows.length) root.append(el('p', state.access.role === 'auditor' ? 'No assignments have been shared with auditors yet.' : 'Assignments have not been posted yet.'));
   for (const row of rows) {
     const section = el('section', null, { class: 'assignment-section', id: row.id === 6 ? 'final-prototype' : `milestone-${row.id}` });
     section.append(el('p', `${row.id === 6 ? 'Final Prototype' : `Milestone #${row.id}`} · ${row.due} · ${row.points} points`, { class: 'assignment-meta' }), el('h2', row.title), el('p', row.description, { class: 'assignment-copy' }));
@@ -182,11 +224,6 @@ async function runAction(control, status, task, success, rerender = false) {
 }
 function section(title, id) { const s = el('section', null, { class: 'admin-section', id }); s.append(el('h2', title)); root.append(s); return s; }
 function newForm(id) { return el('form', null, { class: 'admin-form', id }); }
-function renderAdmin(admin, assignments, files) {
-  root.append(el('p', 'Manage the class list, access, assignments, and lecture PDFs.'));
-  root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
-  renderRoster(admin.roster); renderAllowlist(admin.allowlist); renderFileAdmin(files); renderAssignmentAdmin(assignments);
-}
 function renderRoster(roster) {
   const s = section('Class roster', 'class-roster');
   s.append(el('p', `${roster.length} ${roster.length === 1 ? 'student' : 'students'} on the class list. Upload a Canvas People CSV to replace the roster.`));
@@ -201,7 +238,7 @@ function renderRoster(roster) {
       const wrap = el('div', null, { class: 'roster-preview' }); const table = el('table'); const head = el('tr'); head.append(el('th', 'Student'), el('th', 'UNI')); const thead = el('thead'); thead.append(head); const body = el('tbody');
       for (const row of result.rows) { const tr = el('tr'); tr.append(el('td', row.name || '—'), el('td', row.uni)); body.append(tr); }
       table.append(thead, body); wrap.append(table); preview.append(wrap);
-      for (const issue of result.issues) preview.append(el('p', `Row ${issue.row}: ${issue.name || '(no name)'} — ${issue.reason}`));
+      for (const issue of result.issues) preview.append(el('p', `Row ${issue.row}: ${issue.name || '(no name)'} · ${issue.reason}`));
       if (result.errors.length) { preview.append(el('p', result.errors.join(' '))); return; }
       const acknowledge = el('input', null, { type: 'checkbox', id: 'roster-confirm' }); const label = el('label', `Replace all ${roster.length} current roster entries with these ${result.rows.length} students${result.issues.length ? ' and skip the flagged rows' : ''}.`, { for: 'roster-confirm', class: 'check-label' }); label.prepend(acknowledge); preview.append(label);
       const save = button('Replace roster', () => runAction(save, status, () => state.backend.replaceRoster(result.rows), `Roster replaced: ${result.rows.length} students.`, true)); save.disabled = true;
@@ -212,16 +249,24 @@ function renderRoster(roster) {
   s.append(form);
   const details = el('details'); details.append(el('summary', 'Current class list')); const list = el('ul'); for (const row of roster) list.append(el('li', `${row.name || 'Student'} · ${row.uni}`)); details.append(list); s.append(details);
 }
+function renderStudentAccounts(rows) {
+  const s=section('CBS account links','student-accounts'), form=newForm('student-account-form');
+  s.append(el('p','Link a verified CBS email to its roster UNI. Students cannot claim another student’s UNI.'));
+  const email=field(form,'CBS student email','student_email','', 'email'), uni=field(form,'Roster UNI','student_uni','');
+  email.required=true;uni.required=true;const save=button('Link student account');save.type='submit';form.append(save);const status=formStatus(form);
+  form.addEventListener('submit',e=>{e.preventDefault();runAction(save,status,()=>state.backend.linkStudent(email.value.trim().toLowerCase(),uni.value.trim().toLowerCase()),'Student account linked.',true);});s.append(form);
+  const list=el('ul');for(const row of rows){const li=el('li',`${row.email} · ${row.uni} `);const remove=button(`Remove link for ${row.email}`,()=>runAction(remove,status,()=>state.backend.linkStudent(row.email,null),'Account link removed.',true));li.append(remove);list.append(li);}s.append(list);
+}
 function renderAllowlist(rows) {
-  const s = section('TA and observer access', 'access-lists'); const form = newForm('allowlist-form');
+  const s = section('Role access', 'access-lists'); const form = newForm('allowlist-form');
   const email = field(form, 'Columbia email', 'email', '', 'email'); email.required = true; email.maxLength = 254;
   const label = el('label', 'Access role', { for: 'allow-role' }); const select = el('select', null, { id: 'allow-role' });
-  select.append(el('option', 'Instructor / TA', { value: 'instructor_ta' }), el('option', 'Observer', { value: 'observer' })); form.append(label, select);
+  select.append(el('option', 'Instructor', { value: 'instructor' }), el('option', 'Grader', { value: 'grader' }), el('option', 'Auditor', { value: 'auditor' })); form.append(label, select);
   const save = button('Save access'); save.type = 'submit'; const status = formStatus(form); form.append(save);
   form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, async () => {
     const normalized = normalizeEmail(email.value); if (!isColumbiaEmail(normalized)) throw new Error('Use an @columbia.edu or @gsb.columbia.edu email.');
     if (normalized === OWNER) throw new Error('The instructor account is fixed.');
-    if (normalized === state.access.email && select.value !== 'instructor_ta' && !confirm('Change your own role to Observer? You will lose admin access.')) throw new Error('Your role was not changed.');
+    if (normalized === state.access.email && select.value !== 'instructor' && !confirm(`Change your own role to ${ROLE_LABELS[select.value]}? You will lose instructor access.`)) throw new Error('Your role was not changed.');
     await state.backend.saveAllowlist({ email: normalized, role: select.value });
   }, 'Access saved.', true); });
   s.append(form); const list = el('ul', null, { class: 'file-list' });
@@ -238,16 +283,16 @@ function renderFileAdmin(files) {
   form.append(weekLabel, week);
   const title = field(form, 'File title', 'title'); title.required = true; title.maxLength = 200;
   const file = field(form, 'Lecture PDF (maximum 20 MB)', 'pdf', '', 'file'); file.accept = '.pdf,application/pdf'; file.required = true;
-  const visible = field(form, 'Visible to observers', 'observer_visible', false, 'checkbox');
+  const visible = field(form, 'Visible to auditors', 'auditor_visible', false, 'checkbox');
   const upload = button('Upload PDF'); upload.type = 'submit'; const status = formStatus(form); form.append(upload);
   form.addEventListener('submit', e => { e.preventDefault(); runAction(upload, status, async () => {
     await validatePdf(file.files[0]); if (!title.value.trim()) throw new Error('Enter a file title.');
-    await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), observer_visible: visible.checked });
+    await state.backend.uploadFile(file.files[0], { title: title.value.trim(), week: Number(week.value), auditor_visible: visible.checked });
   }, 'PDF uploaded.', true); });
   s.append(form); const list = el('ul', null, { class: 'file-list' });
   for (const row of files) {
-    const li = el('li'); li.append(fileLink(row), el('span', `Week ${row.week} · ${row.observer_visible ? 'Observer visible' : 'Students and instructors'}`, { class: 'file-meta' }));
-    const toggle = button(row.observer_visible ? `Hide ${row.title} from observers` : `Share ${row.title} with observers`, () => runAction(toggle, status, () => state.backend.setFileVisibility(row.id, !row.observer_visible), 'File visibility updated.', true));
+    const li = el('li'); li.append(fileLink(row), el('span', `Week ${row.week} · ${row.auditor_visible ? 'Auditor visible' : 'Students and instructors'}`, { class: 'file-meta' }));
+    const toggle = button(row.auditor_visible ? `Hide ${row.title} from auditors` : `Share ${row.title} with auditors`, () => runAction(toggle, status, () => state.backend.setFileVisibility(row.id, !row.auditor_visible), 'File visibility updated.', true));
     const remove = button(`Delete ${row.title}`, () => { if (confirm(`Delete ${row.title}? This removes its stored PDF.`)) runAction(remove, status, () => state.backend.deleteFile(row.id), 'PDF deleted.', true); });
     li.append(toggle, remove); list.append(li);
   }
@@ -266,9 +311,9 @@ function renderAssignmentAdmin(rows) {
     const description = field(form, 'Description', 'description', row.description, 'textarea'); description.maxLength = 20000;
     const deliverable = field(form, 'Deliverable', 'deliverable', row.deliverable, 'textarea'); deliverable.maxLength = 10000;
     const grading = field(form, 'How it is graded', 'grading', row.grading, 'textarea'); grading.maxLength = 10000;
-    const visible = field(form, 'Visible to observers', 'observer_visible', row.observer_visible, 'checkbox');
+    const visible = field(form, 'Visible to auditors', 'auditor_visible', row.auditor_visible, 'checkbox');
     const save = button('Save assignment'); save.type = 'submit'; const status = formStatus(form); form.append(save);
-    form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, () => state.backend.saveAssignment({ id: row.id, title: title.value.trim(), due: due.value.trim(), points: Number(points.value), description: description.value, deliverable: deliverable.value, grading: grading.value, observer_visible: visible.checked }), 'Assignment saved.'); });
+    form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, () => state.backend.saveAssignment({ id: row.id, title: title.value.trim(), due: due.value.trim(), points: Number(points.value), description: description.value, deliverable: deliverable.value, grading: grading.value, auditor_visible: visible.checked }), 'Assignment saved.'); });
     details.append(form); s.append(details);
   }
 }
@@ -280,6 +325,8 @@ document.addEventListener('click', e => {
 });
 dialog.querySelector('[data-close-login]').addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+document.querySelector('[data-view-select]').addEventListener('change', e => { if (e.target.value) startPreview(e.target.value); });
+document.querySelector('[data-preview-exit]').addEventListener('click', () => startPreview(null));
 document.querySelector('[data-signout]').addEventListener('click', async () => {
   ++state.version; state.access = null; showGate(); sessionStorage.removeItem('b8403-return');
   try { await state.backend?.signOut(); await refresh(); }

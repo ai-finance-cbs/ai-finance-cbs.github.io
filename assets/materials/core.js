@@ -1,7 +1,7 @@
 // Shared validation has no browser dependencies, so Node can test the same code.
 export const OWNER = 'oh@gsb.columbia.edu';
 export const WEEK_TITLES = ['AI Economics', 'AI Infrastructure', 'Processing Information with AI', 'Predicting Outcomes with AI', 'Persuading Stakeholders with AI', 'The Future of Finance with AI'];
-export const ROLE_LABELS = { instructor_ta: 'Instructor / TA', student: 'Student', observer: 'Observer', unlisted: 'Unlisted' };
+export const ROLE_LABELS = { instructor: 'Instructor', grader: 'Grader', student: 'Student', auditor: 'Auditor', unlisted: 'Unlisted' };
 export const normalizeEmail = value => value.trim().toLowerCase();
 export function isColumbiaEmail(value) {
   return /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@(columbia\.edu|gsb\.columbia\.edu)$/.test(normalizeEmail(value));
@@ -30,7 +30,7 @@ export function safeReturnPath(value, origin, fallback = '/') {
 }
 
 // Small RFC 4180 reader: quoted commas, escaped quotes, embedded newlines, CRLF, and BOM.
-function csvCells(text) {
+export function csvCells(text) {
   const rows = []; let row = [], cell = '', quoted = false, closed = false;
   const endCell = () => { row.push(cell); cell = ''; closed = false; };
   const endRow = () => { endCell(); if (row.some(c => c.trim())) rows.push(row); row = []; };

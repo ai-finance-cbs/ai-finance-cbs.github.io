@@ -21,12 +21,12 @@ export function createHandler(createClient, env) {
       let body;
       try { body = await request.json(); } catch { return respond(400, { error: 'Provide a JSON request.' }); }
       if (!body || !['download', 'delete', 'cleanup'].includes(body.action)) return respond(400, { error: 'Unknown file action.' });
-      if (body.action !== 'download' && access.role !== 'instructor_ta') return respond(403, { error: 'Instructor access required.' });
+      if (body.action !== 'download' && access.role !== 'instructor') return respond(403, { error: 'Instructor access required.' });
       let file;
       if (body.action === 'cleanup') {
         if (typeof body.path !== 'string' || !/^week-[1-6]\/[0-9a-f-]{36}\.pdf$/.test(body.path)) return respond(400, { error: 'Invalid storage path.' });
         const { data: existing, error } = await userClient.from('lecture_files').select('id').eq('storage_path', body.path).maybeSingle();
-        if (error || existing) return respond(409, { error: 'This file has metadata. Use Delete in Admin.' });
+        if (error || existing) return respond(409, { error: 'This file has metadata. Use Delete on Files.' });
         file = { storage_path: body.path };
       } else {
         if (typeof body.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.id)) return respond(400, { error: 'Invalid file ID.' });
