@@ -9,6 +9,6 @@
 {% for s in site.data.library %}{% if s.week < 1 or s.week > 6 %}{% continue %}{% endif %}
 {% if s.week == 0 %}{% assign slug = 'prelude' %}{% elsif s.week == 99 %}{% assign slug = 'coda' %}{% else %}{% assign slug = 'week-' | append: s.week %}{% endif %}
 {% capture u %}/materials/{{ slug }}/{% endcapture %}
-<li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{% if s.week > 0 and s.week < 99 %}<span class="subnav-kicker">Week {{ s.week }}</span>{% endif %}<span class="subnav-label">{{ s.title }}</span></a></li>
+<li class="week-{{ s.week }}"><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{% if s.week > 0 and s.week < 99 %}<span class="subnav-kicker">Week {{ s.week }}</span>{% endif %}<span class="subnav-label">{{ s.title }}</span></a></li>
 {% endfor %}</ul></nav>
 {% elsif include.where contains 'subnav-top' %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
