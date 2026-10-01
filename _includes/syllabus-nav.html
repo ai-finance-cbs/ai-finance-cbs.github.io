@@ -1,8 +1,8 @@
-<nav class="subnav{{ include.where }}" aria-label="Schedule sections">
+<nav class="subnav{{ include.where }}" aria-label="Syllabus sections">
   <ul>
-    <li><a href="{{ '/schedule/' | relative_url }}"{% if page.url == '/schedule/' %} aria-current="page"{% endif %}><span class="subnav-label">Course Goals</span></a></li>
+    <li><a href="{{ '/syllabus/' | relative_url }}"{% if page.url == '/syllabus/' %} aria-current="page"{% endif %}><span class="subnav-label">Course Goals</span></a></li>
     {% for w in site.data.weeks %}
-    {% capture u %}/schedule/week-{{ w.number }}/{% endcapture %}
+    {% capture u %}/syllabus/week-{{ w.number }}/{% endcapture %}
     {% assign lib = site.data.library | where: 'week', w.number | first %}
     <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}><span class="subnav-kicker">Week {{ w.number }}</span><span class="subnav-label">{{ lib.title }}</span></a></li>
     {% endfor %}

@@ -1,3 +1,4 @@
+import { studentGradeRows, submissionStatus } from './week-core.js';
 import {
   canWrite,
   gradeTotal,
@@ -294,7 +295,7 @@ export function renderClassPage(ctx) {
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
       t.classList.add('student-attendance-grid');
-      for (const s of data.sessions) {
+      for (const s of data.sessions.filter(s => s.week >= 1 && s.week <= 6).sort((a,b) => a.week - b.week)) {
         const a = data.attendance.find((a) => a.week === s.week),
           tr = el('tr');
         tr.append(
@@ -306,30 +307,22 @@ export function renderClassPage(ctx) {
         body.append(tr);
       }
       root.append(wrapTable(t));
-      const s = section('My grades', 'my-grades');
-      if (!data.items.length) s.append(el('p', 'No grades have been released yet.'));
-      else {
-        const { t, body } = table(['Item', 'Score', 'Maximum']);
-        for (const i of data.items) {
-          const score = data.grades.find((g) => g.item_id === i.id)?.score,
-            tr = el('tr');
-          tr.append(
-            el('th', i.title, { scope: 'row' }),
-            el('td', score ?? 'Not graded'),
-            el('td', i.max_points),
-          );
-          body.append(tr);
-        }
-        s.append(
-          wrapTable(t),
-          el(
-            'p',
-            `Released points: ${gradeTotal(data.items, data.grades).total}. Optional points are capped at 15; course totals at 100.`,
-          ),
-        );
-      }
-      s.append(el('p', 'Only released items are shown. Blank scores are not zeros.'));
     }
+  }
+  if (page === 'grades') {
+    const list = el('div', null, { id: 'my-grades', class: 'student-grades' });
+    for (const item of studentGradeRows(data)) {
+      const row = el('section', null, { class: 'student-grade', 'data-grade-code': item.code });
+      row.append(el('h2', `${item.code} · ${item.title}`));
+      row.append(el('p', submissionStatus(item.submission), { class: 'grade-status' }));
+      if (item.released) {
+        row.append(el('p', item.grade?.score == null ? 'Not graded' : `${item.grade.score} / ${item.max_points}`, { class: 'grade-score' }));
+        if (item.grade?.comment) row.append(el('p', item.grade.comment, { class: 'grade-comment' }));
+      }
+      list.append(row);
+    }
+    const released = data.items.filter(i => i.released);
+    root.append(el('p', `Released points: ${gradeTotal(released, data.grades).total}. Optional points are capped at 15; course totals at 100.`, { class: 'tool-help' }), list);
   }
   if (page === 'groups') {
     if (admin) {

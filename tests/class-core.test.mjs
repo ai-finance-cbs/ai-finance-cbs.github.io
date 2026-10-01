@@ -17,9 +17,8 @@ const roster = [{ uni: 'ab1234' }, { uni: 'cd5678' }];
 test('role pages and preview write controls match the server contract', () => {
   const expected = {
     instructor: [
-      'upcoming',
-      'assignments',
-      'lecture-notes',
+      'landing',
+      'week',
       'attendance',
       'groups',
       'gradebook',
@@ -27,13 +26,13 @@ test('role pages and preview write controls match the server contract', () => {
       'files',
       'settings',
     ],
-    grader: ['upcoming', 'assignments', 'lecture-notes', 'gradebook', 'attendance'],
-    student: ['upcoming', 'assignments', 'lecture-notes', 'attendance', 'groups'],
-    auditor: ['upcoming', 'assignments', 'lecture-notes'],
+    grader: ['landing', 'week', 'gradebook', 'attendance'],
+    student: ['landing', 'week', 'grades', 'attendance', 'groups'],
+    auditor: ['landing', 'week'],
     unlisted: [],
   };
   for (const [role, pages] of Object.entries(expected))
-    for (const page of expected.instructor)
+    for (const page of [...expected.instructor, 'grades'])
       assert.equal(pageAllowed(page, { role }), pages.includes(page), `${role}: ${page}`);
   const preview = { role: 'student', actor_role: 'instructor', view_as: { uni: 'ab1234' } };
   assert.equal(canWrite(preview), false);

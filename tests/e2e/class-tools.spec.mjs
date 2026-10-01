@@ -20,7 +20,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
   await expect(page.locator('[data-role]')).toHaveText('Grader');
   await expect(page.locator('.topnav a:visible')).toHaveText([
     'Home',
-    'Schedule',
+    'Syllabus',
     'Library',
     'Staff',
     'Course Materials',
@@ -29,7 +29,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
   ]);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.locator('[data-view-picker]')).toBeHidden();
-  for (const path of ['roster', 'files', 'settings', 'groups']) {
+  for (const path of ['roster', 'files', 'settings', 'groups', 'grades']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root')).toContainText(/instructors|does not have access/);
@@ -81,8 +81,10 @@ test('student sees own released scores and teammate identities only after joinin
   page,
 }) => {
   await enter(page, 'student', 'attendance');
-  await expect(page.locator('#my-grades')).toContainText('Milestone #1');
-  await expect(page.locator('#my-grades')).not.toContainText('Milestone #2');
+  await expect(page.locator('#my-grades')).toHaveCount(0);
+  await page.goto('/materials/grades/'); await ready(page);
+  await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('8 / 10');
+  await expect(page.locator('[data-grade-code=M2] .grade-score')).toHaveCount(0);
   await expect(page.locator('#materials-root')).not.toContainText('Second Student');
   await page.goto('/materials/groups/');
   await ready(page);
@@ -140,14 +142,17 @@ test('view-as matches student content and denies writes even when calling the ba
   await ready(page);
   await expect(page).toHaveURL(/attendance\/$/);
   await expect(page.locator('[data-preview-banner]')).toContainText('Viewing as Demo Student');
-  await expect(page.locator('#my-grades')).toContainText('8');
+  await expect(page.locator('#my-grades')).toHaveCount(0);
+  await page.goto('/materials/grades/'); await ready(page);
+  await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('8 / 10');
   await expect(page.locator('.topnav a:visible')).toHaveText([
     'Home',
-    'Schedule',
+    'Syllabus',
     'Library',
     'Staff',
     'Course Materials',
     'Attendance',
+    'Grades',
     'Groups',
   ]);
   await page.goto('/materials/groups/');
@@ -181,15 +186,15 @@ test('view-as matches student content and denies writes even when calling the ba
   await expect(page.getByRole('button', { name: 'Create group set', exact: true })).toBeVisible();
 });
 test('auditor has only Course Materials and cannot open class pages directly', async ({ page }) => {
-  await enter(page, 'auditor', 'assignments');
+  await enter(page, 'auditor', 'week-1');
   await expect(page.locator('.topnav a:visible')).toHaveText([
     'Home',
-    'Schedule',
+    'Syllabus',
     'Library',
     'Staff',
     'Course Materials',
   ]);
-  for (const path of ['attendance', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
+  for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root input')).toHaveCount(0);
@@ -211,7 +216,7 @@ test('students and preview see plain attendance until the matching quiz is relea
   const firstWeek = page.locator('.class-grid tbody tr').first();
   await expect(firstWeek).toContainText('present');
   await expect(firstWeek.locator('td').last()).toHaveText('');
-  await expect(page.locator('#my-grades')).not.toContainText('In-class quiz 1');
+  await expect(page.locator('#my-grades')).toHaveCount(0);
   const hidden = await page.evaluate(async () => {
     const { createDemo } = await import('/assets/materials/demo.js');
     return (await createDemo().classData()).attendance;
@@ -230,5 +235,6 @@ test('students and preview see plain attendance until the matching quiz is relea
   await expect(page.locator('[data-admin-status]')).toContainText('Release status saved');
   await enter(page, 'student', 'attendance');
   await expect(page.locator('.class-grid tbody tr').first()).toContainText('from Quiz 1');
-  await expect(page.locator('#my-grades')).toContainText('In-class quiz 1');
+  await page.goto('/materials/grades/'); await ready(page);
+  await expect(page.locator('[data-grade-code=Q1] .grade-score')).toHaveText('0 / 3');
 });

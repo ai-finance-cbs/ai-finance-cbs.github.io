@@ -1,12 +1,13 @@
 import { announcementText } from './upcoming-core.js';
-import { renderUpcoming } from './upcoming-ui.js';
+import { renderWeek } from './week-ui.js';
+import { currentWeek, weekSlug, inClassFile } from './week-core.js';
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
 import { renderClassPage, renderRosterTable, table, wrapTable } from './class-ui.js';
 import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, parseRoster, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
-document.body.classList.toggle('class-tools', !!root && ['upcoming', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
+document.body.classList.toggle('class-tools', !!root && ['week', 'landing', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
@@ -103,9 +104,9 @@ async function refresh() {
   if (version !== state.version) return;
   const visible = zones(state.access);
   document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !visible.materials);
-  document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !visible.class);
   document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !visible.instructor);
-  document.querySelectorAll('[data-grader-only]').forEach(n => n.hidden = state.access?.role !== 'grader');
+  document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !visible.grading);
+  document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = state.access?.role !== 'student');
   document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
   document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
   const badge = document.querySelector('[data-role]');
@@ -122,22 +123,19 @@ async function refresh() {
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
   if (root) root.replaceChildren(el('p', 'Loading course materials…'));
   try {
-    if (root?.dataset.page === 'upcoming') {
-      const [sessions, assignments, files, announcements, groups] = await Promise.all([
-        state.backend.sessions(), state.access.role === 'auditor' ? [] : state.backend.assignments(),
-        state.backend.files(), state.backend.announcements(),
-        state.access.role === 'student' ? state.backend.classData() : null,
-      ]);
+    if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
+      const sessions = await state.backend.sessions();
+      if (version !== state.version) return;
+      sessionStorage.removeItem('b8403-return');
+      state.redirecting = true;
+      location.replace(path(weekSlug(currentWeek(sessions))));
+      return;
+    } else if (root?.dataset.page === 'week') {
+      const data = await state.backend.classData();
       if (version !== state.version) return;
       root.replaceChildren();
-      renderUpcoming({ root, data: { sessions, assignments, files, announcements, groups }, access: state.access, path, fileLink });
+      renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
       outlineChanged();
-    } else if (root?.dataset.page === 'assignments') {
-      const rows = await state.backend.assignments(); if (version !== state.version) return;
-      root.replaceChildren(); renderAssignments(rows); outlineChanged();
-    } else if (root?.dataset.page === 'lecture-notes') {
-      const rows = await state.backend.files(); if (version !== state.version) return;
-      root.replaceChildren(); renderLectures(rows); outlineChanged();
     } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
       const page = root.dataset.page;
       const data = ['files', 'settings'].includes(page) ? null : await state.backend.classData();
@@ -176,24 +174,12 @@ async function refresh() {
     }
     if (document.querySelector('[data-week-slides]')) {
       const rows = await state.backend.files(); if (version !== state.version) return;
-      document.querySelectorAll('[data-slides-status]').forEach(n => { n.textContent = rows.some(f => f.week === Number(n.dataset.slidesStatus)) ? '' : 'Posted after class.'; });
+      document.querySelectorAll('[data-slides-status]').forEach(n => { n.textContent = rows.some(f => f.week === Number(n.dataset.slidesStatus) && !inClassFile(f)) ? '' : 'Posted after class.'; });
     }
   } catch (error) {
     if (version !== state.version) return;
     if (root) root.replaceChildren(el('p', `Could not load materials. ${error.message}`), button('Try again', () => refresh()));
     else console.warn('Course materials could not load.');
-  }
-}
-function renderAssignments(rows) {
-  if (!rows.length) root.append(el('p', state.access.role === 'auditor' ? 'No assignments have been shared with auditors yet.' : 'Assignments have not been posted yet.'));
-  for (const row of rows) {
-    const section = el('section', null, { class: 'assignment-section', id: row.id === 6 ? 'final-prototype' : `milestone-${row.id}` });
-    section.append(el('p', `${row.id === 6 ? 'Final Prototype' : `Milestone #${row.id}`} · ${row.due} · ${row.points} points`, { class: 'assignment-meta' }), el('h2', row.title), el('p', row.description, { class: 'assignment-copy' }));
-    const dl = el('dl', null, { class: 'detail-list' });
-    for (const [label, text] of [['Deliverable', row.deliverable], ['Graded on', row.grading]]) {
-      const div = el('div'); div.append(el('dt', label), el('dd', text, { class: 'assignment-copy' })); dl.append(div);
-    }
-    section.append(dl); root.append(section);
   }
 }
 function fileLink(file) {
@@ -204,21 +190,16 @@ function fileLink(file) {
       const url = await state.backend.fileUrl(file.id);
       const download = el('a', null, { href: url, download: `${file.title}.pdf`, rel: 'noreferrer' });
       document.body.append(download); download.click(); download.remove();
-    } catch (error) { alert(`Could not open this file. ${error.message}`); }
+    } catch (error) {
+      let status = a.parentElement.querySelector('[data-file-error]');
+      if (!status) { status = el('span', '', { role: 'status', 'data-file-error': '' }); a.after(status); }
+      status.textContent = `Could not open this file. ${error.message}`;
+    }
     finally { a.textContent = old; }
   });
   return a;
 }
-function renderLectures(rows) {
-  WEEK_TITLES.forEach((title, i) => {
-    const section = el('section', null, { class: 'lecture-week', id: `week-${i + 1}` });
-    section.append(el('p', `Week ${i + 1}`, { class: 'assignment-meta' }), el('h2', title));
-    const files = rows.filter(f => f.week === i + 1);
-    if (!files.length) section.append(el('p', 'Posted after class.'));
-    else { const list = el('ul', null, { class: 'file-list' }); for (const f of files) { const li = el('li'); li.append(fileLink(f), el('span', 'PDF', { class: 'file-meta' })); list.append(li); } section.append(list); }
-    root.append(section);
-  });
-}
+
 function field(form, label, name, value = '', type = 'text') {
   const id = `${form.id}-${name}`; const l = el('label', label, { for: id });
   const input = el(type === 'textarea' ? 'textarea' : 'input', null, { id, name });
@@ -429,6 +410,6 @@ async function init() {
       if (member()) await finishSignIn(); else if (state.access) openLogin();
     }
   } catch (error) { state.access = null; showGate(); openLogin(); showMessage(error.message); }
-  finally { document.documentElement.dataset.materialsReady = 'true'; }
+  finally { if (!state.redirecting) document.documentElement.dataset.materialsReady = 'true'; }
 }
 init();

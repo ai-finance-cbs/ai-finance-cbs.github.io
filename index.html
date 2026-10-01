@@ -7,10 +7,10 @@ permalink: /
 ---
 <p class="lead">This course is about using AI to do the work of a finance professional. It is intended for students who want a career in the financial sector and expect AI to be part of the job from the first day.</p>
 <section class="home-section" aria-labelledby="six-weeks">
-  <h2 id="six-weeks">Schedule</h2>
+  <h2 id="six-weeks">Syllabus</h2>
   <ol class="week-index">
     {% for week in site.data.weeks %}
-    <li><a href="{{ '/schedule/week-' | append: week.number | append: '/' | relative_url }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
+    <li><a href="{{ '/syllabus/week-' | append: week.number | append: '/' | relative_url }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
     {% endfor %}
   </ol>
 </section>

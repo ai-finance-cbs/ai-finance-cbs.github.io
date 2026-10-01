@@ -27,23 +27,24 @@
                 <li><a href="{{ item.url | relative_url }}"{% if page.url == item.url or item.url != '/' and page.url contains item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
         {% endfor %}
         <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
-        <li class="member-only" data-materials-member hidden><a href="{{ '/materials/upcoming/' | relative_url }}"{% if page.url contains '/materials/upcoming/' or page.url contains '/materials/assignments/' or page.url contains '/materials/lecture-notes/' %} aria-current="page"{% endif %}>Course Materials</a></li>
-        {% assign class_tabs = 'Attendance,Groups' | split: ',' %}
-        {% for tab in class_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li class="member-only" data-class-member hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li data-materials-member hidden><a href="{{ '/materials/' | relative_url }}"{% if page.material_week != nil or page.url == '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
+        {% assign student_tabs = 'Attendance,Grades,Groups' | split: ',' %}
+        {% for tab in student_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
+        <li data-student-only hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
-        <li class="member-sep" data-grader-only hidden aria-hidden="true"></li>
-        <li class="instructor-only" data-grader-only hidden><a href="{{ '/materials/gradebook/' | relative_url }}"{% if page.url == '/materials/gradebook/' %} aria-current="page"{% endif %}>Gradebook</a></li>
-        <li class="instructor-only" data-grader-only hidden><a href="{{ '/materials/attendance/' | relative_url }}"{% if page.url == '/materials/attendance/' %} aria-current="page"{% endif %}>Attendance</a></li>
-        <li class="member-sep" data-materials-admin hidden aria-hidden="true"></li>
-        {% assign admin_tabs = 'Gradebook,Roster,Files,Settings' | split: ',' %}
+        <li class="member-sep" data-grading-member hidden aria-hidden="true"></li>
+        {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
+        {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
+        <li data-grading-member hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        {% endfor %}
+        {% assign admin_tabs = 'Roster,Settings' | split: ',' %}
         {% for tab in admin_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li class="instructor-only" data-materials-admin hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        <li data-materials-admin hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
       </ul>
     </nav>
     </div>
-    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% elsif page.url contains '/schedule/' %}{% include schedule-nav.html where=' subnav-top' %}{% elsif page.url contains '/materials/' %}{% include materials-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
+    {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% elsif page.url contains '/syllabus/' %}{% include syllabus-nav.html where=' subnav-top' %}{% elsif page.url contains '/materials/' %}{% include materials-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>
 </header>

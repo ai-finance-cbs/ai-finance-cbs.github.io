@@ -1,6 +1,6 @@
 import { csvCells, normalizeUni } from './core.js';
 export const INSTRUCTOR_PAGES = ['roster', 'files', 'settings'];
-export const CLASS_PAGES = ['gradebook', 'attendance', 'groups'];
+export const CLASS_PAGES = ['gradebook', 'attendance', 'grades', 'groups'];
 export const GRADE_ITEMS = [
   ...Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
@@ -43,6 +43,7 @@ export function pageAllowed(page, access) {
   if (INSTRUCTOR_PAGES.includes(page)) return z.instructor;
   if (page === 'gradebook') return z.grading;
   if (page === 'attendance') return z.class || z.grading;
+  if (page === 'grades') return access?.role === 'student';
   if (page === 'groups') return z.class;
   return z.materials;
 }

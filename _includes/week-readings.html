@@ -1,0 +1,8 @@
+{% if include.week > 0 and include.week < 7 %}
+{% assign library = site.data.library | where: 'week', include.week | first %}
+{% assign readings = site.data.materials | where: 'week', include.week | where: 'level', 'required' %}
+<template data-week-readings><section class="week-block" id="required-readings" data-reading-block>
+<h2><a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Required readings in the Library</a></h2>
+{% if readings.size == 0 %}<p class="upcoming-meta">Readings have not been posted.</p>{% endif %}
+<ul class="upcoming-readings">{% for item in readings %}<li>{% if item.url %}<a href="{{ item.url | escape }}">{{ item.title | escape }}</a>{% else %}{{ item.title | escape }}{% endif %}<span class="upcoming-meta">{{ item.author | escape }}{% if item.year %} ({{ item.year }}){% endif %}{% if item.length %} · {{ item.length | escape }}{% endif %}</span></li>{% endfor %}</ul>
+</section></template>{% endif %}

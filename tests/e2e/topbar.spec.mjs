@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const pages = ['/', '/schedule/', '/schedule/week-1/', '/library/', '/staff/',
-  ...['upcoming', 'assignments', 'lecture-notes', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
+const pages = ['/', '/syllabus/', ...Array.from({length:6},(_,i)=>`/syllabus/week-${i+1}/`), '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/materials/',
+  ...['prelude', 'week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'coda', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'files', 'settings'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 
@@ -15,9 +15,9 @@ test.beforeEach(async ({ page }) => {
 
 for (const width of [1440, 1180, 1024, 390, 320]) {
   test(`top bar keeps fixed title, menu, and submenu positions across pages and roles at ${width}px`, async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     await page.setViewportSize({ width, height: 950 });
-    mkdirSync('evidence/upcoming/topbar', { recursive: true });
+    mkdirSync('evidence/phase-b/topbar', { recursive: true });
     const measurements = [];
     let baseline, submenuBottom;
     let desktopReference;
@@ -112,14 +112,14 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
           expect(link.bottom).toBe(submenuBottom);
         }
         measurements.push({ role, path, ...positions });
-        if ((role === 'signed-out' && path === '/schedule/') ||
-            (role === 'student' && path === '/materials/assignments/') ||
+        if ((role === 'signed-out' && path === '/syllabus/') ||
+            (role === 'student' && path === '/materials/week-3/') ||
             (role === 'instructor' && path === '/materials/gradebook/') ||
             (role === 'preview' && path === '/materials/attendance/')) {
-          await page.locator('.topbar').screenshot({ path: `evidence/upcoming/topbar/${role}-${width}.png` });
+          await page.locator('.topbar').screenshot({ path: `evidence/phase-b/topbar/${role}-${width}.png` });
         }
       }
     }
-    writeFileSync(`evidence/upcoming/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
+    writeFileSync(`evidence/phase-b/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
   });
 }

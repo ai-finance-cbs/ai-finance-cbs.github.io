@@ -1,29 +1,5 @@
 ---
-title: "Upcoming"
-kicker: Course Materials
+layout: null
 permalink: /materials/upcoming/
 ---
-<div id="materials-root" data-page="upcoming" aria-live="polite">
-  <p>Sign in to see course materials.</p>
-  <button class="materials-button" type="button" data-login>Log in</button>
-</div>
-{% for week in site.data.weeks %}
-{% assign library = site.data.library | where: 'week', week.number | first %}
-{% assign readings = site.data.materials | where: 'week', week.number | where: 'level', 'required' %}
-<template data-upcoming-week="{{ week.number }}" data-week-title="{{ week.title | escape }}">
-  <section class="upcoming-block" data-reading-block>
-    <h2>Required Reading</h2>
-    <ul class="upcoming-readings">
-      {% for item in readings %}
-      <li>
-        {% if item.url %}<a href="{{ item.url | escape }}">{{ item.title | escape }}</a>{% else %}{{ item.title | escape }}{% endif %}
-        <span class="upcoming-meta">{{ item.author | escape }}{% if item.year %} ({{ item.year }}){% endif %}{% if item.length %} · <span data-reading-time>{{ item.length | escape }}</span>{% endif %}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    <p class="upcoming-meta" data-reading-total></p>
-    <a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Go to Week {{ week.number }} Library →</a>
-  </section>
-</template>
-{% endfor %}
-<noscript><p>Enable JavaScript to sign in and load private course materials.</p></noscript>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page moved</title><link rel="canonical" href="{{ '/materials/' | relative_url }}"><meta http-equiv="refresh" content="0;url={{ '/materials/' | relative_url }}"></head><body><p><a href="{{ '/materials/' | relative_url }}">Continue to the course page</a></p><script>const base={{ site.baseurl | jsonify }}; let target={{ '/materials/' | relative_url | jsonify }}; const m=location.hash.match(/(?:milestone-|week-)([1-6])/); if(m) target=base+'/materials/week-'+m[1]+'/'; else if(location.hash==='#final-prototype') target=base+'/materials/week-6/'; location.replace(target+location.search+location.hash);</script></body></html>

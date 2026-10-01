@@ -7,7 +7,7 @@ test.beforeEach(async ({page}) => {
 });
 const fixture = fileURLToPath(new URL('../fixtures/canvas-roster.csv', import.meta.url));
 const ready = async page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
-const enter = async (page, role, path = '/materials/assignments/') => { await page.goto(`${path}?fakeauth=${role}`); await ready(page); };
+const enter = async (page, role, path = '/materials/week-1/') => { await page.goto(`${path}?fakeauth=${role}`); await ready(page); };
 async function switchRole(page, role) {
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.locator('.auth-controls [data-login]').click();
@@ -21,39 +21,39 @@ async function upload(page, title, shared = false) {
   await page.getByRole('button', { name: 'Upload PDF', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('PDF uploaded.');
 }
-test('signed-out schedule links open one modal and retain their intended milestone', async ({ page }) => {
-  await page.goto('/schedule/week-2/'); await ready(page);
+test('signed-out syllabus links open one modal and retain their intended milestone', async ({ page }) => {
+  await page.goto('/syllabus/week-2/'); await ready(page);
   await expect(page.getByRole('link', { name: 'Course Materials', exact: true })).toBeHidden();
   await page.getByRole('link', { name: 'Milestone #2: Proposal and Task Map' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue with Columbia Google' })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/assignments/#milestone-2');
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/week-2/#milestone-2');
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await expect(page.getByRole('dialog')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/lecture-notes/#week-2');
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/week-2/#lecture-notes');
 });
 test('unlisted account is blocked on every materials page', async ({ page }) => {
   await enter(page, 'unlisted');
   await expect(page.locator('#materials-root')).toContainText('You are not on the class list');
   await expect(page.locator('#materials-root')).toContainText('oh@gsb.columbia.edu');
   await expect(page.locator('.assignment-section')).toHaveCount(0);
-  for (const url of ['/materials/lecture-notes/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('You are not on the class list'); }
+  for (const url of ['/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('You are not on the class list'); }
 });
 test('student sees materials, linked milestones, empty weeks, and no admin controls', async ({ page }) => {
-  await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(6);
+  await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(1);
   await expect(page.locator('[data-role]')).toHaveText('Student');
   await expect(page.getByRole('link', { name: 'Course Materials', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
   await page.goto('/materials/files/'); await ready(page); await expect(page.locator('#materials-root')).toContainText('for instructors');
-  await page.goto('/schedule/week-3/'); await ready(page);
+  await page.goto('/syllabus/week-3/'); await ready(page);
   await expect(page.locator('[data-slides-status]')).toHaveText('Posted after class.');
   await page.getByRole('link', { name: 'Milestone #3: Working Setup' }).click(); await ready(page);
-  await expect(page).toHaveURL(/assignments\/#milestone-3$/);
+  await expect(page).toHaveURL(/week-3\/#milestone-3$/);
   await expect(page.locator('#outline')).toContainText('Demo milestone 3');
-  await page.goto('/schedule/week-6/'); await ready(page);
+  await page.goto('/syllabus/week-6/'); await ready(page);
   await page.getByRole('link', { name: 'Final Prototype', exact: true }).click(); await ready(page); await expect(page).toHaveURL(/#final-prototype$/);
-  await page.goto('/schedule/week-2/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);
-  await expect(page).toHaveURL(/lecture-notes\/#week-2$/); await expect(page.locator('#week-2')).toContainText('Posted after class.');
+  await page.goto('/syllabus/week-2/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);
+  await expect(page).toHaveURL(/week-2\/#lecture-notes$/); await expect(page.locator('#lecture-notes')).toContainText('Posted after class.');
 });
 test('instructor previews roster, replaces it, uploads a PDF, edits text, and manages access', async ({ page }) => {
   await enter(page, 'instructor', '/materials/roster/');
@@ -73,19 +73,19 @@ test('instructor previews roster, replaces it, uploads a PDF, edits text, and ma
   await page.locator('#access-lists > summary').click();
   await page.getByLabel('Columbia email', { exact: true }).fill('newta@gsb.columbia.edu'); await page.getByLabel('Access role').selectOption('instructor');
   await page.getByRole('button', { name: 'Save access', exact: true }).click(); await expect(page.locator('#access-lists')).toContainText('newta@gsb.columbia.edu');
-  await page.goto('/materials/assignments/'); await ready(page); await expect(page.locator('.assignment-section').first()).toContainText('Edited demo assignment');
-  await page.goto('/materials/lecture-notes/'); await ready(page); await expect(page.locator('#week-1')).toContainText('Shared local lecture');
+  await page.goto('/materials/week-1/'); await ready(page); await expect(page.locator('.assignment-section').first()).toContainText('Edited demo assignment');
+  await page.goto('/materials/week-1/'); await ready(page); await expect(page.locator('#lecture-notes')).toContainText('Shared local lecture');
   const downloadPromise = page.waitForEvent('download'); await page.getByRole('link', { name: 'Shared local lecture', exact: true }).click();
   const download = await downloadPromise; expect(download.suggestedFilename()).toBe('Shared local lecture.pdf');
 });
-test('auditor sees only flagged assignments and PDFs, including after a visibility change', async ({ page }) => {
+test('auditor sees no milestones and only shared PDFs, including after a visibility change', async ({ page }) => {
   await enter(page, 'instructor', '/materials/files/'); await upload(page, 'Shared PDF', true); await upload(page, 'Private PDF', false);
-  await switchRole(page, 'auditor'); await page.goto('/materials/assignments/'); await ready(page);
-  await expect(page.locator('.assignment-section')).toHaveCount(1); await expect(page.locator('.assignment-section')).toContainText('Demo milestone 1');
-  await page.goto('/materials/lecture-notes/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: 'Private PDF', exact: true })).toHaveCount(0);
+  await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page);
+  await expect(page.locator('.assignment-section')).toHaveCount(0);
+  await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: 'Private PDF', exact: true })).toHaveCount(0);
   await switchRole(page, 'instructor'); await page.goto('/materials/files/'); await ready(page);
   await page.getByRole('button', { name: 'Hide Shared PDF from auditors', exact: true }).click(); await expect(page.locator('[data-admin-status]')).toHaveText('File visibility updated.');
-  await switchRole(page, 'auditor'); await page.goto('/materials/lecture-notes/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
+  await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
 test('CBS account cannot self-claim and can use an instructor-approved link', async ({page}) => {
   await enter(page,'gsb'); await expect(page.locator('#materials-root')).toContainText('contact the instructor');
@@ -95,10 +95,10 @@ test('CBS account cannot self-claim and can use an instructor-approved link', as
   await page.locator('#student-accounts > summary').click();
   await page.getByLabel('CBS student email').fill('demo@gsb.columbia.edu'); await page.getByLabel('Roster UNI',{exact:true}).fill('ab1234'); await page.getByRole('button',{name:'Link student account',exact:true}).click();
   await expect(page.locator('#student-accounts')).toContainText('demo@gsb.columbia.edu');
-  await switchRole(page,'gsb'); await page.goto('/materials/attendance/'); await ready(page); await expect(page.locator('[data-role]')).toHaveText('Student'); await expect(page.locator('#my-grades')).toContainText('8');
+  await switchRole(page,'gsb'); await page.goto('/materials/grades/'); await ready(page); await expect(page.locator('[data-role]')).toHaveText('Student'); await expect(page.locator('#my-grades')).toContainText('8');
 });
 test('sign-out immediately removes rendered private material', async ({ page }) => {
-  await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(6);
+  await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(1);
   await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.locator('.assignment-section')).toHaveCount(0); await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.');
 });
 test('fakeauth query and stored demo session are inert on the live hostname', async ({ page }) => {
@@ -118,7 +118,7 @@ test('desktop and phone pages fit, keep public navigation, and render without er
   mkdirSync('evidence/class-tools', { recursive: true });
   for (const width of [1440, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 950 });
-    for (const path of ['/', '/library/', '/schedule/week-1/', '/materials/assignments/', '/materials/lecture-notes/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) {
+    for (const path of ['/', '/library/', '/syllabus/week-1/', '/materials/week-1/', '/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) {
       await enter(page, 'instructor', path);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} at ${width}`).toBe(true);
       await expect(page.locator('h1')).toHaveCount(1);
@@ -147,15 +147,15 @@ test('invalid roster leaves the class list intact and instructor can delete uplo
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Delete Delete this PDF', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('PDF deleted.');
-  await page.goto('/materials/lecture-notes/'); await ready(page);
+  await page.goto('/materials/week-1/'); await ready(page);
   await expect(page.getByRole('link', { name: 'Delete this PDF', exact: true })).toHaveCount(0);
 });
 test('login from a milestone returns to that exact assignment after demo sign-in', async ({ page }) => {
-  await enter(page, 'student', '/schedule/week-4/');
+  await enter(page, 'student', '/syllabus/week-4/');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('link', { name: 'Milestone #4: Personal Benchmark' }).click();
   await page.getByLabel('Preview role').selectOption('student');
   await page.getByRole('button', { name: 'Use demo role' }).click();
-  await ready(page); await expect(page).toHaveURL(/assignments\/#milestone-4$/);
+  await ready(page); await expect(page).toHaveURL(/week-4\/#milestone-4$/);
   await expect(page.locator('#milestone-4')).toBeVisible();
 });

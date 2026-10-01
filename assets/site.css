@@ -640,7 +640,7 @@ caption { margin-bottom:6px; }
 .gsi-slot { min-height:44px; margin:4px 0 6px; }
 .gsi-fallback { background:none; border:0; padding:4px 0; color:#6b737c; font:12px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; text-decoration:underline; text-decoration-color:#cfd6de; cursor:pointer; }
 
-/* cross-link between a week's Schedule and Library pages */
+/* cross-link between a week's Syllabus and Library pages */
 .h1-row { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
 .h1-row h1 { margin:0; }
 .xlink { font:500 13px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#2F6FB8; text-decoration:none; border:1px solid #9dbfe6; background:#f3f8fd; border-radius:999px; padding:7px 12px; white-space:nowrap; }
@@ -810,4 +810,30 @@ body.class-tools .content { max-width:1180px; }
 #grade-legend ul { list-style:none; padding:0; font-size:12px; }
 @media (max-width:819px) {
   .upcoming-columns, .upcoming-columns:has(> :nth-child(2):last-child) { grid-template-columns:minmax(0,1fr); gap:22px; }
+}
+
+/* Week pages use the existing course type and spacing, with one vertical reading order. */
+.class-tools .week-block { display:block; border-top:1px solid #ececec; padding:20px 0; }
+.class-tools .week-block:first-child { border-top:0; padding-top:0; }
+.week-block h2 { margin:0 0 12px; }
+.week-block p { margin:8px 0; }
+.week-block .announcement + .announcement { margin-top:16px; }
+.week-files { list-style:none; padding:0; margin:0; }
+.week-files li { margin:8px 0; overflow-wrap:anywhere; }
+.submission-box { border:1px solid #ececec; padding:16px; margin-top:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.submission-box label, .submission-status { flex-basis:100%; }
+.submission-box input { min-width:0; max-width:100%; flex:1 1 220px; }
+.submission-status, .assignment-copy, .grade-comment { overflow-wrap:anywhere; white-space:pre-wrap; }
+.submission-mode { font-weight:600; }
+.text-action { background:none; border:0; padding:0; margin-left:16px; font:inherit; text-decoration:underline; color:var(--link, #1a1a1a); cursor:pointer; }
+/* A grade is one compact row; comments take the full line below it. */
+.student-grade { border-top:1px solid #ececec; padding:12px 0; display:grid; grid-template-columns:minmax(0,1fr) 120px 64px; gap:4px 18px; }
+.class-tools #materials-root .student-grade h2, .class-tools #materials-root .student-grade p { margin:0; font-size:13px; }
+.student-grade .grade-status { grid-column:2; grid-row:1; }
+.student-grade .grade-score { grid-column:3; grid-row:1; text-align:right; }
+.student-grade .grade-comment { grid-column:1 / -1; }
+@media(max-width:819px) {
+  .student-grade { grid-template-columns:minmax(0,1fr) auto; }
+  .student-grade .grade-status { grid-column:1; grid-row:2; }
+  .student-grade .grade-score { grid-column:2; }
 }
