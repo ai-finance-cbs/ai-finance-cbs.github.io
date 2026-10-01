@@ -6,7 +6,7 @@ const el = (tag, text, attrs = {}) => {
   const n = document.createElement(tag); if (text != null) n.textContent = text;
   for (const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); return n;
 };
-export function renderGradePanel({panel, data, item, student, backend, save, close, readOnly}) {
+export function renderGradePanel({panel, data, item, student, backend, save, close, readOnly, role}) {
   panel.replaceChildren(); panel.hidden = false;
   const title = el('h2', `${gradeCode(item)} · ${student.name || student.uni}`, {id:'grade-panel-title'});
   const status = el('p', '', {role:'status','data-panel-status':''});
@@ -48,6 +48,10 @@ export function renderGradePanel({panel, data, item, student, backend, save, clo
   }
   const grade=data.grades.find(g=>g.uni===student.uni && g.item_id===item.id);
   const form=el('form',null,{class:'admin-form'});form.noValidate=true;
+  const visibility = item.released ? 'Visible to students now.' : role === 'grader'
+    ? `Hidden from students until the instructor releases ${gradeCode(item)}.`
+    : `Hidden from students. Visible after you release ${gradeCode(item)}.`;
+  form.append(el('p',visibility,{class:'grade-visibility-note','data-panel-visibility':item.released?'visible':'hidden'}));
   const field=(text,type,value)=>{const label=el('label',text,{class:'tool-label'}), n=el(type==='textarea'?'textarea':'input',null,{'aria-label':text});if(type!=='textarea')n.type=type;n.value=value ?? '';label.append(n);form.append(label);return n;};
   const score=field('Score','number',grade?.score);score.min=0;score.max=item.max_points;score.step='.01';
   const comment=field('Comment','textarea',grade?.comment);comment.maxLength=10000;

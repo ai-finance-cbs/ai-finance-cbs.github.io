@@ -485,7 +485,7 @@ export function renderClassPage(ctx) {
       const note = item.optional ? ' · Optional tasks are capped at 15 points total.' : item.quiz_week ? ' · A quiz score marks attendance present.' : '';
       legendList.append(el('li', `${gradeCode(item)} → ${item.title} → ${item.max_points} points${note}`));
     }
-    legend.append(el('p', 'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across; F2 opens the submission panel. Blank scores are ungraded. S = Submitted; L = Late; • = a score differs from the group grade.'), legendList);
+    legend.append(el('p', 'Hidden: scores and comments stay private. Visible: students can see their scores and comments.', { 'data-visibility-legend':'' }), el('p', 'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across; F2 opens the submission panel. Blank scores are ungraded. S = Submitted; L = Late; • = a score differs from the group grade.'), legendList);
     root.append(legend);
     const filter = options(
       [['all', 'All grading items'], ...data.items.map((i) => [i.id, gradeCode(i)])],
@@ -501,7 +501,7 @@ export function renderClassPage(ctx) {
     root.append(workspace);
     const openPanel = (item, student) => {
       selectedGradeCell = { item: item.id, uni: student.uni }; workspace.classList.add('panel-open');
-      renderGradePanel({ panel, data, item, student, backend, readOnly: !canWrite(access),
+      renderGradePanel({ panel, data, item, student, backend, role: access.role, readOnly: !canWrite(access),
         save: async (task, message) => { if (changes.size) throw new Error('Save grid changes before grading in the panel.'); if (!await run(task, message)) throw new Error(status.textContent); },
         close: () => { selectedGradeCell = null; panel.hidden = true; workspace.classList.remove('panel-open'); },
       });
@@ -509,6 +509,14 @@ export function renderClassPage(ctx) {
     function draw() {
       changes.clear();
       content.replaceChildren();
+      const releasePrompt = el('div', null, { class:'grade-release-confirm', role:'group', 'aria-label':'Release confirmation' });
+      releasePrompt.hidden = true;
+      let releaseControl;
+      const dismissRelease = () => {
+        releasePrompt.hidden = true; releasePrompt.replaceChildren();
+        if (releaseControl) { releaseControl.disabled = !canWrite(access); releaseControl.focus({ preventScroll:true }); }
+        releaseControl = null;
+      };
       const items =
           filter.value === 'all'
             ? data.items
@@ -517,31 +525,53 @@ export function renderClassPage(ctx) {
       const { t, body, head } = table([
         'Student',
         ...items.map(gradeCode),
-        'Total',
+        'Total (visible)',
       ]);
       t.classList.add('gradebook-grid');
-      head.lastElementChild.title = 'Optional points are capped at 15; the course total is capped at 100. Missing scores are not zeros.';
+      head.lastElementChild.append(el('span', 'incl. hidden', { class:'grade-total-hidden' }));
+      head.lastElementChild.title = 'First line: the student’s visible total. Second line: all recorded scores, including hidden items. Optional points are capped at 15; totals are capped at 100. Missing scores are not zeros.';
       items.forEach((item, index) => {
         const cell = head.children[index + 1];
         cell.title = item.title;
         cell.append(el('span', `/${item.max_points}`, { class: 'grade-max' }));
-      });
-      if (admin)
-        items.forEach((item, index) => {
-          const label = el('label', null, { class: 'release-label', title: `Released: ${item.title}` }),
-            check = input('checkbox', `Release ${item.title}`);
-          check.checked = item.released;
-          check.addEventListener('change', () => {
+        const code = gradeCode(item), state = item.released ? 'Visible' : 'Hidden';
+        const control = el(admin ? 'button' : 'span', state, {
+          class:'grade-visibility', 'data-release-state':state.toLowerCase(), 'data-release-item':item.id,
+          'aria-label':`${code} visibility: ${state}`,
+        });
+        if (admin) {
+          control.type = 'button'; control.disabled = !canWrite(access);
+          control.setAttribute('aria-pressed', String(item.released));
+          control.addEventListener('click', async () => {
+            if (saving) return;
             if (changes.size) {
               status.textContent = 'Save scores before changing release status.';
-              check.checked = !check.checked;
               return;
             }
-            run(() => backend.releaseItem(item.id, check.checked), 'Release status saved.');
+            dismissRelease();
+            control.disabled = true;
+            if (item.released) {
+              await run(() => backend.releaseItem(item.id, false), 'Release status saved.');
+              control.disabled = !canWrite(access);
+              root.querySelector(`[data-release-item="${item.id}"]`)?.focus({ preventScroll:true });
+              return;
+            }
+            releaseControl = control;
+            const confirm = button('Show scores', async () => {
+              // Scores can change while confirmation is open. Never discard those edits on release.
+              if (changes.size) { status.textContent = 'Save scores before changing release status.'; dismissRelease(); return; }
+              releasePrompt.querySelectorAll('button').forEach(b => b.disabled = true);
+              await run(() => backend.releaseItem(item.id, true), 'Release status saved.');
+              dismissRelease();
+              root.querySelector(`[data-release-item="${item.id}"]`)?.focus({ preventScroll:true });
+            });
+            const cancel = button('Cancel', dismissRelease);
+            releasePrompt.replaceChildren(el('span', `Show ${code} scores and comments to students?`), confirm, cancel);
+            releasePrompt.hidden = false; cancel.focus({ preventScroll:true });
           });
-          label.prepend(check);
-          head.children[index + 1].append(label);
-        });
+        }
+        cell.append(control);
+      });
       const cells = [];
       data.roster.forEach((r, rowIndex) => {
         const tr = studentRow(r);
@@ -579,6 +609,7 @@ export function renderClassPage(ctx) {
             }
           });
           td.dataset.gradeCell = `${r.uni}:${item.id}`;
+          td.dataset.releaseState = item.released ? 'visible' : 'hidden';
           td.addEventListener('click', () => openPanel(item, r));
           n.addEventListener('keydown', e => { if (e.key === 'F2') { e.preventDefault(); openPanel(item, r); panel.querySelector('input')?.focus(); } });
           const submission = gradingSubmission(data, item, r.uni);
@@ -589,13 +620,12 @@ export function renderClassPage(ctx) {
           cellRow.push(n);
         }
         cells.push(cellRow);
-        const total = gradeTotal(
-          data.items,
-          data.grades.filter((g) => g.uni === r.uni),
-        );
-        tr.append(
-          el('td', total.total, { title: `${total.missing} ungraded items; optional points capped at ${total.bonus}.`, class: 'gradebook-total' }),
-        );
+        const grades = data.grades.filter(g => g.uni === r.uni);
+        const visible = gradeTotal(data.items.filter(i => i.released), grades), total = gradeTotal(data.items, grades);
+        const totals = el('td', null, { title: `${total.missing} ungraded items; optional points capped at ${total.bonus}.`, class:'gradebook-total' });
+        totals.append(el('span', visible.total, { 'data-visible-total':'', 'aria-label':`Visible total: ${visible.total}` }),
+          el('span', total.total, { class:'grade-total-hidden', 'data-all-total':'', 'aria-label':`Total including hidden: ${total.total}` }));
+        tr.append(totals);
         body.append(tr);
       });
       const toolbar = studentFilter(t, 'gradebook');
@@ -639,7 +669,7 @@ export function renderClassPage(ctx) {
             ]);
         }),
       );
-      content.append(wrapTable(t));
+      content.append(releasePrompt, wrapTable(t));
       const form = el('form', null, { class: 'admin-form' }),
         file = input('file', 'Grade CSV');
       file.accept = '.csv';
@@ -690,7 +720,7 @@ export function renderClassPage(ctx) {
       csv.append(form);
       content.append(csv);
       if (!canWrite(access)) {
-        content.querySelectorAll('input[data-grade], .release-label input, #grade-import input, #grade-import button').forEach(n => n.disabled = true);
+        content.querySelectorAll('input[data-grade], #grade-import input, #grade-import button').forEach(n => n.disabled = true);
         save.disabled = true;
       }
     }

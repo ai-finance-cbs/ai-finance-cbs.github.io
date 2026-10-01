@@ -1,7 +1,7 @@
 # Course site: local build and review
 
 The existing Jekyll site uses Supabase and Google sign-in. Keep the current public connection settings.
-Migrations 001–011 are live. Main is now `4536849`; Phase D 012 and Phase E 013 remain local and unapplied.
+Migrations 001–011 are live. Main is now `9d127bb`; Phase D 012 and Phase E 013 remain local and unapplied.
 Do not publish these browser changes before the matching migration and file function pass review.
 
 ## Preview locally (five minutes)
@@ -421,3 +421,28 @@ Screenshots and logs are in `evidence/phase-e/`.
 
 API references: [Supabase standard uploads](https://supabase.com/docs/guides/storage/uploads/standard-uploads)
 and [MDN upload progress events](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequestUpload).
+
+
+## Phase F: grade visibility for staff
+
+Gradebook headers show **Hidden** or **Visible** for every item.
+Instructors can select a state control. Making an item visible requires inline confirmation above the grid.
+The prompt names the item and covers both scores and comments. Cancel preserves the previous state.
+Hiding an item takes effect after the save succeeds. Failed saves preserve the displayed state and allow retry.
+Unsaved grid scores block visibility changes, including edits made while confirmation is open.
+Grader headers show the same state as read-only text. Archived instructor controls remain disabled.
+The existing release RPC and permission rules are unchanged. No new migration is needed.
+
+Hidden score cells use muted gray text and a faint gray background, without italics.
+The Legend explains that Hidden keeps scores and comments private; Visible shows each student their own results.
+The submission panel states the visibility above Score and Comment.
+For hidden items, Graders see that the Instructor must release the item.
+
+The Total column shows the student's **visible total** first, then the total **incl. hidden** in muted text.
+Each total independently applies the existing 15-point optional cap and 100-point course cap.
+An item filter does not change either course total. Missing grades remain ungraded.
+CSV exports retain their existing complete gradebook format and recorded-score totals.
+
+Phase F continues on `phase-d-prep` after merging main `9d127bb`.
+The merge retains both main's week colors/readings and the Phase D/E instructor workspace styles.
+Screenshots and verification logs belong in `evidence/phase-f/`.

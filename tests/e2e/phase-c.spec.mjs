@@ -41,7 +41,7 @@ test('group panel grades snapshot members, retains on-time work, flags overrides
   await expect(panel).toContainText('Second Student');await expect(panel.getByLabel('Comment',{exact:true})).toHaveValue('Group feedback');
 });
 test('grader panel accepts a score without submission and has no release controls',async({page})=>{
-  await seed(page);await enter(page,'grader','gradebook');await expect(page.locator('.release-label')).toHaveCount(0);
+  await seed(page);await enter(page,'grader','gradebook');await expect(page.locator('button.grade-visibility')).toHaveCount(0);
   await page.locator('[data-grade-cell="ab1234:4"]').click();const panel=page.locator('.grade-panel');await expect(panel).toContainText('Not submitted');
   await panel.getByLabel('Score',{exact:true}).fill('0');await panel.getByLabel('Comment',{exact:true}).fill('No work received');await panel.getByRole('button',{name:'Save student grade'}).click();
   await expect(page.getByLabel('ab1234 Milestone #4',{exact:true})).toHaveValue('0');
@@ -93,7 +93,7 @@ test('term controls export before close and leave purging manual; staff can filt
   await page.getByLabel('Gradebook item',{exact:true}).selectOption('1');
   await expect(page.getByRole('button',{name:'Save scores',exact:true})).toBeDisabled();
   await expect(page.getByLabel('ab1234 Milestone #1',{exact:true})).toBeDisabled();
-  await expect(page.getByLabel('Release Milestone #1',{exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'M1 visibility: Visible',exact:true})).toBeDisabled();
   await page.goto('/materials/attendance/');await ready(page);await expect(page.getByRole('button',{name:/Mark all present/})).toHaveCount(0);
 });
 for(const width of [1440,1280])test(`Phase C screenshots and gradebook fits 17 columns at ${width}px`,async({page})=>{

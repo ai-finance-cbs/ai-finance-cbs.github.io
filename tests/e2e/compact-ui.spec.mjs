@@ -99,10 +99,11 @@ test('gradebook keyboard entry and filtering retain unsaved scores and show reco
   await page.getByRole('searchbox').fill('ab1234');
   await expect(first).toHaveValue('7');
   await expect(second).toHaveValue('4');
-  await expect(page.locator('tr[data-student]:visible td').last()).toHaveText('11');
+  await expect(page.locator('tr[data-student]:visible [data-visible-total]')).toHaveText('7');
+  await expect(page.locator('tr[data-student]:visible [data-all-total]')).toHaveText('11');
   await page.getByLabel('Gradebook item', { exact: true }).selectOption('7');
   await expect(page.locator('input[data-grade]:visible')).toHaveCount(1);
-  await expect(page.getByLabel('Release In-class quiz 1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true })).toBeVisible();
 });
 
 test('preview pill stays inside the header beside the role and keeps long names contained', async ({ page }) => {

@@ -128,8 +128,9 @@ test('instructor can import attendance, create and lock groups, and release scor
   await expect(page.getByRole('button', { name: 'Open Final project', exact: true })).toBeVisible();
   await page.goto('/materials/gradebook/');
   await ready(page);
-  await page.getByLabel('Release In-class quiz 1', { exact: true }).check();
-  await expect(page.getByLabel('Release In-class quiz 1', { exact: true })).toBeChecked();
+  await page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true }).click();
+  await page.getByRole('group', { name: 'Release confirmation' }).getByRole('button', { name: 'Show scores', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Q1 visibility: Visible', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const dl = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export gradebook CSV', exact: true }).click();
   expect((await dl).suggestedFilename()).toBe('gradebook.csv');
@@ -232,7 +233,8 @@ test('students and preview see plain attendance until the matching quiz is relea
   await page.locator('[data-preview-exit]').click();
   await page.goto('/materials/gradebook/');
   await ready(page);
-  await page.getByLabel('Release In-class quiz 1', { exact: true }).check();
+  await page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true }).click();
+  await page.getByRole('group', { name: 'Release confirmation' }).getByRole('button', { name: 'Show scores', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toContainText('Release status saved');
   await enter(page, 'student', 'attendance');
   await expect(page.locator('.class-grid tbody tr').first()).toContainText('from Quiz 1');

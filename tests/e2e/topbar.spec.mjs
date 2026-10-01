@@ -17,7 +17,7 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
   test(`top bar keeps fixed title, menu, and submenu positions across pages and roles at ${width}px`, async ({ page }) => {
     test.setTimeout(120000);
     await page.setViewportSize({ width, height: 950 });
-    mkdirSync('evidence/phase-e/topbar', { recursive: true });
+    mkdirSync('evidence/phase-f/topbar', { recursive: true });
     const measurements = [];
     let baseline, submenuBottom;
     let desktopReference;
@@ -116,10 +116,10 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
             (role === 'student' && path === '/materials/week-3/') ||
             (role === 'instructor' && path === '/materials/gradebook/') ||
             (role === 'preview' && path === '/materials/attendance/')) {
-          await page.locator('.topbar').screenshot({ path: `evidence/phase-e/topbar/${role}-${width}.png` });
+          await page.locator('.topbar').screenshot({ path: `evidence/phase-f/topbar/${role}-${width}.png` });
         }
       }
     }
-    writeFileSync(`evidence/phase-e/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
+    writeFileSync(`evidence/phase-f/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
   });
 }

@@ -55,6 +55,6 @@ test('gradebook uses codes, a closed legend, and code CSV exports that can be re
   await page.getByRole('button',{name:'Import scores',exact:true}).click();
   await expect(page.getByLabel('ab1234 In-class quiz 1',{exact:true})).toHaveValue('0');
   await enter(page,'grader','gradebook');
-  await expect(page.locator('.release-label')).toHaveCount(0);
+  await expect(page.locator('button.grade-visibility')).toHaveCount(0);
   await expect(page.locator('#grade-legend')).not.toHaveAttribute('open','');
 });
