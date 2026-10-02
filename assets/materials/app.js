@@ -121,6 +121,8 @@ async function refresh() {
   document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !visible.grading);
   document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = state.access?.role !== 'student');
   document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !visible.class);
+  // Ed Discussion is for students and staff (TA included), not auditors
+  document.querySelectorAll('[data-ed-member]').forEach(n => n.hidden = !(visible.class || visible.grading));
   document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
   document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
   const badge = document.querySelector('[data-role]');

@@ -32,6 +32,7 @@
         {% for tab in student_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
         <li {% if tab == 'Groups' %}data-class-member{% else %}data-student-only{% endif %} data-zone="class" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
+        {% if site.ed_discussion_url != nil and site.ed_discussion_url != "" %}<li data-ed-member data-zone="class" hidden><a href="{{ site.ed_discussion_url }}" target="_blank" rel="noopener">Ed Discussion</a></li>{% endif %}
         <li class="member-sep" data-grading-member hidden aria-hidden="true"></li>
         {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
         {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
