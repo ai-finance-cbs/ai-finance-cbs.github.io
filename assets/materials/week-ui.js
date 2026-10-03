@@ -1,3 +1,5 @@
+import { itemName, assignmentSlug } from './assignment-core.js';
+import { dueLine } from './due-ui.js';
 import { SUBMIT_CODES, submissionWeek } from './staff-core.js';
 import { canWrite, gradeCode } from './class-core.js';
 import { courseTime, ownGroup, ownSubmission, submissionStatus, fileReleased, inClassFile } from './week-core.js';
@@ -13,11 +15,12 @@ const block = (title, id) => {
   section.append(el('h2', title));
   return section;
 };
-function submissionBlock({ data, access, path, backend, refresh }, code, compact = false) {
+export function submissionBlock({ data, access, path, backend, refresh }, code, compact = false, controlsOnly = false) {
   const item = data.submission_items.find(i => gradeCode(i) === code);
   const week = submissionWeek(code);
   const assignment = !code.startsWith('O') && data.assignments.find(a => a.id === week);
-  const section = block(compact ? `${code} · ${assignment?.title || item?.title || code}` : 'Milestone', compact ? `submit-${code}` : week === 6 ? 'final-prototype' : `milestone-${week}`);
+  const name = itemName(item || { code, title:assignment?.title || '' }, data.assignments);
+  const section = block(controlsOnly ? 'Upload' : compact ? name : 'Milestone', controlsOnly ? `assignment-upload-${code}` : compact ? `submit-${code}` : week === 6 ? 'final-prototype' : `milestone-${week}`);
   section.dataset.submitCode = code;
   section.classList.add('assignment-section');
   if (compact) {
@@ -25,26 +28,22 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
     const heading = section.querySelector('h2');
     if (week) { const link = el('a', heading.textContent, { href: `${path(`week-${week}`)}${week === 6 ? '#final-prototype' : `#milestone-${week}`}` }); heading.replaceChildren(link); }
   }
-  if (!compact) section.append(el('h3', `${code} · ${assignment?.title || item?.title || 'Milestone'}`));
-  if (item?.due_at) section.append(el('p', `Due ${courseTime(item.due_at)}`, { class: 'upcoming-meta' }));
-  else section.append(el('p', compact ? '' : 'Due time to be announced.', { class: 'upcoming-meta' }));
-  if (!compact) {
-    if (assignment) {
-      section.append(el('p', assignment.description, { class: 'assignment-copy' }));
-      for (const [label, text] of [['Deliverable', assignment.deliverable], ['Graded on', assignment.grading]]) {
-        if (text) { const p = el('p', null, { class: 'assignment-copy' }); p.append(el('strong', `${label}: `), document.createTextNode(text)); section.append(p); }
-      }
-    } else section.append(el('p', 'Instructions have not been posted.'));
+  if (!compact && !controlsOnly) {
+    const title = el('h3', null, { class:'milestone-title' });
+    title.append(el('span', name), dueLine(item?.due_at, 'span')); section.append(title);
+    section.append(el('a', 'Instructions →', { class:'assignment-instructions-link', href:path(`assignments/${assignmentSlug(code)}`) }));
   }
+  if (code.startsWith('O') && !controlsOnly) section.querySelector('h2').append(el('span', 'Optional task', { class:'optional-task-label' }));
+  if (compact) section.append(el('p', item?.due_at ? `Due ${courseTime(item.due_at)}` : '', { class:'upcoming-meta' }));
   if (!item) return section;
   const group = ownGroup(data, item, access.uni);
-  if (!compact) {
+  if (!compact && !controlsOnly) {
     const own = ownSubmission(data, item, access.uni);
     const state = item.locked || own?.locked ? ['Graded', 'graded'] : own?.late ? ['Late', 'late'] : own ? ['Submitted', 'done']
       : item.mode === 'group' && !group && access.role === 'student' ? ['Join a group', 'todo'] : ['Incomplete', 'todo'];
     section.querySelector('h3')?.append(el('span', state[0], { class: `ms-chip ms-${state[1]}`, 'data-milestone-state': state[1] }));
   }
-  section.append(el('p', item.mode === 'individual' ? 'Individual' : compact ? (group ? `Group ${group.number}` : 'Group') : `Group submission${group ? `: Group ${group.number}` : ''}`, { class: 'submission-mode' }));
+  if (compact || (item.mode === 'group' && group)) section.append(el('p', item.mode === 'individual' ? 'Individual' : group ? `Group ${group.number}` : 'Group', { class:'submission-mode' }));
   const submission = ownSubmission(data, item, access.uni);
   const status = el('p', '', { class: 'submission-status', role: 'status', 'data-submission-status': '' });
   const stateLine = el('div', null, { class:'submission-state' }); stateLine.append(status);
@@ -65,7 +64,7 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   }
   if (item.mode === 'group' && !group && access.role === 'student') {
     if (compact) status.replaceChildren(el('a', 'Join a group first', { href: path('groups') }));
-    else section.append(el('p', 'Join a group first.'), el('a', 'Go to Groups', { href: path('groups') }), status);
+    else section.append(el('a', 'Join a group', { href:path('groups') }), status);
     return section;
   }
   if (item.kind === 'none') return section;
@@ -184,10 +183,10 @@ export function renderWeek(ctx) {
     const dueReadings = document.querySelector('[data-week-due-readings]');
     if (dueReadings) due.append(dueReadings.content.cloneNode(true));
     if (access.role !== 'auditor') { due.append(el('h3', 'Milestone', { class: 'card-sub' })); due.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`)); }
-    // "8 readings · 72 min · M3": total reading time parsed from the listed lengths
+    // Total reading time comes from the listed lengths.
     const lengths = [...due.querySelectorAll('.due-reading-list [data-length]')].map(n => n.dataset.length);
     const minutes = lengths.reduce((sum, text) => sum + (Number(/(\d+)\s*hr/.exec(text)?.[1] || 0) * 60) + Number(/(\d+)\s*min/.exec(text)?.[1] || 0), 0);
-    dueSummary.textContent = [lengths.length ? `${lengths.length} readings` : '', minutes ? `${minutes} min` : '', access.role !== 'auditor' ? (week === 6 ? 'FP' : `M${week}`) : ''].filter(Boolean).join(' · ');
+    dueSummary.textContent = [lengths.length ? `${lengths.length} readings` : '', minutes ? `${minutes} min` : ''].filter(Boolean).join(' · ');
     root.append(due);
   }
   // Card 2: lecture notes and in-class materials together
@@ -222,7 +221,7 @@ export function renderWeek(ctx) {
 }
 
 export function renderSubmit(ctx) {
-  ctx.root.append(el('p', 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB. FP: HTTPS video link.', { id:'submit-format-hint', class:'submission-hint' }));
+  ctx.root.append(el('p', 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB. Final Prototype: HTTPS video link.', { id:'submit-format-hint', class:'submission-hint' }));
   for (const code of SUBMIT_CODES) {
     if (ctx.data.submission_items.some(i => gradeCode(i) === code && ['file','link'].includes(i.kind))) ctx.root.append(submissionBlock(ctx, code, true));
   }

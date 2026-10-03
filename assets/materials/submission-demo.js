@@ -1,6 +1,6 @@
 import { canWrite, gradeCode, scoreValue } from './class-core.js';
 import { checkSubmissionFile, submissionContentType, defaultSubmissionItem, safeSubmission } from './submission-core.js';
-const arrays=['roster','assignments','sessions','attendance','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads','group_grades'];
+const arrays=['assignment_pages','roster','assignments','sessions','attendance','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads','group_grades'];
 export function normalizeTerms(d) {
   d.terms ||= [{id:'spring-2027',title:'Spring 2027',status:'active'}];
   const active=d.terms.find(t=>t.status==='active')?.id || 'spring-2027';

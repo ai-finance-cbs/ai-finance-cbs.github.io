@@ -2,4 +2,8 @@
 layout: null
 permalink: /materials/assignments/
 ---
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page moved</title><link rel="canonical" href="{{ '/materials/' | relative_url }}"><meta http-equiv="refresh" content="0;url={{ '/materials/' | relative_url }}"></head><body><p><a href="{{ '/materials/' | relative_url }}">Continue to the course page</a></p><script>const base={{ site.baseurl | jsonify }}; let target={{ '/materials/' | relative_url | jsonify }}; const m=location.hash.match(/(?:milestone-|week-)([1-6])/); if(m) target=base+'/materials/week-'+m[1]+'/'; else if(location.hash==='#final-prototype') target=base+'/materials/week-6/'; location.replace(target+location.search+location.hash);</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Assignments</title></head><body><p><a href="{{ '/materials/assignments/milestone-1/' | relative_url }}">Milestone #1</a></p><script>
+const base={{ site.baseurl | jsonify }}, match=location.hash.match(/^#(?:milestone-|week-)([1-6])$/);
+const slug=location.hash==='#final-prototype'||match?.[1]==='6'?'final-prototype':match?'milestone-'+match[1]:'milestone-1';
+location.replace(base+'/materials/assignments/'+slug+'/'+location.search+location.hash);
+</script></body></html>

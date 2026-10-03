@@ -1,4 +1,12 @@
-{% if page.preparation_week %}
+{% if page.assignment_code %}
+<nav class="subnav{{ include.where }} assignment-nav" aria-label="Assignments sections" data-assignments-member hidden><ul>
+{% for number in (1..5) %}{% capture code %}M{{ number }}{% endcapture %}{% capture u %}/materials/assignments/milestone-{{ number }}/{% endcapture %}
+<li data-assignment-nav="{{ code }}" hidden><a href="{{ u | relative_url }}"{% if page.assignment_code == code %} aria-current="page"{% endif %}>Milestone #{{ number }}</a></li>
+{% endfor %}
+<li data-assignment-nav="FP" hidden><a href="{{ '/materials/assignments/final-prototype/' | relative_url }}"{% if page.assignment_code == 'FP' %} aria-current="page"{% endif %}>Final Prototype</a></li>
+<li data-assignment-nav="optional" hidden><a href="{{ '/materials/assignments/optional-tasks/' | relative_url }}"{% if page.assignment_code == 'optional' %} aria-current="page"{% endif %}>Optional Tasks</a></li>
+</ul></nav>
+{% elsif page.preparation_week %}
 <nav class="subnav{{ include.where }} preparation-nav" aria-label="Preparation weeks" data-materials-admin hidden><ul>
 {% for s in site.data.library %}{% if s.week < 1 or s.week > 6 %}{% continue %}{% endif %}
 {% capture u %}/materials/preparation/week-{{ s.week }}/{% endcapture %}

@@ -46,15 +46,15 @@ test('all old URLs redirect, retaining assignment anchors, notes, and query para
     await page.goto(`/schedule/${slug}`); await ready(page); await expect(page).toHaveURL(new RegExp(`/syllabus/${slug}$`));
   }
   await page.goto('/materials/assignments/?fakeauth=student#milestone-3'); await ready(page);
-  await expect(page).toHaveURL(/materials\/week-3\/#milestone-3$/);
+  await expect(page).toHaveURL(/materials\/assignments\/milestone-3\/#milestone-3$/);
   await page.goto('/materials/lecture-notes/#week-2'); await ready(page); await expect(page).toHaveURL(/materials\/week-2\/#lecture-notes$/);
   await page.goto('/materials/upcoming/'); await ready(page); await expect(page).toHaveURL(/materials\/week-1\/$/);
 });
 
 test('no-group message, early grade lock, empty notes, and Auditor denial match the page contract', async ({page}) => {
   await seed(page,false); await enter(page,'student');
-  await expect(page.locator('#milestone-3')).toContainText('Join a group first.');
-  await expect(page.getByRole('link',{name:'Go to Groups'})).toHaveAttribute('href','/materials/groups/');
+  await expect(page.locator('#milestone-3')).toContainText('Join a group');
+  await expect(page.getByRole('link',{name:'Join a group',exact:true})).toHaveAttribute('href','/materials/groups/');
   await expect(page.getByLabel('Submission file')).toHaveCount(0);
   await enter(page,'student','week-1');
   await expect(page.locator('[data-submission-locked]')).toContainText('Graded, locked.');
@@ -182,7 +182,7 @@ for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture r
 
 test('individual milestones upload without a group and keep the saved filename on reload', async ({page}) => {
   await enter(page,'student','week-4');
-  await expect(page.locator('.submission-mode')).toHaveText('Individual');
+  await expect(page.locator('.submission-mode')).toHaveCount(0);
   await page.getByLabel('Submission file').setInputFiles(pdf('personal-benchmark.pdf'));
   await page.getByRole('button',{name:'Submit',exact:true}).click();
   await expect(page.locator('[data-submission-status]')).toContainText('Submitted · personal-benchmark.pdf');
@@ -192,7 +192,7 @@ test('individual milestones upload without a group and keep the saved filename o
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
   const publicMenu=['Home','Syllabus','Library','Staff'];
-  for(const [role,extra] of Object.entries({student:['Course Materials','Attendance','Grades','Groups','Submit'],auditor:['Course Materials'],grader:['Course Materials','Gradebook','Attendance'],instructor:['Course Materials','Groups','Gradebook','Attendance','Roster','Settings','Preparation','Speakers']})) {
+  for(const [role,extra] of Object.entries({student:['Course Materials','Assignments','Attendance','Grades','Groups','Submit'],auditor:['Course Materials','Assignments'],grader:['Course Materials','Assignments','Gradebook','Attendance'],instructor:['Course Materials','Assignments','Groups','Gradebook','Attendance','Roster','Settings','Preparation','Speakers']})) {
     await enter(page,role);
     await expect(page.locator('.topnav a:visible')).toHaveText([...publicMenu,...extra]);
     await expect(page.locator('.topnav a[href="/materials/files/"]')).toHaveCount(0);

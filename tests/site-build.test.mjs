@@ -21,7 +21,7 @@ test('private assignment descriptions never enter generated HTML or JS', context
   }
 });
 test('material page source contains gates and no real assignment content', () => {
-  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers']) {
+  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks']) {
     const html = readFileSync(new URL(`materials/${page}/index.html`, output), 'utf8');
     assert.match(html, /Sign in to see course materials/);
     assert.doesNotMatch(html, /<section class="assignment-section"/);
@@ -36,9 +36,9 @@ test('every legacy address redirects and no active page links to Schedule or ret
     const html=readFileSync(new URL(`materials/${slug}/index.html`,output),'utf8');
     assert.match(html,/location.replace/); assert.match(html,/\/materials\//);
   }
-  for(const file of walk(output.pathname).filter(f=>f.endsWith('.html') && !/\/schedule\//.test(f) && !/\/materials\/(upcoming|assignments|lecture-notes)\//.test(f))) {
+  for(const file of walk(output.pathname).filter(f=>f.endsWith('.html') && !/\/schedule\//.test(f) && !/\/materials\/(upcoming|lecture-notes)\//.test(f))) {
     const html=readFileSync(file,'utf8');
-    assert.doesNotMatch(html, /(?:href|xlink_url)=["'][^"']*\/(?:schedule\/|materials\/(?:upcoming|assignments|lecture-notes)\/)/,file);
+    assert.doesNotMatch(html, /(?:href|xlink_url)=["'][^"']*\/(?:schedule\/|materials\/(?:upcoming|lecture-notes)\/)/,file);
   }
 });
 test('week reading templates use each week’s Library data and no retired per-week colors', () => {

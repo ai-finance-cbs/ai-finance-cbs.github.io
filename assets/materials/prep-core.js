@@ -39,16 +39,32 @@ function inline(text, depth = 0) {
   }
   return html + escape(text.slice(offset));
 }
-export function prepMarkdown(body) {
+export function prepMarkdown(body, { newTab = false } = {}) {
   const output = []; let paragraph = [], list = null;
   const flush = () => { if (paragraph.length) output.push(`<p>${inline(paragraph.join('\n'))}</p>`); paragraph = []; };
   const closeList = () => { if (list) output.push(`</${list}>`); list = null; };
-  for (const line of body.replace(/\r\n?/g, '\n').split('\n')) {
+  const lines = body.replace(/\r\n?/g, '\n').split('\n');
+  const cells = line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(s => s.trim());
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    if (line.includes('|') && lines[index + 1]?.includes('|')) {
+      const headers = cells(line), rule = cells(lines[index + 1]);
+      if (rule.length === headers.length && rule.every(s => /^:?-{3,}:?$/.test(s))) {
+        flush(); closeList(); index++;
+        output.push(`<table><thead><tr>${headers.map(s => `<th>${inline(s)}</th>`).join('')}</tr></thead><tbody>`);
+        while (lines[index + 1]?.includes('|') && lines[index + 1].trim()) {
+          const values = cells(lines[++index]);
+          output.push(`<tr>${headers.map((_,i) => `<td>${inline(values[i] || '')}</td>`).join('')}</tr>`);
+        }
+        output.push('</tbody></table>'); continue;
+      }
+    }
     const heading = /^(#{1,6})\s+(.+)$/.exec(line), item = /^\s*(?:([-+*])|\d+[.)])\s+(.+)$/.exec(line);
     if (heading) { flush(); closeList(); const n = heading[1].length; output.push(`<h${n}>${inline(heading[2])}</h${n}>`); }
     else if (item) { flush(); const type = item[1] ? 'ul' : 'ol'; if (list !== type) { closeList(); list = type; output.push(`<${list}>`); } output.push(`<li>${inline(item[2])}</li>`); }
     else if (!line.trim()) { flush(); closeList(); }
     else { closeList(); paragraph.push(line); }
   }
-  flush(); closeList(); return output.join('\n');
+  flush(); closeList(); const html = output.join('\n');
+  return newTab ? html.replaceAll('<a ', '<a target="_blank" ') : html;
 }

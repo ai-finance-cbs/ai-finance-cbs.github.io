@@ -1,0 +1,104 @@
+import {test,expect} from '@playwright/test';
+import {mkdirSync} from 'node:fs';
+const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
+const enter=async(page,role,slug='assignments/milestone-1')=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
+const pdf={name:'survey.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nSynthetic\n%%EOF')};
+test.beforeEach(async({page})=>{
+  await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
+  await page.clock.install({time:new Date('2027-01-24T10:00:00Z')});
+  await page.clock.setFixedTime(new Date('2027-01-24T10:00:00Z'));
+  await page.setViewportSize({width:1440,height:1000});mkdirSync('evidence/phase-h',{recursive:true});
+});
+async function seed(page){
+  await enter(page,'instructor');
+  await page.evaluate(async()=>{
+    const b=(await import('/assets/materials/demo.js')).createDemo();
+    await b.saveGrades([{uni:'ab1234',item_id:1,score:null}]);
+    await b.configureItem(1,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-01-27T14:00:00Z'});
+    const rows=await b.assignments();await b.saveAssignment({...rows.find(a=>a.id===1),title:'Pre-Class Survey'});
+    for(const code of ['M1','M2','M3','M4','M5','FP','O1','O2','O3'])await b.saveAssignmentPage('spring-2027',code,'# Synthetic instructions\n\n**Demo** and *example*\n\n- First step\n- Second step\n\n[Reference](https://example.test/)\n\n<script>window.assignmentXss=1</script>\n<img src=x onerror=alert(1)>\n[Unsafe](javascript:alert)');
+  });
+}
+test('week milestone uses the full name, trimmed content, instructions link, and a minute-updating deadline',async({page})=>{
+  await seed(page);await enter(page,'student','week-1');const box=page.locator('#milestone-1');
+  await expect(box.locator('h3')).toContainText('Milestone #1: Pre-Class Survey');
+  await expect(box.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs remaining');
+  await expect(box.locator('.due-line')).toHaveCSS('color','rgb(168, 90, 16)');
+  await expect(box.locator('[data-milestone-state]')).toHaveText('Incomplete');
+  await expect(box).not.toContainText(/Deliverable|Graded on|Individual|Synthetic local example/);
+  await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);
+  await expect(box.getByRole('link',{name:'Instructions →'})).toHaveAttribute('href','/materials/assignments/milestone-1/');
+  await page.screenshot({path:'evidence/phase-h/week-milestone.png',fullPage:true});
+  await page.clock.setFixedTime(new Date('2027-01-27T12:55:00Z'));await page.clock.runFor(60000);
+  await expect(box.locator('.due-line')).toContainText('1 hrs 5 min remaining');
+  await page.clock.setFixedTime(new Date('2027-01-27T12:56:00Z'));await page.clock.runFor(60000);
+  await expect(box.locator('.due-line')).toContainText('1 hrs 4 min remaining');
+  await page.clock.setFixedTime(new Date('2027-01-27T14:00:00Z'));await page.clock.runFor(60000);
+  await expect(box.locator('.due-line')).toContainText('Past due');await expect(box.locator('.due-line')).toHaveCSS('color','rgb(153, 83, 92)');
+});
+test('student instructions render safe Markdown and summary; shared uploads and full names work across tabs',async({page})=>{
+  await seed(page);await enter(page,'student');
+  await expect(page.locator('.page-heading h1')).toHaveText('Milestone #1: Pre-Class Survey');
+  const root=page.locator('#materials-root');await expect(root.locator('.due-line')).toContainText('3 days 4 hrs remaining');
+  await expect(root.locator('.assignment-mode')).toHaveText('Individual');
+  await expect(root.locator('.prep-markdown strong')).toHaveText('Demo');await expect(root.locator('.prep-markdown em')).toHaveText('example');
+  await expect(root.locator('.prep-markdown li')).toHaveText(['First step','Second step']);
+  await expect(root.getByRole('link',{name:'Reference'})).toHaveAttribute('target','_blank');
+  await expect(root.locator('.prep-markdown img,.prep-markdown script')).toHaveCount(0);expect(await page.evaluate(()=>window.assignmentXss)).toBeUndefined();
+  await expect(root.locator('.assignment-summary')).toContainText('Deliverable: Demo submission.');await expect(root.locator('.assignment-summary')).toContainText('Graded on: Demo criteria.');
+  await expect(root.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);
+  await page.screenshot({path:'evidence/phase-h/assignment-student.png',fullPage:true});
+  await page.getByLabel('Submission file').setInputFiles(pdf);await root.getByRole('button',{name:'Submit',exact:true}).click();await expect(root.locator('[data-submission-status]')).toContainText('Submitted · survey.pdf');
+  await page.getByRole('button',{name:'Delete submission'}).click();await page.getByRole('button',{name:'Delete',exact:true}).click();await expect(root.locator('[data-submission-status]')).toHaveText('Not submitted');
+  for(const slug of ['submit','grades']){
+    await enter(page,'student',slug);await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
+    await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
+    await expect(root.locator('.optional-task-label')).toHaveCount(slug==='submit'?3:4);
+    if(slug==='submit')await page.screenshot({path:'evidence/phase-h/submit-student.png',fullPage:true});
+  }
+});
+test('instructor edits inline, cancels, saves, reloads, and receives unsaved navigation and sign-out warnings',async({page})=>{
+  await seed(page);await enter(page,'instructor');
+  await page.getByRole('button',{name:'Edit instructions'}).click();const input=page.getByLabel('Milestone #1: Pre-Class Survey instructions');
+  await input.fill('# Unsaved');await page.screenshot({path:'evidence/phase-h/assignment-instructor-edit.png',fullPage:true});
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(input).toBeHidden();await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
+  await page.getByRole('button',{name:'Edit instructions'}).click();await input.fill('# Saved assignment\n\nNew **instructions**.');
+  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('[data-prep-status]')).toContainText('Saved');await expect(input).toBeHidden();
+  await page.reload();await ready(page);await expect(page.locator('.prep-markdown')).toContainText('Saved assignment');
+  await page.getByRole('button',{name:'Edit instructions'}).click();await input.fill('Discarded draft');
+  await page.locator('.topnav').getByRole('link',{name:'Groups',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Unsaved changes');
+  await page.getByRole('button',{name:'Keep editing'}).click();await expect(input).toHaveValue('Discarded draft');
+  await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Unsaved changes');await page.getByRole('button',{name:'Keep editing'}).click();
+  const dialog=page.waitForEvent('dialog');const reload=page.evaluate(()=>{location.reload();});const warning=await dialog;expect(warning.type()).toBe('beforeunload');await warning.dismiss();await reload;
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');
+  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Choose file',exact:true})).toBeDisabled();
+});
+test('grader is read-only, auditors see only shared pages, and menu visibility follows sharing',async({page})=>{
+  await seed(page);await enter(page,'grader');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
+  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Submit',exact:true})).toBeDisabled();
+  const reject=()=>page.evaluate(async()=>{try{await (await import('/assets/materials/demo.js')).createDemo().saveAssignmentPage('spring-2027','M1','Forbidden');return false;}catch{return true;}});
+  expect(await reject()).toBe(true);
+  await enter(page,'auditor');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');await expect(page.locator('.submission-box')).toHaveCount(0);expect(await reject()).toBe(true);
+  await expect(page.locator('.subnav-top.assignment-nav a:visible')).toHaveText(['Milestone #1']);
+  for(const slug of ['milestone-2','final-prototype','optional-tasks']){await enter(page,'auditor',`assignments/${slug}`);await expect(page.locator('#materials-root')).toHaveText('This assignment is not available for your role.');}
+  await enter(page,'instructor');await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();const row=(await b.assignments()).find(a=>a.id===1);await b.saveAssignment({...row,auditor_visible:false});});
+  await enter(page,'auditor');await expect(page.locator('.topnav').getByRole('link',{name:'Assignments',exact:true})).toBeHidden();await expect(page.locator('.prep-markdown')).toHaveCount(0);
+  for(const role of ['unlisted']){await enter(page,role);await expect(page.locator('.prep-markdown,textarea')).toHaveCount(0);}
+});
+test('assignment landing preserves old anchors; all optional tasks have separate safe editors',async({page})=>{
+  await seed(page);
+  for(const [anchor,slug] of [['','milestone-1'],['#milestone-3','milestone-3'],['#week-5','milestone-5'],['#milestone-6','final-prototype'],['#final-prototype','final-prototype']]){
+    await page.goto(`/materials/assignments/?fakeauth=student${anchor}`);await ready(page);expect(new URL(page.url()).pathname).toBe(`/materials/assignments/${slug}/`);expect(new URL(page.url()).hash).toBe(anchor);
+  }
+  await enter(page,'instructor','assignments/optional-tasks');await expect(page.locator('.assignment-page')).toHaveCount(3);
+  const second=page.locator('#optional-task-2');await second.getByRole('button',{name:'Edit instructions'}).click();await second.locator('textarea').fill('Second optional draft');
+  await page.locator('.topnav').getByRole('link',{name:'Groups',exact:true}).click();await expect(second.getByRole('alert')).toContainText('Unsaved changes');await second.getByRole('button',{name:'Keep editing'}).click();
+  await second.getByRole('button',{name:'Save',exact:true}).click();await page.reload();await ready(page);await expect(second.locator('.prep-markdown')).toHaveText('Second optional draft');await expect(page.locator('#optional-task-1 .prep-markdown')).toContainText('Synthetic instructions');
+});
+for(const width of [1280,390,320])test(`student assignment pages fit at ${width}px`,async({page})=>{
+  await seed(page);await page.setViewportSize({width,height:1000});
+  for(const slug of ['week-1','assignments/milestone-1','assignments/optional-tasks','submit','grades']){
+    await enter(page,'student',slug);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);
+  }
+});

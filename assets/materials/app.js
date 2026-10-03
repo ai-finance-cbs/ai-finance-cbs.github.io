@@ -1,3 +1,5 @@
+import { renderAssignments } from './assignment-ui.js';
+import { ASSIGNMENT_CODES } from './assignment-core.js';
 import { renderPreparation, renderSpeakers, leavePreparation } from './prep-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
@@ -10,7 +12,7 @@ import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, norm
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
-document.body.classList.toggle('class-tools', !!root && ['week', 'landing', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
+document.body.classList.toggle('class-tools', !!root && ['week', 'landing', 'assignments', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 document.body.classList.toggle('full-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
@@ -113,6 +115,8 @@ function showGate() {
 }
 function applyMenu(m) {
   document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !m.materials);
+  document.querySelectorAll('[data-assignments-member]').forEach(n => n.hidden = !m.assignments);
+  document.querySelectorAll('[data-assignment-nav]').forEach(n => n.hidden = !(m.assignmentCodes || []).some(code => n.dataset.assignmentNav === 'optional' ? code.startsWith('O') : code === n.dataset.assignmentNav));
   document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !m.instructor);
   document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !m.grading);
   document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = !m.student);
@@ -129,9 +133,14 @@ async function refresh() {
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
   const visible = zones(state.access);
+  let catalog = [], catalogError;
+  if (visible.materials) {
+    try { catalog = await state.backend.assignmentCatalog(state.access.term_id); } catch (error) { catalogError = error; }
+    if (version !== state.version) return;
+  }
   // Menu visibility only; every page still checks access on the server. The same flags are
   // remembered for this browser tab so the next page can show the menu before sign-in is re-checked.
-  const menu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
+  const menu = { materials: visible.materials, assignments: catalog.length > 0, assignmentCodes:catalog.map(i => i.code), instructor: visible.instructor, grading: visible.grading,
     student: state.access?.role === 'student', klass: visible.class, ed: visible.class || visible.grading,
     signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
   applyMenu(menu);
@@ -160,6 +169,14 @@ async function refresh() {
       if (version !== state.version) return;
       root.replaceChildren();
       renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
+      outlineChanged();
+    } else if (root?.dataset.page === 'assignments') {
+      if (catalogError) throw catalogError;
+      const codes = root.dataset.assignmentCode === 'optional' ? ASSIGNMENT_CODES.filter(code => code.startsWith('O')) : [root.dataset.assignmentCode];
+      const [data, pages] = await Promise.all([state.backend.classData(), state.backend.assignmentPages(state.access.term_id,codes)]);
+      if (version !== state.version) return;
+      root.replaceChildren();
+      renderAssignments({ root,data,access:state.access,backend:state.backend,refresh,path },catalog,pages);
       outlineChanged();
     } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
       const prep = root.dataset.page === 'preparation';

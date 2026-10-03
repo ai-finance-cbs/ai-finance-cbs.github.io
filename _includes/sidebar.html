@@ -28,6 +28,7 @@
         {% endfor %}
         <li class="member-sep" data-materials-member hidden aria-hidden="true"></li>
         <li data-materials-member data-zone="class" hidden><a href="{{ '/materials/' | relative_url }}"{% if page.material_week != nil or page.url == '/materials/' %} aria-current="page"{% endif %}>Course Materials</a></li>
+        <li data-assignments-member data-zone="class" hidden><a href="{{ '/materials/assignments/' | relative_url }}"{% if page.assignment_code %} aria-current="page"{% endif %}>Assignments</a></li>
         {% assign student_tabs = 'Attendance,Grades,Groups,Submit' | split: ',' %}
         {% for tab in student_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
         <li {% if tab == 'Groups' %}data-class-member{% else %}data-student-only{% endif %} data-zone="class" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
@@ -50,7 +51,8 @@
     /* Show the last known menu for this tab immediately (no flicker); app.js confirms it after re-checking sign-in. */
     window.b8403Menu=function(){try{var m=JSON.parse(sessionStorage.getItem('b8403-menu')||'null');if(!m)return;
       var s=function(sel,show){document.querySelectorAll(sel).forEach(function(n){n.hidden=!show;});};
-      s('[data-materials-member]',m.materials);s('[data-materials-admin]',m.instructor);s('[data-grading-member]',m.grading);
+      s('[data-materials-member]',m.materials);s('[data-assignments-member]',m.assignments);
+      document.querySelectorAll('[data-assignment-nav]').forEach(function(n){n.hidden=!(m.assignmentCodes||[]).some(function(c){return n.dataset.assignmentNav==='optional'?c.indexOf('O')===0:c===n.dataset.assignmentNav;});});s('[data-materials-admin]',m.instructor);s('[data-grading-member]',m.grading);
       s('[data-student-only]',m.student);s('[data-class-member]',m.klass);s('[data-ed-member]',m.ed);
       s('[data-view-picker]',m.instructor);s('[data-login]',!m.signedIn);s('[data-signout]',m.signedIn);
       var b=document.querySelector('[data-role]');if(b){b.hidden=!m.signedIn;b.textContent=m.role;}}catch(e){}};window.b8403Menu();

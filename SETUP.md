@@ -485,9 +485,8 @@ It emits New York times with a daylight-saving timezone definition, stable event
 Sessions without configured start/end times and items without deadlines are omitted.
 Optional Edge environment variable `CALENDAR_LOCATION` supplies the classroom location. Omit it when no location is set.
 The calendar uses the six public week titles; instructor preparation and assignment instructions never enter the feed.
-The public Course Goals page and signed-in Course Materials pages show Google, Apple, and direct `.ics` links.
-Week pages place these links directly below the date pill in the heading, including on phones.
-The live design B cards and per-tab `b8403-menu` cache remain in place after merging main `456a1f1`.
+Main `48243f5` removed the calendar links from Course Goals and Course Materials.
+The read-only feed remains available at its endpoint. The live design B cards and per-tab menu cache remain in place.
 The production endpoint is the configured Supabase URL plus `/functions/v1/calendar`.
 
 Student names open a shared side panel on Gradebook, staff Attendance, and Roster.
@@ -518,5 +517,40 @@ Actual course group notes remain for Claude to set after review.
 Verification uses isolated local PostgreSQL/PGlite databases and synthetic browser data.
 `ical.js` 2.2.1 is a development-only parser for independent calendar validation.
 Screenshots and logs are in `evidence/phase-g/`.
-Deployment still requires applying migration 015 and publishing the new `calendar` function; neither was done here.
+The Phase H handoff confirms that migrations 001–015 are now live. This local task did not deploy Phase G.
 Calendar format reference: [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545).
+
+
+## Phase H: Assignments pages and student item names
+
+Branch `phase-h` starts at Claude's worktree main `48243f5`.
+The week cards, Required tags, new-tab reading links, and removal of calendar links stay intact.
+
+Student week pages, Submit, and Grades use full milestone names and optional-task names.
+Staff grading screens and student-card chips retain codes.
+Week boxes keep the title, deadline, status chip, group information, Instructions link, and existing upload controls.
+Descriptions, Deliverable, and Graded on move to Assignments pages.
+Deadlines use New York time and update every minute without refreshing or resetting a chosen upload.
+
+The new class-zone Assignments tab has five milestone pages, Final Prototype, and Optional Tasks.
+The landing URL redirects to Milestone #1; old milestone/week/final-prototype hashes keep their destinations.
+Pages render protected Markdown, the short assignment summary, and the same upload component used by weeks.
+Markdown supports escaped HTML, headings, lists, bold, italic, safe links in new tabs, and simple pipe tables.
+Instructors edit inline with Save, Cancel, saved time, and the Preparation editor's unsaved-change protection.
+Multiple Optional Tasks editors retain separate drafts and warn before navigation or sign-out.
+Graders and students can read instructions. Auditors receive only shared assignment content and no upload controls.
+
+Migration `016_assignment_pages.sql` adds `assignment_pages`, keyed by term and code, with a 50,000-character limit.
+Reads require term access and the linked item's visibility. Students must have access through that term's roster.
+Milestones and Final Prototype use the existing `assignments.auditor_visible` flag.
+Optional tasks use the new `grade_items.auditor_visible` flag, false by default; staff SQL can configure it.
+Score release does not grant auditor access. The menu catalog contains metadata, never instructions or student records.
+Only `save_assignment_page` writes instructions, with instructor checks, preview protection, and an active-term lock.
+Direct browser writes and anonymous reads are revoked. Course-content edits enter the audit log.
+Archived instructions remain readable under term rules; archived writes fail.
+New terms start with empty detailed instructions; this migration does not copy or invent course prose.
+
+Migrations 001–015 are unchanged. Migration 016 has only run in isolated local test databases.
+Apply it through the normal review/release process before serving these pages against the hosted backend.
+No Edge Function deployment is required for Phase H. No remote action was performed here.
+Evidence and check logs belong in `evidence/phase-h/`.

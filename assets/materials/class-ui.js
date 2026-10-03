@@ -1,3 +1,4 @@
+import { itemName } from './assignment-core.js';
 import { installStudentProfiles } from './profile-ui.js';
 import { renderGradePanel } from './grade-panel.js';
 import { gradingSubmission, groupOverride, newYorkInput, newYorkTime } from './staff-core.js';
@@ -300,7 +301,8 @@ export function renderClassPage(ctx) {
     const list = el('div', null, { id: 'my-grades', class: 'student-grades' });
     for (const item of studentGradeRows(data)) {
       const row = el('section', null, { class: 'student-grade', 'data-grade-code': item.code });
-      row.append(el('h2', `${item.code} · ${item.title}`));
+      row.append(el('h2', itemName(item, data.assignments)));
+      if (item.optional) row.querySelector('h2').append(el('span', 'Optional task', { class:'optional-task-label' }));
       const hasScore = item.grade?.score != null;
       if (!hasScore && ['file', 'link'].includes(item.kind))
         row.append(el('p', submissionStatus(item.submission), { class: 'grade-status' }));

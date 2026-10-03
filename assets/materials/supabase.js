@@ -1,3 +1,4 @@
+import { assignmentBody } from './assignment-core.js';
 import { noteValues, speakerValues } from './prep-core.js';
 import { uploadStorageFile } from './storage-upload.js';
 import { exportTermArchive } from './term-export.js';
@@ -32,6 +33,13 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async assignmentCatalog(term) { return rpc('assignment_catalog', { p_term:term }); },
+    async assignmentPages(term, codes) {
+      return checked(await client.from('assignment_pages').select('term_id,code,body_md,updated_at').eq('term_id',term).in('code',codes));
+    },
+    async saveAssignmentPage(term, code, body) {
+      assignmentBody(code, body); return rpc('save_assignment_page', { p_term:term,p_code:code,p_body:body });
+    },
     async studentProfile(term, uni) { return rpc('student_profile', {p_term:term,p_uni:uni}); },
     async studentNote(term, uni) {
       return checked(await client.from('student_notes').select('term_id,uni,body,updated_at').eq('term_id',term).eq('uni',uni).maybeSingle()) || {term_id:term,uni,body:'',updated_at:null};

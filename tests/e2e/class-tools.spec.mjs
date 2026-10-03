@@ -24,6 +24,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
     'Library',
     'Staff',
     'Course Materials',
+    'Assignments',
     'Gradebook',
     'Attendance',
   ]);
@@ -152,6 +153,7 @@ test('view-as matches student content and denies writes even when calling the ba
     'Library',
     'Staff',
     'Course Materials',
+    'Assignments',
     'Attendance',
     'Grades',
     'Groups',
@@ -187,7 +189,7 @@ test('view-as matches student content and denies writes even when calling the ba
   await expect(page.locator('[data-role]')).toHaveText('Instructor');
   await expect(page.getByRole('button', { name: 'Create group set', exact: true })).toBeVisible();
 });
-test('auditor has only Course Materials and cannot open class pages directly', async ({ page }) => {
+test('auditor gets shared Assignments but cannot open student or staff tools', async ({ page }) => {
   await enter(page, 'auditor', 'week-1');
   await expect(page.locator('.topnav a:visible')).toHaveText([
     'Home',
@@ -195,6 +197,7 @@ test('auditor has only Course Materials and cannot open class pages directly', a
     'Library',
     'Staff',
     'Course Materials',
+    'Assignments',
   ]);
   for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings', 'submit']) {
     await page.goto(`/materials/${path}/`);

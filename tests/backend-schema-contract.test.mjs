@@ -16,6 +16,7 @@ function query(table) {
     update(v){verb='update';values=v;mutations.push({table,verb,values});return this;},
     delete(){verb='delete';return this;},
     eq(k,v){filters.push([k,v]);return this;},
+    in(k,v){filters.push([k,v,'in']);return this;},
     order(k,options={}){orders.push(`${ident(k)} ${options.ascending===false?'desc':'asc'}`);return this;},
     single(){one=true;return this;},
     maybeSingle(){one=true;return this;},
@@ -32,7 +33,7 @@ function query(table) {
       sql=`insert into ${ident(table)}(${Object.keys(values).map(ident).join(',')}) values(${Object.values(values).map(bind).join(',')})`;
       if(upsert)sql+=' on conflict(email) do update set role=excluded.role';
     }
-    if(filters.length)sql+=' where '+filters.map(([k,v])=>`${ident(k)}=${bind(v)}`).join(' and ');
+    if(filters.length)sql+=' where '+filters.map(([k,v,op])=>op==='in'?`${ident(k)} in (${v.map(bind).join(',')})`:`${ident(k)}=${bind(v)}`).join(' and ');
     if(verb==='select' && orders.length)sql+=' order by '+orders.join(',');
     if(returning)sql+=' returning '+columns;
     try {const rows=await h.rows(sql,params);return {data:one?rows[0]:rows};}catch(error){return {error};}
@@ -133,4 +134,21 @@ test('Phase G adapter keeps private notes, staff profiles and group settings ali
   assert.equal((await backend.studentNote(term,'aa1001')).body,'');
   await assert.rejects(backend.saveStudentNote(term,'aa1001','Forbidden'),/Instructor/);
   assert.equal((await backend.studentProfile(term,'aa1001')).email,'aa1001@columbia.edu');
+});
+
+
+test('assignment adapter scopes reads to the term and writes only through the guarded RPC',async()=>{
+  who='teacher';await h.as(who);const term=(await backend.getAccess()).term_id;
+  await backend.saveAssignmentPage(term,'M1','# Adapter instructions');
+  assert.ok((await backend.assignmentCatalog(term)).some(i=>i.code==='M1'));
+  assert.equal((await backend.assignmentPages(term,['M1']))[0].body_md,'# Adapter instructions');
+  who='grader';await h.as(who);await backend.getAccess();
+  assert.equal((await backend.assignmentPages(term,['M1'])).length,1);
+  await assert.rejects(backend.saveAssignmentPage(term,'M1','Forbidden'),/Instructor/);
+  who='auditor';await h.as(who);await backend.getAccess();
+  assert.equal((await backend.assignmentPages(term,['M1'])).length,0);
+  who='teacher';await h.as(who);await backend.getAccess();await backend.setPreview('aa1001');
+  assert.equal((await backend.assignmentPages(term,['M1'])).length,1);
+  await assert.rejects(backend.saveAssignmentPage(term,'M1','Forbidden'),/preview/i);
+  await backend.setPreview(null);
 });

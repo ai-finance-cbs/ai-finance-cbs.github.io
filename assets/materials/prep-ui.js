@@ -11,14 +11,19 @@ const button = (text, action) => {
   node.addEventListener('click', action); return node;
 };
 let editor = null;
-const dirty = () => editor?.node.isConnected && editor.dirty();
+const editors = new Set();
+const dirty = () => {
+  for (const entry of editors) if (!entry.node.isConnected) editors.delete(entry);
+  editor = [...editors].find(entry => entry.dirty());
+  return !!editor;
+};
 export async function leavePreparation() {
   if (!dirty()) return true;
   if (editor.pending) return false;
   const current = editor;
   return new Promise(resolve => {
     const prompt = el('div', 'Unsaved changes. Leave without saving?', { class:'prep-warning', role:'alert' });
-    const finish = value => { prompt.remove(); current.pending = false; if (value) editor = null; resolve(value); };
+    const finish = value => { prompt.remove(); current.pending = false; if (value) editors.clear(); resolve(value); };
     const stay = button('Keep editing', () => finish(false));
     prompt.append(button('Leave without saving', () => finish(true)), stay);
     current.node.prepend(prompt); current.pending = true; stay.focus();
@@ -37,38 +42,45 @@ document.addEventListener('click', async event => {
   if (await leavePreparation()) location.assign(link.href);
 }, true);
 
-export function renderPreparation({ root, note, backend }) {
+// Both editors share saving, navigation warnings, and safe Markdown rendering.
+export function renderPreparation({ root, note, backend, assignment = false, labelText = `Week ${note.week} notes`, editable = true }) {
   const panel = el('section', null, { class:'preparation-editor' });
   const form = el('form', null, { class:'admin-form prep-form' });
-  const label = el('label', `Week ${note.week} notes`, { class:'tool-label' });
+  const label = el('label', labelText, { class:'tool-label' });
   const input = el('textarea', null, { maxlength:'50000', rows:'18' }); input.value = note.body;
   label.append(input); form.append(label);
   const output = el('div', null, { class:'prep-markdown', 'data-prep-markdown':'' });
+  if (!editable) { output.innerHTML = prepMarkdown(note.body, { newTab:assignment }); root.append(output); return; }
   const status = el('span', '', { role:'status', 'data-prep-status':'' });
-  let saved = note.body, updated = note.updated_at, editing = !note.body;
+  let saved = note.body, updated = note.updated_at, editing = editable && !assignment && !note.body;
   const savedStatus = () => updated ? `Saved ${new Date(updated).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })}` : '';
   const toggle = button('Edit', () => { editing = !editing; render(); if (editing) input.focus(); });
   const save = button('Save', () => {}); save.type = 'submit';
+  const cancel = button('Cancel', () => { input.value = saved; editing = false; render(); });
   const controls = el('div', null, { class:'prep-controls' }); controls.append(toggle, save, status); form.append(controls);
+  if (assignment) controls.append(cancel);
+  controls.hidden = !editable;
   const render = () => {
     label.hidden = !editing; output.hidden = editing; toggle.textContent = editing ? 'View' : 'Edit';
+    if (assignment) { toggle.textContent = 'Edit instructions'; toggle.hidden = editing; save.hidden = !editing; cancel.hidden = !editing; }
     // prepMarkdown emits only escaped text and a small, tested list of elements.
-    output.innerHTML = prepMarkdown(input.value);
+    output.innerHTML = prepMarkdown(input.value, { newTab:assignment });
     status.textContent = input.value !== saved ? 'Unsaved changes' : savedStatus();
     save.disabled = input.value === saved;
   };
   input.addEventListener('input', () => { status.textContent = input.value !== saved ? 'Unsaved changes' : savedStatus(); save.disabled = input.value === saved; });
   form.addEventListener('submit', async event => {
     event.preventDefault(); const body = input.value;
-    save.disabled = true; input.disabled = true; toggle.disabled = true; status.textContent = 'Saving…';
+    save.disabled = true; input.disabled = true; toggle.disabled = true; cancel.disabled = true; status.textContent = 'Saving…';
     try {
       const row = await backend.saveInstructorNote(note.week, body); saved = row.body; updated = row.updated_at;
+      if (assignment) editing = false;
       render();
     } catch (error) { status.textContent = error.message; save.disabled = false; }
-    finally { input.disabled = false; toggle.disabled = false; }
+    finally { input.disabled = false; toggle.disabled = false; cancel.disabled = false; }
   });
   panel.append(form, output); root.append(panel);
-  editor = { node:panel, dirty:() => input.value !== saved, pending:false };
+  if (editable) editors.add({ node:panel, dirty:() => input.value !== saved, pending:false });
   render();
 }
 
