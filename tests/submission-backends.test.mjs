@@ -199,3 +199,26 @@ test('demo group deletion follows the current uploader while teammates retain re
   await b.deleteSubmission(original.submission.id);await b.chooseGroup('demo-set',null);
   assert.equal((await b.classData()).submissions.length,0);
 });
+
+
+test('Phase G demo keeps notes private by role and term, and restricts group additions',async()=>{
+  const d=createDemo();await d.pickRole('instructor');
+  const term=(await d.getAccess()).term_id;
+  await d.saveStudentNote(term,'ab1234','Private demo note');
+  await d.setGroupNote('demo-set','Working alone? Join a group.');await d.addGroups('demo-set',3);
+  assert.equal((await d.classData()).groups.length,5);
+  assert.equal((await d.classData()).student_notes,undefined);
+  for(const role of ['grader','student','auditor']){
+    await d.pickRole(role);await assert.rejects(d.studentNote(term,'ab1234'));
+    await assert.rejects(d.saveStudentNote(term,'ab1234','Denied'));
+    await assert.rejects(d.setGroupNote('demo-set','Denied'));await assert.rejects(d.addGroups('demo-set',1));
+    if(role==='grader')assert.equal((await d.studentProfile(term,'ab1234')).email,'ab1234@columbia.edu');
+    else await assert.rejects(d.studentProfile(term,'ab1234'));
+  }
+  await d.pickRole('instructor');await d.setPreview('ab1234');
+  await assert.rejects(d.studentNote(term,'ab1234'));await assert.rejects(d.saveStudentNote(term,'ab1234','Denied'));
+  await assert.rejects(d.addGroups('demo-set',1));await assert.rejects(d.setGroupNote('demo-set','Denied'));
+  await d.setPreview(null);await d.openTerm('Fall 2027');
+  assert.equal((await d.studentNote(term,'ab1234')).body,'Private demo note');
+  await assert.rejects(d.saveStudentNote(term,'ab1234','Denied'),/read-only/);
+});

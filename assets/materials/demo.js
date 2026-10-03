@@ -1,3 +1,4 @@
+import { extendProfiles } from './profile-demo.js';
 import { extendPrep } from './prep-demo.js';
 import { extendTerms } from './term-demo.js';
 import { announcementText } from './upcoming-core.js';
@@ -44,6 +45,7 @@ export function createDemo() {
   return {
     ...extendTerms({ readAll, saveAll, access }),
     ...extendPrep({ readAll, saveAll, access }),
+    ...extendProfiles({ readAll, saveAll, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
     demo: true,

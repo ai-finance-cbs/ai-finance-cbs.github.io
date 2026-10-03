@@ -1,2 +1,5 @@
 [functions.lecture-file]
 verify_jwt = true
+
+[functions.calendar]
+verify_jwt = false

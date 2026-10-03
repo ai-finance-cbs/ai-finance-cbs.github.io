@@ -32,6 +32,13 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async studentProfile(term, uni) { return rpc('student_profile', {p_term:term,p_uni:uni}); },
+    async studentNote(term, uni) {
+      return checked(await client.from('student_notes').select('term_id,uni,body,updated_at').eq('term_id',term).eq('uni',uni).maybeSingle()) || {term_id:term,uni,body:'',updated_at:null};
+    },
+    async saveStudentNote(term, uni, body) { return rpc('save_student_note', {p_term:term,p_uni:uni,p_body:body}); },
+    async setGroupNote(id, note) { return rpc('set_group_note', {p_set:id,p_note:note}); },
+    async addGroups(id, count) { return rpc('add_groups', {p_set:id,p_count:count}); },
     async instructorNote(week) {
       return checked(await client.from('instructor_notes').select('week,body,updated_at').eq('week', week).maybeSingle()) || { week, body:'', updated_at:null };
     },

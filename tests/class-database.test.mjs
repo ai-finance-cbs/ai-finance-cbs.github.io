@@ -320,10 +320,16 @@ const tables = [
   'term_exports',
   'instructor_notes',
   'speakers',
+  'student_notes',
 ];
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
-const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge'];
+const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge','calendar_data'];
 const fnCases = {
+  calendar_data: [],
+  student_profile: ['spring-2027','ab1234'],
+  save_student_note: ['spring-2027','ab1234','Denied'],
+  set_group_note: ['00000000-0000-0000-0000-000000000099','Denied'],
+  add_groups: ['00000000-0000-0000-0000-000000000099',2],
   delete_submission: ['00000000-0000-0000-0000-000000000099'],
   save_instructor_note: [1, 'Denied'],
   save_speaker: [null, 'Denied', '', '', null, 'Idea', '', ''],
@@ -453,7 +459,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       );
       for (const sql of [
         `delete from ${t} returning *`,
-        `update ${t} set ${['submissions','pending_uploads','terms','speakers'].includes(t) ? 'id=id' : t === 'instructor_notes' ? 'body=body' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : ['grades','group_grade_records'].includes(t) ? 'score=score' : t === 'term_exports' ? 'term_id=term_id' : 'actor_email=actor_email'} returning *`,
+        `update ${t} set ${['submissions','pending_uploads','terms','speakers'].includes(t) ? 'id=id' : ['instructor_notes','student_notes'].includes(t) ? 'body=body' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : ['grades','group_grade_records'].includes(t) ? 'score=score' : t === 'term_exports' ? 'term_id=term_id' : 'actor_email=actor_email'} returning *`,
       ]) {
         try {
           assert.equal((await rows(sql)).length, 0, `${who}: ${sql}`);
@@ -504,7 +510,7 @@ test('each role calls each public function, including guessed identities and gra
             'get_access',
             ...(['a', 'grader','auditor'].includes(who) ? ['class_data'] : []),
             ...(who === 'a' ? ['begin_submission'] : []),
-            ...(who === 'grader' ? ['save_grades', 'save_attendance'] : []),
+            ...(who === 'grader' ? ['save_grades', 'save_attendance', 'student_profile'] : []),
           ];
     for (const [fn, args] of Object.entries(fnCases)) {
       if (who === 'a' && fn === 'delete_submission') await assert.rejects(rpc(fn,...args), /Submission unavailable/);
@@ -526,7 +532,7 @@ test('preview rejects all write RPCs and direct old-table writes; auditors are e
   await rpc('set_student_preview', 'ab1234');
   for (const [fn, args] of Object.entries(fnCases))
     if (!['get_access', 'set_student_preview', 'view_as_student', 'class_data'].includes(fn))
-      await assert.rejects(rpc(fn, ...args), serviceFunctions.includes(fn) ? /permission denied/ : /read-only|Instructor/);
+      await assert.rejects(rpc(fn, ...args), serviceFunctions.includes(fn) ? /permission denied/ : /read-only|Instructor|Staff/);
   for (const table of ['allowlist', 'assignments', 'lecture_files'])
     assert.equal((await rows(`delete from ${table} returning *`)).length, 0);
   await assert.rejects(

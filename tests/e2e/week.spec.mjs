@@ -171,7 +171,7 @@ for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture r
     await page.screenshot({path:`evidence/phase-b/round-1/${name}-${width}.png`,fullPage:true});
   };
   await enter(page,'student');
-  expect(await page.locator('#materials-root > *').evaluateAll(nodes=>nodes.map(n=>n.id||n.className))).toEqual(['week-announcements','next-class','milestone-3','in-class-files','lecture-notes','required-readings']);
+  expect(await page.locator('#materials-root > *').evaluateAll(nodes=>nodes.map(n=>n.id||n.className))).toEqual(['calendar-links','week-announcements','next-class','milestone-3','in-class-files','lecture-notes','required-readings']);
   await capture('week-3-student-before');
   await page.getByLabel('Submission file').setInputFiles(pdf('working-setup.pdf'));await page.getByRole('button',{name:'Submit',exact:true}).click();
   await expect(page.locator('[data-submission-status]')).toContainText('Submitted · working-setup.pdf');await capture('week-3-student-after');

@@ -1,3 +1,4 @@
+import { calendarLinks } from './calendar.js';
 import { renderPreparation, renderSpeakers, leavePreparation } from './prep-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
@@ -10,6 +11,9 @@ import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, norm
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
+// The public course-goals page also offers calendar subscriptions.
+const calendarURL = config.url || document.querySelector('[data-calendar-url]')?.dataset.calendarUrl || '';
+document.querySelectorAll('[data-calendar-links]').forEach(n=>n.replaceWith(calendarLinks(calendarURL)));
 document.body.classList.toggle('class-tools', !!root && ['week', 'landing', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 document.body.classList.toggle('full-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 const openSettings = new Set();
@@ -137,7 +141,7 @@ async function refresh() {
   document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
-  if (root) root.replaceChildren(el('p', 'Loading course materials…'));
+  if (root) { root.onclick=null;root.replaceChildren(el('p', 'Loading course materials…')); }
   try {
     if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
       const sessions = await state.backend.sessions();
@@ -150,6 +154,7 @@ async function refresh() {
       const data = await state.backend.classData();
       if (version !== state.version) return;
       root.replaceChildren();
+      root.append(calendarLinks(calendarURL));
       renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
       outlineChanged();
     } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
@@ -181,7 +186,7 @@ async function refresh() {
         root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
         if (page === 'roster') {
           const admin = await state.backend.adminData(); if (version !== state.version) return;
-          renderRosterTable({ root, data, startPreview });
+          renderRosterTable({ root, data, startPreview, access:pageAccess, backend:state.backend, refresh });
           if (!pageAccess.read_only) renderRoster(admin.roster);
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
@@ -189,6 +194,7 @@ async function refresh() {
           const [admin, assignments, tests, announcements, overview] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts(), state.backend.announcements(), state.backend.staffOverview()]);
           if (version !== state.version) return;
           renderScheduleAdmin(data);
+          renderGroupSettings(data);
           renderFileAdmin(data.files);
           root.append(el('p', `Storage: ${(overview.storage_bytes / 1024 / 1024).toFixed(1)} MB used / 1 GB`, { 'data-storage-usage': '' }));
           renderTermAdmin(overview);
@@ -376,6 +382,22 @@ function renderScheduleAdmin(data) {
       await state.backend.configureItem(item.id,{kind:item.kind,mode:mode.value,group_set_id:mode.value==='group'?set.value:null,due_at:newYorkTime(due.value)});
     },'Submission settings saved.',true); });
     details.append(form); items.append(details);
+  }
+}
+function renderGroupSettings(data) {
+  const sectionNode=section('Group sign-up settings','group-settings');
+  if(!data.sets.length)sectionNode.append(el('p','Create a group set on Groups first.'));
+  for(const set of data.sets) {
+    const form=newForm(`group-note-${set.id}`);form.append(el('h3',set.title));
+    const note=field(form,'Sign-up note','note',set.note || '');note.maxLength=500;
+    const save=button('Save sign-up note');save.type='submit';form.append(save);const status=formStatus(form);
+    form.addEventListener('submit',e=>{e.preventDefault();runAction(save,status,()=>state.backend.setGroupNote(set.id,note.value),'Sign-up note saved.');});
+    const addForm=newForm(`group-add-${set.id}`);
+    addForm.append(el('p',`${data.groups.filter(g=>g.set_id===set.id).length} groups`));
+    const count=field(addForm,'Number of groups to add','count',1,'number');count.min=1;count.max=100;count.required=true;
+    const add=button('Add groups');add.type='submit';addForm.append(add);const addStatus=formStatus(addForm);
+    addForm.addEventListener('submit',e=>{e.preventDefault();runAction(add,addStatus,()=>state.backend.addGroups(set.id,Number(count.value)),'Groups added.',true);});
+    sectionNode.append(form,addForm);
   }
 }
 function renderTermAdmin(overview) {
