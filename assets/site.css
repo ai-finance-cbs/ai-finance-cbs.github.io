@@ -970,6 +970,52 @@ body.week-page #materials-root > .week-block > h2 { color:#4b5560; margin:0 0 12
 body.week-page #materials-root > .next-class { background:#fff; border:1px solid #ECECEC; border-radius:8px; padding:14px 22px; margin:6px 0 16px; }
 body.week-page #materials-root > .week-block .week-reading-topic:first-of-type { margin-top:8px; }
 
+/* Calendar links and staff student cards use the existing course and panel styles. */
+.content .calendar-links { font-size:12px; margin:0 0 18px; color:var(--muted); }
+.week-title { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 14px; }
+.page-title-row .week-title h1 { flex:0 1 auto; }
+.week-date { padding-top:4px; max-width:100%; }
+.week-date .date-pill { margin-left:0; top:0; }
+.week-date .calendar-links { margin:4px 0 0; font:12px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.student-profile-link { border:0; padding:0; background:none; font:inherit; text-align:left; color:inherit; cursor:pointer; }
+.student-profile-link:hover, .student-profile-link:focus-visible { text-decoration:underline; }
+.profile-attendance { padding-left:16px; font-size:12px; }
+.profile-item { border-top:1px solid #ececec; padding:8px 0; }
+.profile-item h4, .profile-item p { margin:4px 0; font-size:12px; }
+.profile-note textarea { display:block; width:100%; margin:8px 0; }
+.group-note { font-size:13px; }
+.grade-panel[data-profile-uni] { max-height:calc(100vh - 200px); overflow-y:auto; position:sticky; top:12px; }
+@media (max-width:819px) { .grade-panel[data-profile-uni] { position:static; max-height:70vh; } }
+
+/* Student ID card, design B. All mockup styles stay inside this panel. */
+.grade-panel .student-card { clear:both; border-radius:14px; border:1px solid #d9e3ef; overflow:hidden; background:#fbfdff; }
+.student-card .band { background:#2F6FB8; color:#fff; padding:9px 16px; font:500 11px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; display:flex; justify-content:space-between; gap:10px; }
+.student-card .main { display:grid; grid-template-columns:86px minmax(0,1fr); gap:14px; padding:16px; }
+.student-card .photo { width:86px; height:104px; border-radius:10px; background:#e9f0f9; display:grid; place-items:center; font:600 30px "Source Serif 4",Georgia,serif; color:#2F6FB8; }
+#materials-root .student-card .name { font:600 18px/1.2 "Source Serif 4",Georgia,serif; margin:0 0 2px; letter-spacing:0; }
+.student-card .meta { font-size:12.5px; line-height:1.45; color:#5b6470; overflow-wrap:anywhere; }
+.student-card .meta a { color:inherit; }
+.student-card .totals { margin-top:8px; }
+.student-card .totals strong { color:#1a1a1a; }
+.student-card .stamps { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; list-style:none; margin:0; padding:0 16px 12px; }
+.student-card .stamp { width:100%; max-width:38px; aspect-ratio:1; border-radius:50%; border:2px dashed #b9cbe2; display:grid; place-items:center; font-size:10.5px; line-height:1; color:#7d93b0; }
+.student-card .stamp.present { border:2px solid #2F6FB8; color:#fff; background:#2F6FB8; font-weight:600; }
+.student-card .stamp.excused { border:2px solid #e3b04b; color:#9a6200; background:#fff7e6; }
+.student-card .stamp.absent { border:2px solid #dfa9b3; color:#8C2F39; background:#f3d3d7; }
+.student-card .barcode { margin:4px 16px 14px; height:22px; background:repeating-linear-gradient(90deg,#1a1a1a 0 2px,transparent 2px 4px,#1a1a1a 4px 5px,transparent 5px 8px); opacity:.75; border-radius:2px; }
+.student-card .foot { border-top:1px dashed #d9e3ef; padding:12px 16px 14px; }
+.student-card .chip { display:inline-block; font:400 11.5px/1.45 "Helvetica Neue",Helvetica,Arial,sans-serif; border:0; border-radius:999px; padding:3px 9px; margin:0 6px 6px 0; cursor:pointer; }
+.student-card .chip.ok { background:#e8f1fb; color:#2F6FB8; }
+.student-card .chip.late { background:#fff1d6; color:#9a6200; }
+.student-card .chip.miss, .student-card .chip.hid { background:#f6f6f6; color:#8a8a8a; }
+.student-card .note { margin:10px 0 0; border:1px solid #ECECEC; border-radius:10px; padding:8px 10px; font-size:12.5px; color:#555; background:#fff; }
+.student-card .note .materials-button { margin:4px 0; }
+#materials-root .student-card .note [role=status] { margin:4px 0 0; font-size:11px; }
+.student-card .profile-record { margin-top:12px; font-size:12px; }
+.student-card .profile-record summary { cursor:pointer; }
+.student-card .profile-record h3 { margin-top:14px; }
+@media (max-width:480px) { .student-card .main { grid-template-columns:minmax(0,1fr); } }
+
 /* ---- 2026-10-02: week page cards: date pill, Due before class, Lecture notes & materials, Reading list ---- */
 .date-pill { display:inline-block; vertical-align:middle; margin-left:14px; padding:4px 12px; border-radius:999px; background:#FFF1E2; border:1px solid #F3C38E; color:#A85A10; font:500 13px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:0; position:relative; top:-3px; }
 body.week-page #materials-root .due-note { margin:0 0 14px; padding:8px 12px; background:#fff; border:1px solid #ECECEC; border-radius:6px; font-size:13px; color:#4b5560; }

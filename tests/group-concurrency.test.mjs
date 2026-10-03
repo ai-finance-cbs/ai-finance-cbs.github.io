@@ -24,7 +24,7 @@ async function rpc(client, name, args = []) {
   ).rows[0].value;
 }
 test(
-  'real PostgreSQL serializes competing joins before counting the last seat',
+  'real PostgreSQL serializes competing joins and group additions',
   { timeout: 30000 },
   async () => {
     const listener = createServer();
@@ -125,6 +125,23 @@ test(
       assert.equal(locked, true);
       await instructor.query('commit');
       assert.match((await waiting).error.message, /closed/);
+      // Two instructors add groups at once. The second request must wait, then
+      // number its groups after the first request's committed groups.
+      await authenticate(b, 1, 'oh@gsb.columbia.edu');
+      await instructor.query('begin');
+      await rpc(instructor, 'add_groups', [set, 2]);
+      const adding = rpc(b, 'add_groups', [set, 3]);
+      locked = false;
+      for (let i = 0; i < 100; i++) {
+        locked = (await owner.query("select wait_event_type='Lock' locked from pg_stat_activity where pid=$1", [pid])).rows[0].locked;
+        if (locked) break;
+        await new Promise(r => setTimeout(r, 10));
+      }
+      assert.equal(locked, true, 'Concurrent group additions must wait on the set lock.');
+      await instructor.query('commit');
+      await adding;
+      assert.deepEqual((await owner.query('select number from class_groups where set_id=$1 order by number', [set])).rows.map(r => r.number), [1,2,3,4,5,6,7]);
+      assert.equal((await owner.query('select count(*)::int n from group_memberships where set_id=$1', [set])).rows[0].n, 1);
       if (process.env.RUN_DB_LINT === '1') {
         await mkdir('evidence/class-tools', { recursive: true });
         const args = [

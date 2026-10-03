@@ -115,3 +115,22 @@ test('Phase D adapter reads and saves only global instructor fields under actual
   await assert.rejects(backend.deleteSpeaker(speaker.id),/read-only/);
   await backend.setPreview(null); await backend.deleteSpeaker(speaker.id); assert.deepEqual(await backend.speakers(),[]);
 });
+
+
+test('Phase G adapter keeps private notes, staff profiles and group settings aligned with SQL', async()=>{
+  who='teacher';await h.as('teacher');await backend.getAccess();
+  const term=(await backend.classData()).term_id;
+  assert.equal((await backend.studentNote(term,'aa1001')).body,'');
+  await backend.saveStudentNote(term,'aa1001','Private adapter note');
+  assert.equal((await backend.studentNote(term,'aa1001')).body,'Private adapter note');
+  assert.equal((await backend.studentProfile(term,'aa1001')).email,'aa1001@columbia.edu');
+  const set=(await backend.classData()).sets[0];
+  await backend.setGroupNote(set.id,'Solo students must join a group.');
+  const count=(await backend.classData()).groups.length;
+  await backend.addGroups(set.id,2);assert.equal((await backend.classData()).groups.length,count+2);
+  assert.equal((await backend.classData()).sets[0].note,'Solo students must join a group.');
+  who='grader';await h.as('grader');await backend.getAccess();
+  assert.equal((await backend.studentNote(term,'aa1001')).body,'');
+  await assert.rejects(backend.saveStudentNote(term,'aa1001','Forbidden'),/Instructor/);
+  assert.equal((await backend.studentProfile(term,'aa1001')).email,'aa1001@columbia.edu');
+});

@@ -470,3 +470,53 @@ Tests check uploader replacement/deletion, group freezes, concurrent replacement
 Markdown tests cover JavaScript links, quoted event-handler URLs, and raw image payloads inside bold and headings.
 No parser change was needed; these payloads already render as escaped text.
 Review evidence belongs in `evidence/phase-f/review-1/`.
+
+
+## Phase G: calendar, student cards, and group settings
+
+Migration `015_calendar_student_profiles_groups.sql` adds term-scoped private student notes and optional group sign-up notes.
+Migrations 001–014 remain unchanged. Phase G was built locally from main `cfbaca9` on `phase-g`.
+
+The public `calendar` Edge Function uses a service client to call the read-only `calendar_data()` projection.
+That function selects the active term and explicitly returns only session times and item titles, codes, IDs, and deadlines.
+It does not accept a requested term. Anonymous and authenticated clients cannot call the SQL projection directly.
+The Edge Function accepts GET/HEAD, caches responses for five minutes, and uses `verify_jwt = false` in `supabase/config.toml`.
+It emits New York times with a daylight-saving timezone definition, stable event UIDs, and one-day deadline reminders.
+Sessions without configured start/end times and items without deadlines are omitted.
+Optional Edge environment variable `CALENDAR_LOCATION` supplies the classroom location. Omit it when no location is set.
+The calendar uses the six public week titles; instructor preparation and assignment instructions never enter the feed.
+The public Course Goals page and signed-in Course Materials pages show Google, Apple, and direct `.ics` links.
+Week pages place these links directly below the date pill in the heading, including on phones.
+The live design B cards and per-tab `b8403-menu` cache remain in place after merging main `456a1f1`.
+The production endpoint is the configured Supabase URL plus `/functions/v1/calendar`.
+
+Student names open a shared side panel on Gradebook, staff Attendance, and Roster.
+The panel shows attendance, every submission item, scores, comments, release states, and both course totals.
+A staff-only `student_profile` RPC supplies the course email. Test accounts retain a null email.
+The card uses Simon's chosen design B inside the existing grade panel.
+Its blue course band, initials block, six attendance stamps, barcode, and work chips follow the supplied mockup.
+The 86×104 initials block uses Source Serif. Present, excused, absent, and unrecorded stamps have distinct labeled states.
+Each work chip opens that item's existing grade panel. Attendance and Roster use the same grading controls.
+The full submission and score record remains available under Submissions and scores below the private note.
+The card fits the existing panel at 1280 pixels; its identity block stacks on phones without horizontal page scrolling.
+Escape closes it; Up/Down selects adjacent visible students. Arrow keys retain normal behavior inside inputs.
+Private note drafts remain in memory when moving between cards until the page refreshes. Save persists the selected note.
+
+Only a real Instructor can select `student_notes`; other roles and preview receive no rows.
+Writes use `save_student_note`, instructor checks, an active-term lock, and `preview_guard`.
+Direct browser writes have no grants. Notes are limited to 10,000 characters and have no audit trigger.
+Archived notes remain readable to Instructors but cannot be edited. Notes never enter class snapshots or exports.
+Graders can read the student card but cannot read or save private notes.
+
+Settings contains a Group sign-up settings section for existing sets.
+Sign-up notes allow one line of up to 500 characters and appear immediately below the title on Groups.
+Add groups accepts 1–100 new empty groups per request and preserves existing groups and memberships.
+The RPC locks the set before choosing new numbers; a real PostgreSQL test covers competing additions.
+Both controls require a real Instructor and target the active term.
+Actual course group notes remain for Claude to set after review.
+
+Verification uses isolated local PostgreSQL/PGlite databases and synthetic browser data.
+`ical.js` 2.2.1 is a development-only parser for independent calendar validation.
+Screenshots and logs are in `evidence/phase-g/`.
+Deployment still requires applying migration 015 and publishing the new `calendar` function; neither was done here.
+Calendar format reference: [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545).

@@ -1,3 +1,4 @@
+import { installStudentProfiles } from './profile-ui.js';
 import { renderGradePanel } from './grade-panel.js';
 import { gradingSubmission, groupOverride, newYorkInput, newYorkTime } from './staff-core.js';
 import { courseTime, studentGradeRows, submissionStatus } from './week-core.js';
@@ -58,7 +59,7 @@ export function table(headers) {
 function studentCell(student) {
   const cell = el('th', null, { scope: 'row', title: `${student.name || student.uni} (${student.uni})` });
   const identity = el('span', null, { class: 'student-identity' });
-  identity.append(el('span', student.name || student.uni, { class: 'student-name' }), el('span', student.uni, { class: 'student-uni' }));
+  identity.append(el('button', student.name || student.uni, { type:'button', class:'student-name student-profile-link', 'data-student-profile':student.uni }), el('span', student.uni, { class: 'student-uni' }));
   cell.append(identity);
   return cell;
 }
@@ -138,11 +139,13 @@ export function renderRosterTable(ctx) {
     body.append(tr);
   }
   root.append(studentFilter(t, 'roster'), wrapTable(t));
+  installStudentProfiles(ctx);
 }
 export function renderClassPage(ctx) {
   const { root, page, data, backend, access, refresh } = ctx;
   const admin = access.role === 'instructor' && !access.view_as;
   const grading = ['instructor', 'grader'].includes(access.role) && !access.view_as;
+  let openProfileGrade;
   const status = el('p', '', {
     class: 'materials-status',
     role: 'status',
@@ -368,6 +371,7 @@ export function renderClassPage(ctx) {
       const s = section(set.title, `set-${set.id}`),
         open = groupOpen(set),
         own = data.members.find((m) => m.set_id === set.id && m.uni === access.uni);
+      if (set.note) s.append(el('p',set.note,{class:'group-note'}));
       s.append(
         el(
           'p',
@@ -500,12 +504,14 @@ export function renderClassPage(ctx) {
     const changes = new Map();
     root.append(workspace);
     const openPanel = (item, student) => {
+      delete panel.dataset.profileUni;panel.setAttribute('aria-labelledby','grade-panel-title');
       selectedGradeCell = { item: item.id, uni: student.uni }; workspace.classList.add('panel-open');
       renderGradePanel({ panel, data, item, student, backend, role: access.role, readOnly: !canWrite(access),
         save: async (task, message) => { if (changes.size) throw new Error('Save grid changes before grading in the panel.'); if (!await run(task, message)) throw new Error(status.textContent); },
         close: () => { selectedGradeCell = null; panel.hidden = true; workspace.classList.remove('panel-open'); },
       });
     };
+    openProfileGrade = openPanel;
     function draw() {
       changes.clear();
       content.replaceChildren();
@@ -739,4 +745,5 @@ export function renderClassPage(ctx) {
       if (item && student) openPanel(item, student); else selectedGradeCell = null;
     }
   }
+  if (grading && ['attendance','gradebook'].includes(page)) installStudentProfiles({...ctx,openGrade:openProfileGrade,onOpen:()=>{selectedGradeCell=null;}});
 }

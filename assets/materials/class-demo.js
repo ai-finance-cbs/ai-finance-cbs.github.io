@@ -220,6 +220,20 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       );
       save(d);
     },
+    async setGroupNote(id, note) {
+      requireAdmin();const d=read(),set=d.sets.find(s=>s.id===id);
+      if(!set)throw new Error('Group set not found in the active term.');
+      if([...note].length>500 || /[\r\n]/.test(note))throw new Error('Enter one line, up to 500 characters.');
+      set.note=note.trim();save(d);
+    },
+    async addGroups(id, count) {
+      requireAdmin();const d=read();
+      if(!d.sets.some(s=>s.id===id))throw new Error('Group set not found in the active term.');
+      if(!Number.isInteger(count) || count<1 || count>100)throw new Error('Add between 1 and 100 groups.');
+      const last=Math.max(0,...d.groups.filter(g=>g.set_id===id).map(g=>g.number));
+      for(let n=1;n<=count;n++)d.groups.push({id:crypto.randomUUID(),set_id:id,number:last+n});
+      save(d);
+    },
     async chooseGroup(set, group, uni = null) {
       const d = read(),
         a = access(),
