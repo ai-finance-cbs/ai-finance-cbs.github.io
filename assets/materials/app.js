@@ -115,22 +115,31 @@ function showGate() {
   } else root.append(el('p', INSTRUCTOR_PAGES.includes(root.dataset.page) ? 'This page is for instructors.' : 'Your role does not have access to this page.'));
   outlineChanged();
 }
+function applyMenu(m) {
+  document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !m.materials);
+  document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !m.instructor);
+  document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !m.grading);
+  document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = !m.student);
+  document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !m.klass);
+  // Ed Discussion is for students and staff (TA included), not auditors
+  document.querySelectorAll('[data-ed-member]').forEach(n => n.hidden = !m.ed);
+  document.querySelectorAll('[data-login]').forEach(n => n.hidden = m.signedIn);
+  document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !m.signedIn);
+  const badge = document.querySelector('[data-role]');
+  badge.hidden = !m.signedIn; badge.textContent = m.role;
+}
 async function refresh() {
   const version = ++state.version;
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
   const visible = zones(state.access);
-  document.querySelectorAll('[data-materials-member]').forEach(n => n.hidden = !visible.materials);
-  document.querySelectorAll('[data-materials-admin]').forEach(n => n.hidden = !visible.instructor);
-  document.querySelectorAll('[data-grading-member]').forEach(n => n.hidden = !visible.grading);
-  document.querySelectorAll('[data-student-only]').forEach(n => n.hidden = state.access?.role !== 'student');
-  document.querySelectorAll('[data-class-member]').forEach(n => n.hidden = !visible.class);
-  // Ed Discussion is for students and staff (TA included), not auditors
-  document.querySelectorAll('[data-ed-member]').forEach(n => n.hidden = !(visible.class || visible.grading));
-  document.querySelectorAll('[data-login]').forEach(n => n.hidden = !!state.access);
-  document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !state.access);
-  const badge = document.querySelector('[data-role]');
-  badge.hidden = !state.access; badge.textContent = ROLE_LABELS[state.access?.role] || '';
+  // Menu visibility only; every page still checks access on the server. The same flags are
+  // remembered for this browser tab so the next page can show the menu before sign-in is re-checked.
+  const menu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
+    student: state.access?.role === 'student', klass: visible.class, ed: visible.class || visible.grading,
+    signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
+  applyMenu(menu);
+  try { if (state.access) sessionStorage.setItem('b8403-menu', JSON.stringify(menu)); else sessionStorage.removeItem('b8403-menu'); } catch {}
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
   banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);
@@ -522,6 +531,7 @@ document.querySelector('[data-preview-exit]').addEventListener('click', () => st
 document.querySelector('[data-signout]').addEventListener('click', async () => {
   if (!await leavePreparation()) return;
   ++state.version; state.access = null; showGate(); sessionStorage.removeItem('b8403-return');
+  try { sessionStorage.removeItem('b8403-menu'); } catch {}
   try { await state.backend?.signOut(); await refresh(); }
   catch (error) { openLogin(); showMessage(`Sign out could not finish. ${error.message}`); }
 });

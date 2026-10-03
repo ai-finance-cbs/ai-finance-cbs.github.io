@@ -171,7 +171,7 @@ for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture r
     await page.screenshot({path:`evidence/phase-b/round-1/${name}-${width}.png`,fullPage:true});
   };
   await enter(page,'student');
-  expect(await page.locator('#materials-root > *').evaluateAll(nodes=>nodes.map(n=>n.id||n.className))).toEqual(['calendar-links','week-announcements','next-class','milestone-3','in-class-files','lecture-notes','required-readings']);
+  expect(await page.locator('#materials-root > *').evaluateAll(nodes=>nodes.map(n=>n.id||n.className))).toEqual(['week-announcements','due-before-class','lecture-notes','required-readings']);
   await capture('week-3-student-before');
   await page.getByLabel('Submission file').setInputFiles(pdf('working-setup.pdf'));await page.getByRole('button',{name:'Submit',exact:true}).click();
   await expect(page.locator('[data-submission-status]')).toContainText('Submitted · working-setup.pdf');await capture('week-3-student-after');
@@ -249,16 +249,16 @@ test('Files uploads use the category select, preserving titles and grouping by m
     await expect(page.getByRole('link',{name:title,exact:true})).toBeVisible();
   }
   await enter(page,'student','week-1');
-  await expect(page.locator('#lecture-notes a')).toHaveText(['In-class: a note title']);
+  await expect(page.locator('#lecture-note-files a')).toHaveText(['In-class: a note title']);
   await expect(page.locator('#in-class-files a')).toHaveText(['Class handout']);
 });
 
 for(const width of [1440,390,320]) test(`section labels and compact file/link controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await seed(page);await enter(page,'student');
-  await expect(page.locator('.week-block h2')).toHaveText(['Announcements','Milestone','In-class files','Lecture notes','Readings']);
-  const styles=await page.locator('.week-block h2').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.fontSize,s.fontWeight,s.letterSpacing,s.textTransform,s.color];}));
+  await expect(page.locator('#materials-root > .week-block > h2')).toHaveText(['Announcements','Due before class','Lecture notes & materials','Full reading list']);
+  const styles=await page.locator('#materials-root > .week-block > h2').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.fontSize,s.fontWeight,s.letterSpacing,s.textTransform,s.color];}));
   expect(styles.every(s=>JSON.stringify(s)===JSON.stringify(styles[0]))).toBe(true);
-  expect(styles[0].slice(0,4)).toEqual(['11px','500','1.54px','uppercase']);
+  expect(styles[0].slice(0,4)).toEqual(['12px','600','0.48px','uppercase']);
   expect(await page.locator('#milestone-3 h3').evaluate(n=>getComputedStyle(n).fontSize)).toBe('15px');
   await expect(page.getByLabel('Submission file')).toBeHidden();
   const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Choose file',exact:true}).click();

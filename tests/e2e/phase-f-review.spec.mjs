@@ -57,14 +57,17 @@ test('review Markdown payloads stay escaped in the rendered notes, including bol
   expect(await page.evaluate(()=>window.prepXss)).toBeUndefined();
 });
 
-test('all six week pages use main’s neutral section boxes without per-week tint classes or variables', async ({page}) => {
+test('all six week pages colour cards by type, never by week', async ({page}) => {
   await page.setViewportSize({width:1440,height:900});mkdirSync('evidence/phase-f/review-1',{recursive:true});
   for(let week=1;week<=6;week++) {
     await enter(page,'instructor',`week-${week}`);
     await expect(page.locator('body')).toHaveClass(/week-page/);
     await expect(page.locator('.week-tint,[class~="week-1"],[class~="week-2"],[class~="week-3"],[class~="week-4"],[class~="week-5"],[class~="week-6"]')).toHaveCount(0);
     const blocks=page.locator('body.week-page #materials-root > .week-block');expect(await blocks.count()).toBeGreaterThan(0);
-    for(const block of await blocks.all())await expect(block).toHaveCSS('background-color','rgb(250, 250, 250)');
+    // Design B: colour follows the card type (same on every week), never the week number
+    await expect(page.locator('#due-before-class')).toHaveCSS('background-color','rgb(255, 247, 238)');
+    await expect(page.locator('#lecture-notes')).toHaveCSS('background-color','rgb(242, 247, 252)');
+    await expect(page.locator('#required-readings')).toHaveCSS('background-color','rgb(246, 247, 249)');
     expect(await page.locator('body').evaluate(n=>getComputedStyle(n).getPropertyValue('--wk'))).toBe('');
   }
   await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:'evidence/phase-f/review-1/week-neutral-sections-1440.png',fullPage:true});

@@ -1,6 +1,5 @@
 import { SUBMIT_CODES, submissionWeek } from './staff-core.js';
 import { canWrite, gradeCode } from './class-core.js';
-import { classDate } from './upcoming-core.js';
 import { courseTime, ownGroup, ownSubmission, submissionStatus, fileReleased, inClassFile } from './week-core.js';
 
 const el = (tag, text, attrs = {}) => {
@@ -39,6 +38,12 @@ function submissionBlock({ data, access, path, backend, refresh }, code, compact
   }
   if (!item) return section;
   const group = ownGroup(data, item, access.uni);
+  if (!compact) {
+    const own = ownSubmission(data, item, access.uni);
+    const state = item.locked || own?.locked ? ['Graded', 'graded'] : own?.late ? ['Late', 'late'] : own ? ['Submitted', 'done']
+      : item.mode === 'group' && !group && access.role === 'student' ? ['Join a group', 'todo'] : ['Incomplete', 'todo'];
+    section.querySelector('h3')?.append(el('span', state[0], { class: `ms-chip ms-${state[1]}`, 'data-milestone-state': state[1] }));
+  }
   section.append(el('p', item.mode === 'individual' ? 'Individual' : compact ? (group ? `Group ${group.number}` : 'Group') : `Group submission${group ? `: Group ${group.number}` : ''}`, { class: 'submission-mode' }));
   const submission = ownSubmission(data, item, access.uni);
   const status = el('p', '', { class: 'submission-status', role: 'status', 'data-submission-status': '' });
@@ -172,15 +177,27 @@ export function renderWeek(ctx) {
       }
       root.append(announcements);
     }
-    const session = data.sessions.find(s => s.week === week);
-    const when = session?.starts_at ? courseTime(session.starts_at) : classDate(session?.date);
-    root.append(el('p', `Next class · Week ${week}${when ? ` · ${when}` : ' · Date to be announced'}${session?.room ? ` · ${session.room}` : ''}; the paper quiz covers this week’s readings.`, { class: 'next-class', 'data-next-class': '' }));
-    if (access.role !== 'auditor') root.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`));
+    // Card 1: everything due before class (quiz readings + milestone)
+    const due = block('Due before class', 'due-before-class');
+    const dueSummary = el('span', '', { class: 'card-summary' }); due.querySelector('h2').after(dueSummary);
+    due.append(el('p', 'There will be a 3-question quiz on these readings at the start of class.', { class: 'due-note' }));
+    const dueReadings = document.querySelector('[data-week-due-readings]');
+    if (dueReadings) due.append(dueReadings.content.cloneNode(true));
+    if (access.role !== 'auditor') { due.append(el('h3', 'Milestone', { class: 'card-sub' })); due.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`)); }
+    // "8 readings · 72 min · M3": total reading time parsed from the listed lengths
+    const lengths = [...due.querySelectorAll('.due-reading-list [data-length]')].map(n => n.dataset.length);
+    const minutes = lengths.reduce((sum, text) => sum + (Number(/(\d+)\s*hr/.exec(text)?.[1] || 0) * 60) + Number(/(\d+)\s*min/.exec(text)?.[1] || 0), 0);
+    dueSummary.textContent = [lengths.length ? `${lengths.length} readings` : '', minutes ? `${minutes} min` : '', access.role !== 'auditor' ? (week === 6 ? 'FP' : `M${week}`) : ''].filter(Boolean).join(' · ');
+    root.append(due);
   }
+  // Card 2: lecture notes and in-class materials together
+  const materials = block('Lecture notes & materials', 'lecture-notes');
+  const weekFiles = data.files.filter(f => f.week === week);
+  if (!weekFiles.length) materials.append(el('p', 'Posted after class.', { class: 'upcoming-meta' }));
   for (const isClass of [true, false]) {
-    const section = block(isClass ? 'In-class files' : 'Lecture notes', isClass ? 'in-class-files' : 'lecture-notes');
-    const files = data.files.filter(f => f.week === week && inClassFile(f) === isClass);
-    if (!files.length) section.append(el('p', isClass ? 'No files released yet.' : 'Posted after class.', { class: 'upcoming-meta' }));
+    const files = weekFiles.filter(f => inClassFile(f) === isClass);
+    const section = el('div', null, { id: isClass ? 'in-class-files' : 'lecture-note-files', class: 'week-file-group' });
+    if (files.length) section.append(el('h3', isClass ? 'In class' : 'Notes', { class: 'week-file-label' }));
     const list = el('ul', null, { class: 'week-files' });
     for (const file of files) {
       const li = el('li'); li.append(fileLink(file));
@@ -196,8 +213,10 @@ export function renderWeek(ctx) {
       }
       list.append(li);
     }
-    section.append(list); root.append(section);
+    section.append(list); materials.append(section);
   }
+  root.append(materials);
+  // Card 3: the full reading list with levels
   const readings = document.querySelector('[data-week-readings]');
   if (readings) root.append(readings.content.cloneNode(true));
 }

@@ -1,9 +1,10 @@
 {% if include.week > 0 and include.week < 7 %}
 {% assign library = site.data.library | where: 'week', include.week | first %}
 {% assign wk = site.data.materials | where: 'week', include.week %}
+{% assign wreq = wk | where: 'level', 'required' %}{% if wreq.size > 0 %}{% assign quiz = wreq %}{% else %}{% assign quiz = wk | where: 'level', 'recommended' %}{% endif %}
+<template data-week-due-readings><div class="due-readings"><h3 class="card-sub">Readings</h3>{% if quiz.size == 0 %}<p class="upcoming-meta">Readings have not been posted.</p>{% endif %}<ul class="due-reading-list">{% for item in quiz %}<li>{% if item.url %}<a href="{{ item.url | escape }}">{{ item.title | escape }}</a>{% else %}{{ item.title | escape }}{% endif %}<span class="due-author">{{ item.author | escape }}</span><span class="due-length"{% if item.length %} data-length="{{ item.length | escape }}"{% endif %}>{{ item.length | escape }}</span></li>{% endfor %}</ul></div></template>
 <template data-week-readings><section class="week-block" id="required-readings" data-reading-block>
-<h2>Readings</h2>
-<p><a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Open in the Library</a></p>
+<h2>Full reading list</h2><span class="card-summary">{{ wk.size }} items · <a href="{{ '/library/' | append: library.slug | append: '/' | relative_url }}">Open in the Library →</a></span>
 {% if wk.size == 0 %}<p class="upcoming-meta">Readings have not been posted.</p>{% endif %}
 {% for topic in library.topics %}{% assign items = wk | where: 'topic', topic %}{% if items.size > 0 %}<h3 class="week-reading-topic">{{ topic }}</h3><ul class="material-list week-material-list">{% assign req = items | where: 'level', 'required' %}{% assign rec = items | where: 'level', 'recommended' %}{% assign opt = items | where: 'level', 'optional' | sort_natural: 'year' %}{% for m in req %}{% include material-item.html m=m %}{% endfor %}{% for m in rec %}{% include material-item.html m=m %}{% endfor %}{% for m in opt %}{% include material-item.html m=m %}{% endfor %}</ul>{% endif %}{% endfor %}
 </section></template>{% endif %}
