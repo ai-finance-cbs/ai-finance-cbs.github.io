@@ -26,7 +26,7 @@
           {% assign mw = site.data.weeks | where: 'number', page.material_week | first %}
           <div class="week-title">
             <h1>{{ page.heading | default: page.title }}</h1>
-            {% if mw.short_date %}<div class="week-date"><span class="date-pill">{{ mw.short_date }}</span><div data-week-calendar hidden></div></div>{% endif %}
+            {% if mw.short_date %}<div class="week-date"><span class="date-pill">{{ mw.short_date }}</span></div>{% endif %}
           </div>
           {% else %}<h1>{{ page.heading | default: page.title }}</h1>{% endif %}</div>
         </div>

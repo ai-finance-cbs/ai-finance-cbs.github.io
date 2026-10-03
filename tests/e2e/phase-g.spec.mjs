@@ -84,28 +84,9 @@ test('Settings saves the student sign-up note and adds empty groups',async({page
   await enter(page,'student','groups');await expect(page.locator('.group-note')).toHaveText(note);await expect(page.locator('.group-grid tbody tr')).toHaveCount(5);await expect(page.locator('.group-grid tbody tr').last()).toContainText('No members yet.');
   await page.screenshot({path:'evidence/phase-g/groups-note.png',fullPage:true});
 });
-test('calendar subscription links appear on public Course Goals and materials for every signed-in role',async({page})=>{
-  mkdirSync('evidence/phase-g/review-1',{recursive:true});
-  for(const width of [1440,390,320]) {
-    await page.setViewportSize({width,height:1000});
-    for(const [url,role] of [['/syllabus/',null],...['instructor','grader','student','auditor'].map(r=>[`/materials/week-1/?fakeauth=${r}`,r])]){
-      await page.goto(url);await ready(page);const row=page.locator('.calendar-links');await expect(row).toHaveText('Add to calendar: Google · Apple · Download (.ics)');
-      const feed=await row.getByRole('link',{name:'Download (.ics)',exact:true}).getAttribute('href');expect(feed).toMatch(/^https:\/\/[^/]+\/functions\/v1\/calendar$/);
-      const webcal=feed.replace('https:','webcal:');await expect(row.getByRole('link',{name:'Apple',exact:true})).toHaveAttribute('href',webcal);
-      expect(new URL(await row.getByRole('link',{name:'Google',exact:true}).getAttribute('href')).searchParams.get('cid')).toBe(webcal);
-      if(role) {
-        await expect(page.locator('.page-heading .week-date .calendar-links')).toHaveCount(1);
-        await expect(page.locator('#materials-root .calendar-links,.next-class')).toHaveCount(0);
-        const pill=await page.locator('.date-pill').boundingBox(),links=await row.boundingBox();
-        expect(links.y-pill.y-pill.height).toBeCloseTo(4,0);expect(links.x).toBeCloseTo(pill.x,0);
-        await expect(row).toHaveCSS('font-size','12px');await expect(row).toHaveCSS('color','rgb(89, 89, 89)');
-      }
-      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-      if(role==='student')await page.screenshot({path:`evidence/phase-g/review-1/calendar-links-${width}.png`,fullPage:true});
-    }
-    await page.getByRole('button',{name:'Sign out',exact:true}).click();
-    await expect(page.locator('[data-week-calendar]')).toBeHidden();await expect(page.locator('.calendar-links')).toHaveCount(0);
-  }
+test('no calendar links appear on Course Goals or week pages (Simon removed them)',async({page})=>{
+  await page.goto('/syllabus/');await expect(page.locator('.calendar-links,[data-calendar-links]')).toHaveCount(0);
+  await page.goto('/materials/week-1/?fakeauth=student');await ready(page);await expect(page.locator('.calendar-links,[data-week-calendar]')).toHaveCount(0);
 });
 
 for(const width of [1280,390,320]) test(`design B fits at ${width}px with initials, stamps, chips and a scoped barcode`,async({page})=>{

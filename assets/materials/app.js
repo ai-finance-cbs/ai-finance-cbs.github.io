@@ -1,4 +1,3 @@
-import { calendarLinks } from './calendar.js';
 import { renderPreparation, renderSpeakers, leavePreparation } from './prep-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
@@ -11,9 +10,6 @@ import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, norm
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
-// The public course-goals page also offers calendar subscriptions.
-const calendarURL = config.url || document.querySelector('[data-calendar-url]')?.dataset.calendarUrl || '';
-document.querySelectorAll('[data-calendar-links]').forEach(n=>n.replaceWith(calendarLinks(calendarURL)));
 document.body.classList.toggle('class-tools', !!root && ['week', 'landing', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 document.body.classList.toggle('full-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
 const openSettings = new Set();
@@ -140,11 +136,6 @@ async function refresh() {
     signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
   applyMenu(menu);
   try { if (state.access) sessionStorage.setItem('b8403-menu', JSON.stringify(menu)); else sessionStorage.removeItem('b8403-menu'); } catch {}
-  const weekCalendar = document.querySelector('[data-week-calendar]');
-  if (weekCalendar) {
-    weekCalendar.replaceChildren(...(visible.materials ? [calendarLinks(calendarURL)] : []));
-    weekCalendar.hidden = !visible.materials;
-  }
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
   banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);

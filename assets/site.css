@@ -1059,3 +1059,6 @@ body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid
 
 /* ---- 2026-10-02: Required readings get a red-orange tag (Recommended stays blue, Optional grey) ---- */
 .badge-required:not(.badge-recommended):not(.badge-optional) { color:#fff; background:#D4561E; border-color:#D4561E; }
+
+/* ---- 2026-10-02: consistent level tags: same outline shape, colour by level ---- */
+.badge-required:not(.badge-recommended):not(.badge-optional) { color:#B8501A; background:#FFF4EC; border-color:#F2C2A2; }
