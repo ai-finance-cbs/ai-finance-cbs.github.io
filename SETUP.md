@@ -486,6 +486,8 @@ Sessions without configured start/end times and items without deadlines are omit
 Optional Edge environment variable `CALENDAR_LOCATION` supplies the classroom location. Omit it when no location is set.
 The calendar uses the six public week titles; instructor preparation and assignment instructions never enter the feed.
 The public Course Goals page and signed-in Course Materials pages show Google, Apple, and direct `.ics` links.
+Week pages place these links directly below the date pill in the heading, including on phones.
+The live design B cards and per-tab `b8403-menu` cache remain in place after merging main `456a1f1`.
 The production endpoint is the configured Supabase URL plus `/functions/v1/calendar`.
 
 Student names open a shared side panel on Gradebook, staff Attendance, and Roster.

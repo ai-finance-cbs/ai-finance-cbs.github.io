@@ -971,7 +971,12 @@ body.week-page #materials-root > .next-class { background:#fff; border:1px solid
 body.week-page #materials-root > .week-block .week-reading-topic:first-of-type { margin-top:8px; }
 
 /* Calendar links and staff student cards use the existing course and panel styles. */
-.calendar-links { font-size:12px; margin:0 0 18px; color:var(--muted); }
+.content .calendar-links { font-size:12px; margin:0 0 18px; color:var(--muted); }
+.week-title { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 14px; }
+.page-title-row .week-title h1 { flex:0 1 auto; }
+.week-date { padding-top:4px; max-width:100%; }
+.week-date .date-pill { margin-left:0; top:0; }
+.week-date .calendar-links { margin:4px 0 0; font:12px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
 .student-profile-link { border:0; padding:0; background:none; font:inherit; text-align:left; color:inherit; cursor:pointer; }
 .student-profile-link:hover, .student-profile-link:focus-visible { text-decoration:underline; }
 .profile-attendance { padding-left:16px; font-size:12px; }

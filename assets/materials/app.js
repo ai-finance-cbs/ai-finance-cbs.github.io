@@ -140,6 +140,11 @@ async function refresh() {
     signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
   applyMenu(menu);
   try { if (state.access) sessionStorage.setItem('b8403-menu', JSON.stringify(menu)); else sessionStorage.removeItem('b8403-menu'); } catch {}
+  const weekCalendar = document.querySelector('[data-week-calendar]');
+  if (weekCalendar) {
+    weekCalendar.replaceChildren(...(visible.materials ? [calendarLinks(calendarURL)] : []));
+    weekCalendar.hidden = !visible.materials;
+  }
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
   banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);
@@ -163,7 +168,6 @@ async function refresh() {
       const data = await state.backend.classData();
       if (version !== state.version) return;
       root.replaceChildren();
-      root.append(calendarLinks(calendarURL));
       renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
       outlineChanged();
     } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
