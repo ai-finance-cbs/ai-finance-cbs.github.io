@@ -969,3 +969,13 @@ body.week-page #materials-root > .week-block { background:#FAFAFA; border:1px so
 body.week-page #materials-root > .week-block > h2 { color:#4b5560; margin:0 0 12px; }
 body.week-page #materials-root > .next-class { background:#fff; border:1px solid #ECECEC; border-radius:8px; padding:14px 22px; margin:6px 0 16px; }
 body.week-page #materials-root > .week-block .week-reading-topic:first-of-type { margin-top:8px; }
+
+/* ---- 2026-10-02: week page cards: date pill, Due before class, Lecture notes & materials, Reading list ---- */
+.date-pill { display:inline-block; vertical-align:middle; margin-left:14px; padding:4px 12px; border-radius:999px; background:#FFF1E2; border:1px solid #F3C38E; color:#A85A10; font:500 13px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:0; position:relative; top:-3px; }
+body.week-page #materials-root .due-note { margin:0 0 14px; padding:8px 12px; background:#fff; border:1px solid #ECECEC; border-radius:6px; font-size:13px; color:#4b5560; }
+body.week-page #materials-root > .week-block .week-block { background:none; border:0; border-top:1px solid #ECECEC; border-radius:0; padding:14px 0 0; margin:16px 0 0; }
+body.week-page #materials-root > .week-block .week-block > h2, .week-file-label { font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:0; text-transform:none; color:#1a1a1a; margin:0 0 8px; }
+.due-reading-list, .week-files { list-style:none; margin:0; padding:0; }
+.due-reading-list li { margin:0 0 7px; } .due-reading-list a { font-weight:600; }
+.week-file-group + .week-file-group h3 { margin-top:12px; }
+body.week-page #materials-root h3.week-file-label { font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:0 0 8px; color:#1a1a1a; }
