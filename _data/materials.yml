@@ -11,7 +11,7 @@
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Video, title: "AI and Our Economic Future (lecture)", length: "1 hr", author: "Chad Jones", year: 2026, url: "https://www.youtube.com/watch?v=xBpGn3BDcOY"}
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "A.I. and Our Economic Future", author: "Charles I. Jones", year: 2026, url: "https://web.stanford.edu/~chadj/AIandEconomicFuture.pdf"}
 - {week: 1, topic: Economic Frameworks for AI, level: recommended, kind: Writing, title: "Has AI Impacted the Labor Market Yet?", length: "20 min", author: "Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/has-ai-impacted-the-labor-market"}
-- {week: 1, topic: Economic Frameworks for AI, level: recommended, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
+- {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
 
 - {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 - {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
@@ -20,7 +20,7 @@
 
 - {week: 1, topic: Nature of Financial Work, level: recommended, kind: Writing, title: "2026 Global Annual Survey Report on AI Use in Financial Services", author: "Institute of International Finance and EY", year: 2026, url: "https://www.iif.com/Publications/ID/6722/2026-IIF-EY-Global-Annual-Survey-Report-on-AI-Use-in-Financial-Services"}
 - {week: 1, topic: Nature of Financial Work, level: recommended, kind: Writing, title: "GDPval: Measuring Model Performance on Real-World Tasks", length: "7 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/gdpval/"}
-- {week: 1, topic: Nature of Financial Work, level: recommended, kind: Writing, title: "Finance Agent Benchmark v2", length: "15 min", author: "Vals AI", year: 2026, url: "https://www.vals.ai/benchmarks/fabv2"}
+- {week: 1, topic: Nature of Financial Work, level: required, kind: Writing, title: "Finance Agent Benchmark v2", length: "15 min", author: "Vals AI", year: 2026, url: "https://www.vals.ai/benchmarks/fabv2"}
 - {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "Advancing Claude for Financial Services", length: "7 min", author: "Anthropic", year: 2025, url: "https://www.anthropic.com/news/advancing-claude-for-financial-services"}
 - {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "Professional Reasoning Benchmark: Finance", length: "3 min", author: "Scale AI", year: 2025, url: "https://labs.scale.com/leaderboard/prbench-finance"}
 - {week: 1, topic: Nature of Financial Work, level: optional, kind: Writing, title: "The 2026 Global AI in Financial Services Report", author: "Cambridge Centre for Alternative Finance", year: 2026, url: "https://www.jbs.cam.ac.uk/faculty-research/centres/alternative-finance/publications/2026-global-ai-in-financial-services-report/"}
@@ -43,7 +43,7 @@
 - {week: 0, topic: "Where Do AI Answers Come From?", level: recommended, kind: Writing, title: "How an AI Token Travels Through a Data Center", length: "25 min", author: "Chris Zeoli", year: 2026, url: "https://www.datagravity.dev/p/how-an-ai-token-travels-through-a"}
 
 # ---- Week 2: AI Infrastructure (Compute -> Models -> Data and Context -> Tools and Agents) ----
-- {week: 2, topic: Compute, level: recommended, kind: Writing, title: "The Plunging Price of Thought", length: "40 min", author: "Epoch AI", year: 2026, url: "https://epoch.ai/publications/the-plunging-price-of-thought"}
+- {week: 2, topic: Compute, level: required, kind: Writing, title: "The Plunging Price of Thought", length: "40 min", author: "Epoch AI", year: 2026, url: "https://epoch.ai/publications/the-plunging-price-of-thought"}
 - {week: 2, topic: Compute, level: recommended, kind: Writing, title: "AI’s $600B Question", length: "6 min", author: "David Cahn", year: 2024, url: "https://www.sequoiacap.com/article/ais-600b-question/"}
 - {week: 2, topic: Compute, level: optional, kind: Writing, title: "LLM Inference Prices Have Fallen Rapidly but Unequally Across Tasks", length: "3 min", author: "Epoch AI", year: 2025, url: "https://epoch.ai/data-insights/llm-inference-price-trends"}
 - {week: 2, topic: Compute, level: optional, kind: Podcast, title: "Deep Dive on the 3 Big Bottlenecks to Scaling AI Compute (Dwarkesh Podcast)", length: "2 hr 31 min", author: "Dwarkesh Patel and Dylan Patel", year: 2026, url: "https://www.dwarkesh.com/p/dylan-patel"}
@@ -58,7 +58,7 @@
 
 - {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "The Law of Leaky Abstractions", length: "10 min", author: "Joel Spolsky", year: 2002, url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/"}
 - {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "Context Engineering", length: "2 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Jun/27/context-engineering/"}
-- {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "Letter to Shareholders: “AI, Data and Technology Are Key to the Future”", length: "5 min", author: "Jamie Dimon", year: 2026, url: "https://www.jpmorganchase.com/content/dam/jpmc/jpmorgan-chase-and-co/investor-relations/documents/ceo-letter-to-shareholders-2025.pdf"}
+- {week: 2, topic: Data and Context, level: required, kind: Writing, title: "Letter to Shareholders: “AI, Data and Technology Are Key to the Future”", length: "5 min", author: "Jamie Dimon", year: 2026, url: "https://www.jpmorganchase.com/content/dam/jpmc/jpmorgan-chase-and-co/investor-relations/documents/ceo-letter-to-shareholders-2025.pdf"}
 - {week: 2, topic: Data and Context, level: optional, kind: Writing, title: "Prompt Engineering", author: "Lee Boonstra, Google", year: 2024, url: "https://www.kaggle.com/whitepaper-prompt-engineering"}
 - {week: 2, topic: Data and Context, level: optional, kind: Writing, title: "Effective Context Engineering for AI Agents", length: "14 min", author: "Anthropic", year: 2025, url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"}
 
@@ -76,20 +76,20 @@
 - {week: 3, topic: Non-Text Sources, level: recommended, kind: Writing, title: "Using NLP to Unlock a Treasure Trove of Alternative Data", length: "7 min", author: "CFA Institute", year: 2024, url: "https://www.cfainstitute.org/insights/articles/using-nlp-to-unlock-treasure-trove-of-alternative-data"}
 - {week: 3, topic: Non-Text Sources, level: optional, kind: Writing, title: "Unstructured Data and AI: Fine-Tuning LLMs to Enhance the Investment Process", length: "report", author: "Brian Pisaneschi", year: 2024, url: "https://rpc.cfainstitute.org/sites/default/files/-/media/documents/article/industry-research/unstructured-data-and-ai.pdf"}
 
-- {week: 3, topic: Data Preparation, level: recommended, kind: Writing, title: "The Quartz Guide to Bad Data", length: "10 min skim", author: "Christopher Groskopf", year: 2016, url: "https://github.com/Quartz/bad-data-guide"}
+- {week: 3, topic: Data Preparation, level: required, kind: Writing, title: "The Quartz Guide to Bad Data", length: "10 min skim", author: "Christopher Groskopf", year: 2016, url: "https://github.com/Quartz/bad-data-guide"}
 - {week: 3, topic: Data Preparation, level: optional, kind: Writing, title: "Data Cleaning IS Analysis, Not Grunt Work", length: "18 min", author: "Randy Au", year: 2020, url: "https://www.counting-stuff.com/data-cleaning-is-analysis-not-grunt-65949948516031001b3512e5/"}
 
 - {week: 3, topic: Retrieval and Analysis, level: recommended, kind: Writing, title: "What Is an API?", length: "11 min", author: "Trent Fowler", year: 2025, url: "https://zapier.com/blog/what-is-an-api/"}
 - {week: 3, topic: Retrieval and Analysis, level: recommended, kind: Writing, title: "A Deep Dive Into MCP and the Future of AI Tooling", length: "12 min", author: "Yoko Li", year: 2025, url: "https://a16z.com/a-deep-dive-into-mcp-and-the-future-of-ai-tooling/"}
-- {week: 3, topic: Retrieval and Analysis, level: optional, kind: Writing, title: "What Is an API? In English, Please.", length: "7 min", author: "Petr Gazarov", year: 2016, url: "https://www.freecodecamp.org/news/what-is-an-api-in-english-please-b880a3214a82/"}
+- {week: 3, topic: Retrieval and Analysis, level: required, kind: Writing, title: "What Is an API? In English, Please.", length: "7 min", author: "Petr Gazarov", year: 2016, url: "https://www.freecodecamp.org/news/what-is-an-api-in-english-please-b880a3214a82/"}
 - {week: 3, topic: Retrieval and Analysis, level: optional, kind: Writing, title: "Introducing the Model Context Protocol", length: "3 min", author: "Anthropic", year: 2024, url: "https://www.anthropic.com/news/model-context-protocol"}
 
-- {week: 3, topic: Verification, level: recommended, kind: Writing, title: "Why Language Models Hallucinate", length: "6 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/why-language-models-hallucinate/"}
+- {week: 3, topic: Verification, level: required, kind: Writing, title: "Why Language Models Hallucinate", length: "6 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/why-language-models-hallucinate/"}
 - {week: 3, topic: Verification, level: recommended, kind: Writing, title: "Deloitte AI Debacle Seen as Wake-Up Call for Corporate Finance", length: "4 min", author: "Alexei Alexis", year: 2025, url: "https://www.cfodive.com/news/deloitte-ai-debacle-seen-wake-up-call-corporate-finance/802674/"}
 
 # ---- Week 4: Predicting Outcomes ----
 - {week: 4, topic: Prediction Basics, level: recommended, kind: Writing, title: "Lies, Damned Lies, and Data Mining", length: "19 min", author: "Cliff Asness", year: 2017, url: "https://www.aqr.com/Insights/Perspectives/Lies-Damned-Lies-and-Data-Mining"}
-- {week: 4, topic: Prediction Basics, level: recommended, kind: Writing, title: "LLMs Are Closing the Gap on Human Superforecasters", length: "3 min", author: "Forecasting Research Institute", year: 2026, url: "https://forecastingresearch.substack.com/p/llms-are-closing-the-gap-on-human"}
+- {week: 4, topic: Prediction Basics, level: required, kind: Writing, title: "LLMs Are Closing the Gap on Human Superforecasters", length: "3 min", author: "Forecasting Research Institute", year: 2026, url: "https://forecastingresearch.substack.com/p/llms-are-closing-the-gap-on-human"}
 - {week: 4, topic: Prediction Basics, level: optional, kind: Writing, title: "A Backtesting Protocol in the Era of Machine Learning", length: "paper", author: "Rob Arnott, Campbell Harvey, and Harry Markowitz", year: 2019, url: "https://people.duke.edu/~charvey/Research/Published_Papers/P138_A_backtesting_protocol.pdf"}
 
 - {week: 4, topic: Predicting Fundamentals, level: recommended, kind: Writing, title: "How AI Is Helping to Explain Stock-Price Moves", length: "3 min", author: "Matt Robinson", year: 2026, url: "https://www.chicagobooth.edu/review/how-ai-is-helping-explain-stock-price-moves"}
@@ -97,7 +97,7 @@
 - {week: 4, topic: Predicting Fundamentals, level: optional, kind: Writing, title: "From Man vs. Machine to Man + Machine: The Art and AI of Stock Analyses", length: "paper", author: "Sean Cao, Wei Jiang, Junbo Wang, and Baozhong Yang", year: 2024, url: "https://www.nber.org/papers/w28800"}
 - {week: 4, topic: Predicting Fundamentals, level: optional, kind: Writing, title: "Assessing the Benefits of Optimized Agentic AI Systems for Asset Pricing", length: "paper", author: "Ralph Koijen and Bradford Levy", year: 2026, url: "https://www.nber.org/papers/w35431"}
 
-- {week: 4, topic: Predicting People, level: recommended, kind: Writing, title: "Can AI Stand In for Human Survey-Takers? Not Really", length: "10 min", author: "Pew Research Center", year: 2026, url: "https://www.pewresearch.org/data-labs/2026/09/30/can-ai-stand-in-for-human-survey-takers-not-really/"}
+- {week: 4, topic: Predicting People, level: required, kind: Writing, title: "Can AI Stand In for Human Survey-Takers? Not Really", length: "10 min", author: "Pew Research Center", year: 2026, url: "https://www.pewresearch.org/data-labs/2026/09/30/can-ai-stand-in-for-human-survey-takers-not-really/"}
 - {week: 4, topic: Predicting People, level: recommended, kind: Writing, title: "Simulating Human Behavior with AI Agents", length: "6 min", author: "Stanford HAI", year: 2025, url: "https://hai.stanford.edu/policy/simulating-human-behavior-with-ai-agents"}
 - {week: 4, topic: Predicting People, level: optional, kind: Writing, title: "LLM Agents Grounded in Self-Reports Enable General-Purpose Simulation of Individuals", length: "paper", author: "Joon Sung Park and others", year: 2024, url: "https://arxiv.org/abs/2411.10109"}
 - {week: 4, topic: Predicting People, level: optional, kind: Writing, title: "A Foundation Model to Predict and Capture Human Cognition", length: "paper", author: "Marcel Binz, Eric Schulz, and others", year: 2025, url: "https://www.nature.com/articles/s41586-025-09215-4"}
@@ -131,11 +131,11 @@
 - {week: 5, topic: Writing for Machine Readers, level: optional, kind: Writing, title: "The /llms.txt File", length: "8 min", author: "Jeremy Howard", year: 2024, url: "https://llmstxt.org"}
 - {week: 5, topic: Writing for Machine Readers, level: optional, kind: Writing, title: "How to Talk When a Machine Is Listening (Full Paper)", length: "paper", author: "Sean Cao, Wei Jiang, Baozhong Yang, and Alan L. Zhang", year: 2023, url: "https://www.nber.org/papers/w27950"}
 
-- {week: 5, topic: Handing Over the Work, level: recommended, kind: Writing, title: "Your Job Is to Deliver Code You Have Proven to Work", length: "5 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Dec/18/code-proven-to-work/"}
+- {week: 5, topic: Handing Over the Work, level: required, kind: Writing, title: "Your Job Is to Deliver Code You Have Proven to Work", length: "5 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Dec/18/code-proven-to-work/"}
 - {week: 5, topic: Handing Over the Work, level: recommended, kind: Writing, title: "The Importance of Excel", length: "5 min", author: "James Kwak", year: 2013, url: "https://baselinescenario.com/2013/02/09/the-importance-of-excel/"}
 - {week: 5, topic: Handing Over the Work, level: optional, kind: Writing, title: "Financial Modelling Code", length: "26 min", author: "ICAEW", year: 2024, url: "https://www.icaew.com/-/media/corporate/files/technical/technology/excel/financial-modelling-code.ashx"}
 
-- {week: 5, topic: Defending the Analysis, level: recommended, kind: Writing, title: "Centaurs and Cyborgs on the Jagged Frontier", length: "10 min", author: "Ethan Mollick", year: 2023, url: "https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged"}
+- {week: 5, topic: Defending the Analysis, level: required, kind: Writing, title: "Centaurs and Cyborgs on the Jagged Frontier", length: "10 min", author: "Ethan Mollick", year: 2023, url: "https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged"}
 - {week: 5, topic: Defending the Analysis, level: recommended, kind: Writing, title: "Judge Sanctions Lawyers for Brief Written by A.I. with Fake Citations", length: "2 min", author: "Dan Mangan", year: 2023, url: "https://www.cnbc.com/2023/06/22/judge-sanctions-lawyers-whose-ai-written-filing-contained-fake-citations.html"}
 - {week: 5, topic: Defending the Analysis, level: optional, kind: Writing, title: "Navigating the Jagged Technological Frontier", length: "paper", author: "Fabrizio Dell’Acqua, Ethan Mollick, and others", year: 2023, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4573321"}
 
@@ -147,7 +147,7 @@
 - {week: 6, topic: People, level: recommended, kind: Writing, title: "No Widespread Displacement, but the AI Employment Gap for Young Workers Has Widened to 19%", length: "6 min", author: "Erik Brynjolfsson, Bharat Chandar, and Ruyu Chen", year: 2026, url: "https://digitaleconomy.stanford.edu/news/canariesaug26/"}
 - {week: 6, topic: People, level: recommended, kind: Writing, title: "We Must Prepare AI Natives to Shape the Future of Work", length: "6 min", author: "Marco Argenti", year: 2025, url: "https://www.goldmansachs.com/insights/articles/fortune-we-must-prepare-ai-natives-to-shape-the-future-of-work"}
 - {week: 6, topic: People, level: optional, kind: Writing, title: "Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence", length: "paper", author: "Erik Brynjolfsson, Bharat Chandar, and Ruyu Chen", year: 2025, url: "https://digitaleconomy.stanford.edu/publication/canaries-in-the-coal-mine-six-facts-about-the-recent-employment-effects-of-artificial-intelligence/"}
-- {week: 6, topic: People, level: optional, kind: Podcast, title: "Building AI Systems for Capital Markets", length: "35 min", author: "Goldman Sachs", year: 2026, url: "https://www.goldmansachs.com/insights/goldman-sachs-exchanges/building-ai-systems-for-capital-markets"}
+- {week: 6, topic: People, level: required, kind: Podcast, title: "Building AI Systems for Capital Markets", length: "35 min", author: "Goldman Sachs", year: 2026, url: "https://www.goldmansachs.com/insights/goldman-sachs-exchanges/building-ai-systems-for-capital-markets"}
 
 - {week: 6, topic: Firms, level: recommended, kind: Writing, title: "Apps, Agents, and Aggregation", length: "13 min", author: "Ben Thompson", year: 2026, url: "https://stratechery.com/2026/apps-agents-and-aggregation/"}
 - {week: 6, topic: Firms, level: recommended, kind: Writing, title: "Agentic AI Will Shake Up Banking, Shrinking Global Profit Pools", length: "4 min", author: "Pradip Patiath and Ido Segev", year: 2025, url: "https://www.mckinsey.com/industries/financial-services/our-insights/banking-matters/agentic-ai-will-shake-up-banking-shrinking-global-profit-pools"}
@@ -158,3 +158,4 @@
 - {week: 6, topic: Position, level: recommended, kind: Writing, title: "Regulatory Notice 24-09: Gen AI and Large Language Models", length: "5 min", author: "FINRA", year: 2024, url: "https://www.finra.org/rules-guidance/notices/24-09"}
 - {week: 6, topic: Position, level: optional, kind: Writing, title: "Moffatt v. Air Canada", length: "11 min", author: "Civil Resolution Tribunal of British Columbia", year: 2024, url: "https://www.canlii.org/en/bc/bccrt/doc/2024/2024bccrt149/2024bccrt149.html"}
 - {week: 6, topic: Position, level: optional, kind: Writing, title: "SR 26-2: Revised Guidance on Model Risk Management", length: "13 min", author: "Federal Reserve, OCC, and FDIC", year: 2026, url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2602.htm"}
+- {week: 6, topic: Risks, level: required, kind: Writing, title: "Financing the AI Buildout", length: "paper", author: "Stijn Van Nieuwerburgh", year: 2026, url: "https://www.brookings.edu/wp-content/uploads/2026/09/4c_Van-Nieuwerburgh.pdf"}

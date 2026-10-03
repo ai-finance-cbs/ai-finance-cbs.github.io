@@ -1010,3 +1010,6 @@ body.week-page #required-readings .material-list li { background:#fff; border:1p
 body.week-page #required-readings .material-list li .material-icon { left:12px; top:11px; }
 body.week-page #required-readings .material-list a { text-decoration:none; }
 body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid rgba(0,0,0,.05); border-radius:8px; padding:8px 12px; margin:0 0 6px; }
+
+/* ---- 2026-10-02: Required readings get a red-orange tag (Recommended stays blue, Optional grey) ---- */
+.badge-required:not(.badge-recommended):not(.badge-optional) { color:#fff; background:#D4561E; border-color:#D4561E; }
