@@ -979,3 +979,34 @@ body.week-page #materials-root > .week-block .week-block > h2, .week-file-label 
 .due-reading-list li { margin:0 0 7px; } .due-reading-list a { font-weight:600; }
 .week-file-group + .week-file-group h3 { margin-top:12px; }
 body.week-page #materials-root h3.week-file-label { font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:0 0 8px; color:#1a1a1a; }
+
+/* ---- 2026-10-02: week page design B: tinted cards with a coloured title chip ---- */
+body.week-page #materials-root > .week-block { border-radius:12px; padding:16px 18px 18px; }
+body.week-page #materials-root > #due-before-class { background:#FFF7EE; border-color:#F6DDBF; }
+body.week-page #materials-root > #lecture-notes { background:#F2F7FC; border-color:#D7E5F5; }
+body.week-page #materials-root > #required-readings { background:#F6F7F9; border-color:#E5E8EC; }
+body.week-page #materials-root > .week-block > h2 { display:inline-block; margin:0 10px 12px 0; padding:6px 11px; border-radius:999px; color:#fff; font:600 12px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; letter-spacing:.04em; text-transform:uppercase; background:#5B6B7B; }
+body.week-page #materials-root > #due-before-class > h2 { background:#D9822B; }
+body.week-page #materials-root > #lecture-notes > h2 { background:#2F6FB8; }
+body.week-page #materials-root > #week-announcements > h2 { background:#4b5560; }
+body.week-page .card-summary { font-size:12.5px; color:#737373; }
+body.week-page #materials-root .due-note { background:none; border:0; padding:0; margin:0 0 4px; color:#8a4d0f; font-size:13px; }
+body.week-page #materials-root h3.card-sub { font:600 12.5px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#5b4630; margin:14px 0 7px; text-transform:none; letter-spacing:0; }
+body.week-page .due-reading-list li { display:grid; grid-template-columns:1fr auto; column-gap:12px; background:#fff; border:1px solid rgba(0,0,0,.05); border-radius:8px; padding:8px 12px; margin:0 0 6px; }
+body.week-page .due-reading-list li a { font-weight:600; text-decoration:none; }
+body.week-page .due-reading-list .due-author { grid-column:1; grid-row:2; font-size:12px; color:#737373; }
+body.week-page .due-reading-list .due-length { grid-column:2; grid-row:1; font-size:12.5px; color:#737373; white-space:nowrap; }
+/* the milestone sits in one white box inside the orange card */
+body.week-page #materials-root #due-before-class .assignment-section { background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:8px; padding:12px 14px; margin:0; }
+body.week-page #materials-root #due-before-class .assignment-section > h2 { display:none; }
+body.week-page #materials-root #due-before-class .assignment-section > h3 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 4px; }
+.ms-chip { font:600 11px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; padding:4px 9px; border-radius:999px; letter-spacing:.02em; }
+.ms-todo { background:#FFF1E2; color:#A85A10; border:1px solid #F3C38E; }
+.ms-done { background:#E8F1FB; color:#2F6FB8; border:1px solid #BFD6F0; }
+.ms-late { background:#FFF6D6; color:#8a6200; border:1px solid #EBD38A; }
+.ms-graded { background:#F1F2F4; color:#5b6470; border:1px solid #DDE0E4; }
+/* full reading list rows */
+body.week-page #required-readings .material-list li { background:#fff; border:1px solid rgba(0,0,0,.05); border-radius:8px; padding:8px 12px 8px 36px; margin:0 0 6px; }
+body.week-page #required-readings .material-list li .material-icon { left:12px; top:11px; }
+body.week-page #required-readings .material-list a { text-decoration:none; }
+body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid rgba(0,0,0,.05); border-radius:8px; padding:8px 12px; margin:0 0 6px; }
