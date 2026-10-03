@@ -1,34 +1,40 @@
 - number: 1
+  date: "Wednesday, January 27, 2027, 9:00 AM–12:00 PM"
   title: AI Economics
   goal: Learn key frameworks for the economics of AI and how its core features interact with finance.
   topics: ["Key Economic Frameworks", "Assessing the Validity of AI-related Predictions", "Different Kinds of Financial Work", "Sources of an AI Answer (Memory + Input + Tools)"]
   exercises: ["10x Richer", "Sort the Work", "Three Answers"]
   milestone: "Milestone #1: Pre-Class Survey"
 - number: 2
+  date: "Wednesday, February 3, 2027, 9:00 AM–12:00 PM"
   title: AI Infrastructure
   goal: Learn where AI answers come from and discuss the basics of AI infrastructure.
   topics: ["Data (Files, Databases, APIs)", "Models (Providers, Tiers, and Open Weights)", "Prompts and Standing Instructions", "Context: Connections, Retrieval, and Memory", "Tools, Actions, and Agents", "Tokens and Costs"]
   exercises: ["Rebuild the Chart", "Four Formats", "The Bill"]
   milestone: "Milestone #2: Proposal and Task Map"
 - number: 3
+  date: "Wednesday, February 10, 2027, 9:00 AM–12:00 PM"
   title: Processing Information with AI
   goal: Extract structured data from financial documents and learn how to verify AI outputs.
   topics: ["Sources of Financial Information (Filings, Contracts, Transcripts, News)", "Document Pipeline (Scraping, Parsing, OCR, Chunking)", "Structured Extraction (Schemas and Output Format)", "Grounding and Citation", "Verification and Common Failure Modes"]
   exercises: ["Unparsed", "Page 700", "Write the Checks"]
   milestone: "Milestone #3: Working Setup"
 - number: 4
+  date: "Wednesday, February 17, 2027, 9:00 AM–12:00 PM"
   title: Predicting Outcomes with AI
   goal: Understand what AI can and cannot predict and learn to evaluate AI predictions honestly.
   topics: ["Prediction Basics (Targets, Error, Benchmarks, Backtesting, Out-of-Sample)", "Predicting Fundamentals", "Predicting People", "Contamination and Knowledge Cutoffs", "Confidence and Instability (Uncalibrated Probability, Repeatability)"]
   exercises: ["Priced In", "The Mirror", "Rank Four"]
   milestone: "Milestone #4: Personal Benchmark"
 - number: 5
+  date: "Wednesday, February 24, 2027, 9:00 AM–12:00 PM"
   title: Persuading Stakeholders with AI
   goal: Produce written memos, slides, and presentations with AI, and defend them.
   topics: ["Choosing the Format (Memo, Slides, Talk)", "Drafting with AI", "Spotting AI Writing (Detectors and Their Limits)", "Writing for Machine Readers", "Handing Over the Work", "Defending the Analysis"]
   exercises: ["Writing Pageant", "Pass It On"]
   milestone: "Milestone #5: Pitch It"
 - number: 6
+  date: "Wednesday, March 3, 2027, 9:00 AM–12:00 PM"
   title: The Future of Finance with AI
   goal: Think through what will happen to the financial sector and its jobs.
   topics: ["Markets: Crowding and Reflexivity", "People: The Apprenticeship Problem", "Firms: Where the Value Goes", "Position: Who Signs"]

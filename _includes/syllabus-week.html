@@ -2,7 +2,7 @@
 {% assign lib = site.data.library | where: 'week', week.number | first %}
 <p class="lead">{{ week.goal }}</p>
 <dl class="week-details">
-  <div><dt>Date</dt><dd>TBA</dd></div>
+  <div><dt>Date</dt><dd>{{ week.date | default: "TBA" }}</dd></div>
   <div><dt>Topics</dt><dd><ul class="row-list">{% for x in week.topics %}<li>{{ x }}</li>{% endfor %}</ul></dd></div>
   <div><dt>Due before class</dt><dd><a data-protected-link href="{{ '/materials/week-' | append: week.number | append: '/' | relative_url }}#{% if week.number == 6 %}final-prototype{% else %}milestone-{{ week.number }}{% endif %}">{{ week.milestone }}</a></dd></div>
   <div><dt>Slides</dt><dd><a data-protected-link data-week-slides="{{ week.number }}" href="{{ '/materials/week-' | append: week.number | append: '/' | relative_url }}#lecture-notes">Lecture Notes: Week {{ week.number }}</a><span class="slides-status" data-slides-status="{{ week.number }}"></span></dd></div>
