@@ -1121,3 +1121,7 @@ body.week-page #materials-root h3.card-sub { font:700 18px/1.3 "Helvetica Neue",
 .field-note:first-of-type { border-top:0; padding-top:4px; }
 .field-note h2 { font-size:20px; line-height:1.35; margin:0 0 12px; }
 .field-note ul ul { margin-top:6px; }
+
+/* ---- 2026-10-04: Syllabus topic bullets start where the other rows' text starts ---- */
+.week-details dd .row-list { padding-left:1.15em; margin:0; }
+.week-details dd .row-list li { padding-left:2px; }
