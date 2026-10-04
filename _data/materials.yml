@@ -55,6 +55,7 @@
 - {week: 2, topic: Models, level: recommended, kind: Writing, title: "Open Source AI Is the Path Forward", length: "10 min", author: "Mark Zuckerberg", year: 2024, url: "https://about.fb.com/news/2024/07/open-source-ai-is-the-path-forward/"}
 - {week: 2, topic: Models, level: optional, kind: Writing, title: "Open vs. Closed AI: How Far Behind Are Open Models?", length: "30 min", author: "Epoch AI", year: 2024, url: "https://epoch.ai/blog/open-models-report"}
 - {week: 2, topic: Models, level: optional, kind: Writing, title: "Introducing GPT-5", length: "15 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/introducing-gpt-5/"}
+- {week: 2, topic: Models, level: optional, kind: Writing, title: "Understanding the AI That Drives Robots", length: "24 min", author: "Brian Potter", year: 2026, url: "https://www.construction-physics.com/p/understanding-the-ai-that-drives"}
 
 - {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "The Law of Leaky Abstractions", length: "10 min", author: "Joel Spolsky", year: 2002, url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/"}
 - {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "Context Engineering", length: "2 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Jun/27/context-engineering/"}
