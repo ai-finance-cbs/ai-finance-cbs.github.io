@@ -550,7 +550,39 @@ Direct browser writes and anonymous reads are revoked. Course-content edits ente
 Archived instructions remain readable under term rules; archived writes fail.
 New terms start with empty detailed instructions; this migration does not copy or invent course prose.
 
-Migrations 001–015 are unchanged. Migration 016 has only run in isolated local test databases.
-Apply it through the normal review/release process before serving these pages against the hosted backend.
+Phase H left migrations 001–015 unchanged and tested migration 016 only in isolated local databases.
+The Phase I handoff confirms that migrations 001–016 are now live.
 No Edge Function deployment is required for Phase H. No remote action was performed here.
 Evidence and check logs belong in `evidence/phase-h/`.
+
+## Phase I: Preparation sections and Speakers by week
+
+Branch `phase-i` starts from `origin/main` at `2e90da0`.
+Preparation still allows only a real instructor. Student preview and every other role remain denied.
+Each week now follows the Library topics and Syllabus exercises, with a muted goal below the page title.
+Required and Recommended references show their titles and authors, with links opening in a new tab.
+Quiz, exercise, milestone, and logistics notes use normal sections with serif headings and hairlines.
+There is no editor on load. Edit or Add notes opens only that section's borderless, growing textarea.
+Save and Cancel act on that section. Saving one section leaves other drafts unsaved and keeps their warnings.
+Assignments retain their existing editor; all note editors share the navigation and sign-out warning handler.
+
+`_includes/preparation-outline.html` builds public metadata from `weeks.yml`, `library.yml`, and `materials.yml`.
+The page's JSON contains only public goals, topic names, exercise names, milestone names, and reading references.
+Private notes still load separately through the existing backend and row policies.
+
+`prep-outline-core.js` reads and writes one Markdown body per week in the existing `instructor_notes` table.
+Nonempty sections use `## <Section name>` headings followed by a `<!-- preparation-section -->` boundary comment.
+That comment distinguishes stored sections from Markdown headings inside a note, including unfinished code examples.
+Existing unmarked section headings are accepted. Free-form text, unknown sections, and duplicate sections survive under Other notes.
+Retired topics also move to Other notes. Nothing is saved merely by visiting a page.
+The existing 50,000-character limit covers the whole serialized week, including headings and comments.
+Saved times come from the existing week record; no per-section timestamp or new schema is introduced.
+
+Speakers now has six Library week sections, followed by Unscheduled.
+Each speaker keeps the name, affiliation, status, contact, topic, and notes without a table or card.
+Add, filter, inline editing, reassignment, and confirmed deletion use the existing backend methods.
+The page embeds only public week labels. Speaker records remain instructor-only data.
+
+No migration, RPC, row policy, authentication rule, or Edge Function changed.
+Migrations 001–016 remain unchanged. No push, database push, deployment, or hosted-data change occurred.
+Screenshots and local check logs are in `evidence/phase-i/`.

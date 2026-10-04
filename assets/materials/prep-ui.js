@@ -12,6 +12,7 @@ const button = (text, action) => {
 };
 let editor = null;
 const editors = new Set();
+export function trackPreparationEditor(node, dirty) { editors.add({ node, dirty, pending:false }); }
 const dirty = () => {
   for (const entry of editors) if (!entry.node.isConnected) editors.delete(entry);
   editor = [...editors].find(entry => entry.dirty());
@@ -80,11 +81,11 @@ export function renderPreparation({ root, note, backend, assignment = false, lab
     finally { input.disabled = false; toggle.disabled = false; cancel.disabled = false; }
   });
   panel.append(form, output); root.append(panel);
-  if (editable) editors.add({ node:panel, dirty:() => input.value !== saved, pending:false });
+  if (editable) trackPreparationEditor(panel,() => input.value !== saved);
   render();
 }
 
-export function renderSpeakers({ root, rows, backend, confirmInline }) {
+export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
   const toolbar = el('div', null, { class:'speakers-toolbar' });
   const label = el('label', 'Filter speakers', { class:'tool-label' }), filter = el('input', null, { type:'search' }); label.append(filter);
   const add = button('Add speaker', () => { if (!composer.childElementCount) edit(composer); });
@@ -123,25 +124,31 @@ export function renderSpeakers({ root, rows, backend, confirmInline }) {
     list.replaceChildren();
     const matches = sortedSpeakers(rows, filter.value);
     if (!matches.length) list.append(el('p', 'No speakers found.'));
-    for (const row of matches) {
-      const item = el('section', null, { class:'speaker-row', 'data-speaker-id':row.id });
-      const heading = el('div', null, { class:'speaker-heading' });
-      heading.append(el('h2', row.name));
-      for (const key of ['affiliation','topic']) heading.append(el('span', row[key], { class:`speaker-${key}` }));
-      heading.append(el('span', row.week ? `Week ${row.week}` : '', { class:'speaker-week' }), el('span', row.status, { class:'speaker-status' }));
-      const actions = el('div', null, { class:'speaker-actions' });
-      const remove = button('Delete', async () => {
-        if (!await confirmInline(remove, `Delete ${row.name}?`)) return;
-        remove.disabled = true;
-        try { await backend.deleteSpeaker(row.id); rows = rows.filter(s => s.id !== row.id); draw(); status.textContent = 'Speaker deleted.'; }
-        catch (e) { status.textContent = e.message; remove.disabled = false; }
-      });
-      actions.append(button('Edit', () => edit(item, row)), remove);
-      const contact = el('span', null, { class:'speaker-contact' }), url = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact) ? `mailto:${row.contact}` : row.contact;
-      contact.append(safePrepLink(url) ? el('a', row.contact, { href:url, rel:'noopener noreferrer' }) : document.createTextNode(row.contact));
-      heading.append(contact, actions); item.append(heading);
-      if (row.notes) item.append(el('p', row.notes, { class:'speaker-notes' }));
-      list.append(item);
+    for (const week of [...weeks,{week:null,title:'Unscheduled'}]) {
+      const group = el('section',null,{class:'speaker-week','data-speaker-week':week.week ?? 'unscheduled'});
+      group.append(el('h2',week.week ? `Week ${week.week} · ${week.title}` : week.title));
+      const speakers = el('ul',null,{class:'speaker-week-list'}); group.append(speakers); list.append(group);
+      for (const row of matches.filter(row => row.week === week.week)) {
+        const item = el('li', null, { class:'speaker-row', 'data-speaker-id':row.id });
+        const heading = el('div', null, { class:'speaker-heading' });
+        heading.append(el('h3', row.name));
+        if (row.affiliation) heading.append(el('span', `— ${row.affiliation}`, { class:'speaker-affiliation' }));
+        heading.append(el('span', row.status, { class:'speaker-status' }));
+        const actions = el('div', null, { class:'speaker-actions' });
+        const remove = button('Delete', async () => {
+          if (!await confirmInline(remove, `Delete ${row.name}?`)) return;
+          remove.disabled = true;
+          try { await backend.deleteSpeaker(row.id); rows = rows.filter(s => s.id !== row.id); draw(); status.textContent = 'Speaker deleted.'; }
+          catch (e) { status.textContent = e.message; remove.disabled = false; }
+        });
+        actions.append(button('Edit', () => edit(item, row)), remove);
+        const contact = el('span', null, { class:'speaker-contact' }), url = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact) ? `mailto:${row.contact}` : row.contact;
+        if (row.contact) { contact.append(safePrepLink(url) ? el('a', row.contact, { href:url, target:'_blank', rel:'noopener noreferrer' }) : document.createTextNode(row.contact)); heading.append(contact); }
+        heading.append(actions); item.append(heading);
+        if (row.topic) item.append(el('p',row.topic,{class:'speaker-topic'}));
+        if (row.notes) item.append(el('p', row.notes, { class:'speaker-notes' }));
+        speakers.append(item);
+      }
     }
   }
   filter.addEventListener('input', draw); draw();

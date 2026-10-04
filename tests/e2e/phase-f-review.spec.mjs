@@ -45,12 +45,12 @@ for (const [kind,id,code,week] of [['file',2,'M2',2],['link',6,'FP',6]]) test(`g
 });
 
 test('review Markdown payloads stay escaped in the rendered notes, including bold and headings', async ({page}) => {
-  await enter(page,'instructor','preparation/week-1');await page.getByRole('button',{name:'Edit',exact:true}).click();
+  await enter(page,'instructor','preparation/week-1');const notes=page.locator('[data-prep-section="Other notes"]');await notes.getByRole('button',{name:'Edit Other notes',exact:true}).click();
   const payloads=['[x](javascript:alert(1))','[x](https://a"onmouseover=...)','<img src=x onerror="window.prepXss=1">'];
-  await page.getByLabel('Week 1 notes').fill(payloads.flatMap(s=>[s,`**${s}**`,`# ${s}`,`## **${s}**`]).join('\n\n'));
-  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('[data-prep-status]')).toContainText('Saved');
+  await page.getByLabel('Other notes',{exact:true}).fill(payloads.flatMap(s=>[s,`**${s}**`,`# ${s}`,`## **${s}**`]).join('\n\n'));
+  await notes.getByRole('button',{name:'Save',exact:true}).click();await expect(notes.locator('[data-prep-status]')).toContainText('Saved');
   await page.reload();await ready(page);
-  const rendered=page.locator('[data-prep-markdown]');
+  const rendered=notes.locator('[data-prep-markdown]');
   for(const payload of payloads)await expect(rendered).toContainText(payload);
   await expect(rendered.locator('a,img,script,[onerror],[onmouseover]')).toHaveCount(0);
   await expect(rendered.locator('strong')).toHaveCount(6);await expect(rendered.locator('h1,h2')).toHaveCount(6);

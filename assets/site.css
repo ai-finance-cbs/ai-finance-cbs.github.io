@@ -946,17 +946,21 @@ button.grade-visibility { cursor:pointer; }
 .class-tools #materials-root .prep-markdown :is(h3,h4,h5,h6) { font-size:16px; }
 .speakers-toolbar { display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; }
 .speakers-toolbar label { flex:1; max-width:340px; }
-.speakers-list { border-bottom:1px solid #ececec; }
-.speaker-row { border-top:1px solid #ececec; padding:3px 0; overflow-wrap:anywhere; }
-.speaker-heading { display:grid; grid-template-columns:minmax(120px,1fr) minmax(100px,1fr) minmax(130px,1.3fr) 50px 76px minmax(140px,1fr) auto; align-items:baseline; gap:12px; }
+#materials-root[data-page="speakers"] { max-width:900px; }
+.speaker-week { border-top:1px solid #ececec; padding:22px 0; }
+.class-tools #materials-root .speaker-week > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0 0 14px; }
+.speaker-week-list { list-style:none; padding:0; margin:0; }
+.class-tools #materials-root .speaker-row { padding:5px 0; margin:0 0 12px; overflow-wrap:anywhere; }
+.speaker-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
 .speaker-heading > * { min-width:0; }
-.class-tools #materials-root .speaker-heading h2 { font-size:13px; font-weight:600; margin:0; text-transform:none; letter-spacing:normal; }
+.class-tools #materials-root .speaker-heading h3 { font-size:14px; font-weight:600; margin:0; text-transform:none; letter-spacing:normal; }
 .speaker-heading > span { color:#666; font-size:12px; }
-.class-tools #materials-root .speaker-row .speaker-notes { margin:1px 0 0; font-size:11px; line-height:1.2; color:#737373; white-space:pre-wrap; }
+.speaker-heading .speaker-status { color:#777; font-size:11px; }
+.class-tools #materials-root .speaker-row :is(.speaker-topic,.speaker-notes) { margin:5px 0 0; font-size:12px; line-height:1.5; color:#737373; white-space:pre-wrap; }
 .speaker-actions { display:flex; align-items:baseline; gap:8px; margin:0; }
-.speaker-actions > .materials-button { padding:0; min-height:0; border:0; background:none; font-size:12px; text-decoration:underline; }
+.speaker-actions .materials-button, .speakers-toolbar > .materials-button, .speaker-form .materials-button { padding:0; min-height:0; border:0; background:none; font-size:12px; text-decoration:underline; text-underline-offset:3px; }
 .speaker-form { padding:12px 0; }
-@media(max-width:1099px) { .speaker-heading { display:flex; flex-wrap:wrap; gap:4px 12px; } }
+.class-tools #materials-root[data-page="speakers"] :is(input,select,textarea) { border:0; border-bottom:1px solid #ddd; border-radius:0; box-shadow:none; padding:5px 0; }
 
 .week-material-list { margin-top:10px; }
 
@@ -1076,6 +1080,26 @@ body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid
 .class-tools #materials-root .assignment-page .assignment-section { padding:14px 0; }
 .class-tools #materials-root .assignment-mode { color:#595959; }
 .assignment-nav a { white-space:nowrap; }
+
+/* Preparation follows the public course outline; notes sit directly on the page. */
+#materials-root[data-page="preparation"] { max-width:900px; }
+.class-tools #materials-root .preparation-goal { color:#6b6b6b; margin:6px 0 26px; font-size:14px; }
+.preparation-section, .preparation-exercises { border-top:1px solid #ececec; padding:22px 0; }
+.preparation-exercises .preparation-section { border:0; padding:14px 0 4px; }
+.prep-section-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 16px; margin-bottom:10px; }
+.class-tools #materials-root :is(.prep-section-heading,.preparation-exercises) > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
+.class-tools #materials-root .prep-section-heading > h3 { font:600 19px/1.4 "Source Serif 4",Georgia,serif; margin:0; }
+.prep-text-action { border:0; background:none; border-radius:0; padding:2px 0; color:#34536e; font:400 12px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.prep-text-action.empty { color:#777; }
+.prep-text-action:disabled { opacity:.5; cursor:default; }
+.class-tools #materials-root .prep-reading-level { color:#777; font-size:10px; text-transform:uppercase; letter-spacing:.1em; margin:12px 0 4px; }
+.prep-reading-list { list-style:none; padding:0; margin:0 0 12px; }
+.class-tools #materials-root .prep-reading-list li { margin:3px 0; font-size:12px; overflow-wrap:anywhere; }
+.prep-reading-author { color:#777; }
+.prep-section-form textarea { display:block; width:100%; min-height:60px; max-height:none; padding:8px 0; border:0; border-bottom:1px solid #ddd; border-radius:0; box-shadow:none; background:transparent; color:#444; font:14px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif; resize:none; overflow:hidden; }
+.prep-section-form textarea:focus { outline:none; border-bottom-color:#34536e; }
+.prep-section-form .prep-controls { margin:8px 0; }
+.preparation-section > [role="status"] { color:#777; font-size:11px; }
 
 /* ---- 2026-10-04: larger, easier sub-headings inside week cards ---- */
 body.week-page #materials-root h3.card-sub { font:600 15px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#1a1a1a; margin:16px 0 6px; }
