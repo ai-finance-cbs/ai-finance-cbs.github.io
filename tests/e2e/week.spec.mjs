@@ -191,7 +191,7 @@ test('individual milestones upload without a group and keep the saved filename o
 });
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
-  const publicMenu=['Home','Syllabus','Library','Staff'];
+  const publicMenu=['Home','Syllabus','Library','Staff','Nota Bene'];
   for(const [role,extra] of Object.entries({student:['Course Materials','Assignments','Attendance','Grades','Groups','Submit'],auditor:['Course Materials','Assignments'],grader:['Course Materials','Assignments','Gradebook','Attendance'],instructor:['Course Materials','Assignments','Groups','Gradebook','Attendance','Roster','Settings','Preparation','Speakers']})) {
     await enter(page,role);
     await expect(page.locator('.topnav a:visible')).toHaveText([...publicMenu,...extra]);

@@ -23,6 +23,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
     'Syllabus',
     'Library',
     'Staff',
+    'Nota Bene',
     'Course Materials',
     'Assignments',
     'Gradebook',
@@ -152,6 +153,7 @@ test('view-as matches student content and denies writes even when calling the ba
     'Syllabus',
     'Library',
     'Staff',
+    'Nota Bene',
     'Course Materials',
     'Assignments',
     'Attendance',
@@ -196,6 +198,7 @@ test('auditor gets shared Assignments but cannot open student or staff tools', a
     'Syllabus',
     'Library',
     'Staff',
+    'Nota Bene',
     'Course Materials',
     'Assignments',
   ]);

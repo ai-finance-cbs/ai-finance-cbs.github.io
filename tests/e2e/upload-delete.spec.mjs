@@ -72,7 +72,7 @@ test('group link deletion respects deadlines, grades, preview, and archived term
   await page.reload();await ready(page);await expect(item.getByRole('button',{name:'Delete submission',exact:true})).toHaveCount(0);expect(await denied()).toContain('read-only');
 });
 
-test('twelve compact speaker rows fit 1440 by 900, keep all fields and notes, and preserve inline editing',async({page})=>{
+test('twelve speakers group by week, keep all fields and notes, and preserve inline editing',async({page})=>{
   await page.setViewportSize({width:1440,height:900});await enter(page,'instructor','speakers');
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
@@ -81,10 +81,13 @@ test('twelve compact speaker rows fit 1440 by 900, keep all fields and notes, an
   });
   await page.reload();await ready(page);await page.evaluate(()=>document.fonts.ready);
   await expect(page.locator('.speaker-row')).toHaveCount(12);
-  const geometry=await page.locator('.speaker-row').evaluateAll(rows=>({bottom:rows.at(-1).getBoundingClientRect().bottom,tops:rows.map(r=>[...r.querySelector('.speaker-heading').children].map(c=>c.getBoundingClientRect().top))}));
-  expect(geometry.bottom).toBeLessThan(900);
-  expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight && document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  for(const tops of geometry.tops)expect(Math.max(...tops)-Math.min(...tops)).toBeLessThan(5);
+  await expect(page.locator('.speaker-week')).toHaveCount(7);
+  for (let week=1;week<=6;week++) {
+    const group=page.locator(`[data-speaker-week="${week}"]`); await expect(group.locator('.speaker-row')).toHaveCount(2);
+    await expect(group.locator('.speaker-notes')).toHaveText(['Synthetic speaker planning note.','Synthetic speaker planning note.']);
+  }
+  await expect(page.locator('#materials-root table')).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:'evidence/phase-e/speakers-1440.png',fullPage:true});
   const first=page.locator('.speaker-row').first();await first.getByRole('button',{name:'Edit',exact:true}).click();await first.getByLabel('Topic').fill('Updated topic');await first.getByRole('button',{name:'Save speaker'}).click();
   await page.getByLabel('Filter speakers').fill('Updated topic');await expect(page.locator('.speaker-row')).toHaveCount(1);

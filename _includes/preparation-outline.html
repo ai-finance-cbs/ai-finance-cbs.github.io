@@ -1,0 +1,12 @@
+{% assign wk = site.data.weeks | where: 'number', page.preparation_week | first %}
+{% assign library = site.data.library | where: 'week', page.preparation_week | first %}
+{% assign readings = site.data.materials | where: 'week', page.preparation_week %}
+{% capture outline %}{
+  "goal": {{ wk.goal | jsonify }},
+  "exercises": {{ wk.exercises | jsonify }},
+  "milestone": {{ wk.milestone | jsonify }},
+  "topics": [{% for topic in library.topics %}{% assign items = readings | where: 'topic', topic %}{% assign required = items | where: 'level', 'required' %}{% assign recommended = items | where: 'level', 'recommended' %}{% assign references = required | concat: recommended %}
+    {"name": {{ topic | jsonify }}, "readings": [{% for item in references %}{"title": {{ item.title | jsonify }}, "author": {{ item.author | jsonify }}, "url": {{ item.url | jsonify }}, "level": {{ item.level | jsonify }}}{% unless forloop.last %},{% endunless %}{% endfor %}]}{% unless forloop.last %},{% endunless %}{% endfor %}
+  ]
+}{% endcapture %}
+<script type="application/json" data-preparation-outline>{{ outline | replace: '<', '\u003c' }}</script>

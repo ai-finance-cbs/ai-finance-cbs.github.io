@@ -1,6 +1,7 @@
 import { renderAssignments } from './assignment-ui.js';
 import { ASSIGNMENT_CODES } from './assignment-core.js';
-import { renderPreparation, renderSpeakers, leavePreparation } from './prep-ui.js';
+import { renderSpeakers, leavePreparation } from './prep-ui.js';
+import { renderPreparationOutline } from './prep-outline-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
 import { announcementText } from './upcoming-core.js';
@@ -183,8 +184,10 @@ async function refresh() {
       const data = prep ? await state.backend.instructorNote(Number(root.dataset.week)) : await state.backend.speakers();
       if (version !== state.version) return;
       root.replaceChildren();
-      if (prep) renderPreparation({ root, note:data, backend:state.backend });
-      else renderSpeakers({ root, rows:data, backend:state.backend, confirmInline });
+      if (prep) renderPreparationOutline({ root, note:data, backend:state.backend,
+        outline:JSON.parse(document.querySelector('[data-preparation-outline]').textContent) });
+      else renderSpeakers({ root, rows:data, backend:state.backend, confirmInline,
+        weeks:JSON.parse(document.querySelector('[data-speaker-weeks]').textContent) });
       outlineChanged();
     } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
       const page = root.dataset.page;

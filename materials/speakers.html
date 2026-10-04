@@ -8,3 +8,5 @@ permalink: /materials/speakers/
   <button class="materials-button" type="button" data-login>Log in</button>
 </div>
 <noscript><p>Enable JavaScript to sign in and load your class tools.</p></noscript>
+{% capture weeks %}[{% for number in (1..6) %}{% assign week = site.data.library | where: 'week', number | first %}{"week":{{ number }},"title":{{ week.title | jsonify }}}{% unless forloop.last %},{% endunless %}{% endfor %}]{% endcapture %}
+<script type="application/json" data-speaker-weeks>{{ weeks | replace: '<', '\u003c' }}</script>
