@@ -14,7 +14,9 @@ import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, norm
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
 document.body.classList.toggle('class-tools', !!root && ['week', 'landing', 'assignments', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
-document.body.classList.toggle('full-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
+// Speakers stays in the right pane; Gradebook is a standalone page in its own tab; other tool pages use the full width.
+const RIGHT_PANE_PAGES = ['speakers', 'gradebook'];
+document.body.classList.toggle('full-tools', !!root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page) && !RIGHT_PANE_PAGES.includes(root.dataset.page));
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
