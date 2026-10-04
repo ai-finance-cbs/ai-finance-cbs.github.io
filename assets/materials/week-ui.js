@@ -179,7 +179,6 @@ export function renderWeek(ctx) {
     // Card 1: everything due before class (quiz readings + milestone)
     const due = block('Due before class', 'due-before-class');
     const dueSummary = el('span', '', { class: 'card-summary' }); due.querySelector('h2').after(dueSummary);
-    due.append(el('p', 'There will be a 3-question quiz on these readings at the start of class.', { class: 'due-note' }));
     const dueReadings = document.querySelector('[data-week-due-readings]');
     if (dueReadings) due.append(dueReadings.content.cloneNode(true));
     if (access.role !== 'auditor') { due.append(el('h3', 'Milestone', { class: 'card-sub' })); due.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`)); }

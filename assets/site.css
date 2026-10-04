@@ -1076,3 +1076,7 @@ body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid
 .class-tools #materials-root .assignment-page .assignment-section { padding:14px 0; }
 .class-tools #materials-root .assignment-mode { color:#595959; }
 .assignment-nav a { white-space:nowrap; }
+
+/* ---- 2026-10-04: larger, easier sub-headings inside week cards ---- */
+body.week-page #materials-root h3.card-sub { font:600 15px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#1a1a1a; margin:16px 0 6px; }
+body.week-page #materials-root .due-readings .due-note { margin:0 0 10px; }
