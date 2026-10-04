@@ -23,7 +23,7 @@ test('week milestone uses the full name, trimmed content, instructions link, and
   await seed(page);await enter(page,'student','week-1');const box=page.locator('#milestone-1');
   await expect(box.locator('h3')).toContainText('Milestone #1: Pre-Class Survey');
   await expect(box.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs remaining');
-  await expect(box.locator('.due-line')).toHaveCSS('color','rgb(168, 90, 16)');
+  await expect(box.locator('.due-line')).toHaveCSS('color','rgb(31, 58, 107)');
   await expect(box.locator('[data-milestone-state]')).toHaveText('Incomplete');
   await expect(box).not.toContainText(/Deliverable|Graded on|Individual|Synthetic local example/);
   await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);

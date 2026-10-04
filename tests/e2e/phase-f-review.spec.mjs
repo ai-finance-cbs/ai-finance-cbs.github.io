@@ -65,7 +65,7 @@ test('all six week pages colour cards by type, never by week', async ({page}) =>
     await expect(page.locator('.week-tint,[class~="week-1"],[class~="week-2"],[class~="week-3"],[class~="week-4"],[class~="week-5"],[class~="week-6"]')).toHaveCount(0);
     const blocks=page.locator('body.week-page #materials-root > .week-block');expect(await blocks.count()).toBeGreaterThan(0);
     // Design B: colour follows the card type (same on every week), never the week number
-    await expect(page.locator('#due-before-class')).toHaveCSS('background-color','rgb(255, 247, 238)');
+    await expect(page.locator('#due-before-class')).toHaveCSS('background-color','rgb(243, 246, 251)');
     await expect(page.locator('#lecture-notes')).toHaveCSS('background-color','rgb(242, 247, 252)');
     await expect(page.locator('#required-readings')).toHaveCSS('background-color','rgb(246, 247, 249)');
     expect(await page.locator('body').evaluate(n=>getComputedStyle(n).getPropertyValue('--wk'))).toBe('');
