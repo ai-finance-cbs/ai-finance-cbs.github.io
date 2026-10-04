@@ -1125,3 +1125,9 @@ body.week-page #materials-root h3.card-sub { font:700 18px/1.3 "Helvetica Neue",
 /* ---- 2026-10-04: Syllabus topic bullets start where the other rows' text starts ---- */
 .week-details dd .row-list { padding-left:1.15em; margin:0; }
 .week-details dd .row-list li { padding-left:2px; }
+
+/* Gradebook opens in its own tab: no course header or sidebars, full width. */
+body.standalone-tool { --topbar:0px; }
+body.standalone-tool .topbar, body.standalone-tool .site-sidebar, body.standalone-tool .skip-link, body.standalone-tool .subnav-inline { display:none !important; }
+body.standalone-tool main { margin-left:0; padding:32px 40px 0; }
+body.standalone-tool .content { max-width:none; }

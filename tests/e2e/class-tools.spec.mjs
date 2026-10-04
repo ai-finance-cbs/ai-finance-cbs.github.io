@@ -16,7 +16,8 @@ test.beforeEach(async ({ page }) => {
 test('grader menu and direct page gates expose only materials, grades, and attendance', async ({
   page,
 }) => {
-  await enter(page, 'grader', 'gradebook');
+  // Gradebook is standalone (no top bar), so read the grader menu from Attendance.
+  await enter(page, 'grader', 'attendance');
   await expect(page.locator('[data-role]')).toHaveText('Grader');
   await expect(page.locator('.topnav a:visible')).toHaveText([
     'Home',
