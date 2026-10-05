@@ -9,7 +9,6 @@ import {
   gradeTotal,
   parseGradesCsv,
   parseQuizCsv,
-  parsePresentCsv,
   checkGroupChange,
   toCsv,
 } from '../assets/materials/class-core.js';
@@ -76,11 +75,6 @@ test('CSV imports validate all rows, preserve zero, and allow deliberate clearin
   ])
     assert.throws(() => parseQuizCsv(csv, quiz, roster));
   assert.throws(() => parseGradesCsv('uni,unknown\nab1234,2', GRADE_ITEMS, roster));
-  assert.deepEqual(parsePresentCsv('UNI\nab1234\nab1234\ncd5678@columbia.edu', roster), [
-    { uni: 'ab1234', status: 'present' },
-    { uni: 'cd5678', status: 'present' },
-  ]);
-  assert.throws(() => parsePresentCsv('ab1234\nzz9999', roster));
   assert.match(toCsv([['=evil', 'a"b']]), /"'=evil","a""b"/);
 });
 test('group checks respect preview, deadlines, capacity, and own membership', () => {

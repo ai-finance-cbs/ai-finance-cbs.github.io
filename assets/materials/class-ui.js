@@ -8,7 +8,6 @@ import {
   gradeTotal,
   gradeCode,
   groupOpen,
-  parsePresentCsv,
   parseGradesCsv,
   scoreValue,
   toCsv,
@@ -107,7 +106,8 @@ function labeled(parent, label, node) {
   return node;
 }
 function statusNote(a) {
-  if (!a) return 'Not recorded';
+  if (!a) return '';
+  if (a.status === 'excused') return 'Instructor excuse';
   if (a.source_quiz)
     return a.manual_override
       ? `Manual override; Quiz ${a.source_quiz} recorded`
@@ -222,64 +222,51 @@ export function renderClassPage(ctx) {
         for (const s of data.sessions) {
           const a = data.attendance.find((a) => a.uni === r.uni && a.week === s.week),
             td = el('td');
-          const select = options(
-            [
-              ['', 'Quiz / clear'],
-              ['present', 'Present'],
-              ['absent', 'Absent'],
-              ['excused', 'Excused'],
-            ],
-            a?.status || '',
-            `${r.uni} Week ${s.week} attendance`,
-          );
-          select.title = 'Use quiz or clear removes the manual override.';
-          select.addEventListener('change', async () => {
-            select.disabled = true;
-            if (!await run(
-              () => backend.saveAttendance(s.week, [{ uni: r.uni, status: select.value || null }]),
-              'Attendance saved.',
-            )) select.value = a?.status || '';
-            select.disabled = false;
-          });
-          td.append(select);
+          td.setAttribute('aria-label', `${r.uni} Week ${s.week} attendance`);
+          const state = a?.status || 'absent';
+          td.append(el('span', state === 'present' ? '✓' : state === 'excused' ? 'Excused' : '', {
+            class: 'attendance-status', 'aria-label': state,
+            ...(state === 'excused' && a.excuse_reason ? { title: a.excuse_reason } : {}),
+          }));
           if (a?.source_quiz) {
             const source = el('span', `Q${a.source_quiz}${a.manual_override ? '*' : ''}`, { class: 'quiz-marker', title: statusNote(a) });
             source.append(el('span', ` ${statusNote(a)}`, { class: 'sr-only' }));
             td.append(source);
           }
+          if (admin && canWrite(access) && state !== 'present') {
+            const action = button(state === 'excused' ? 'Remove excuse' : 'Excuse', async () => {
+              if (state === 'excused') {
+                action.disabled = true;
+                await run(() => backend.saveAttendance(s.week, [{ uni: r.uni, status: null }]), 'Excuse removed.');
+                action.disabled = false;
+                return;
+              }
+              action.hidden = true;
+              const form = el('form', null, { class: 'attendance-excuse-form' });
+              const reason = el('textarea', null, { required: '', maxlength: '300', rows: '2', 'aria-label': `${r.uni} Week ${s.week} excuse reason` });
+              labeled(form, 'Reason', reason);
+              const save = button('Save', () => {}); save.type = 'submit';
+              const cancel = button('Cancel', () => { form.remove(); action.hidden = false; action.focus(); });
+              form.append(save, cancel);
+              reason.addEventListener('input', () => reason.setCustomValidity(''));
+              form.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!reason.value.trim()) { reason.setCustomValidity('Enter an excuse reason.'); reason.reportValidity(); return; }
+                save.disabled = cancel.disabled = true;
+                await run(() => backend.saveAttendance(s.week, [{ uni: r.uni, status: 'excused', excuse_reason: reason.value.trim() }]), 'Absence excused.');
+                save.disabled = cancel.disabled = false;
+              });
+              td.append(form); reason.focus();
+            });
+            action.classList.add('attendance-action');
+            td.append(action);
+          }
           tr.append(td);
         }
         body.append(tr);
       }
-      root.append(studentFilter(t, 'attendance'), wrapTable(t));
-      const s = disclosure('Import attendance CSV', 'attendance-import'),
-        form = el('form', null, { class: 'admin-form' }),
-        week = options(
-          data.sessions.map((s) => [s.week, `Week ${s.week}`]),
-          1,
-          'Attendance import week',
-        ),
-        file = input('file', 'Present UNI CSV');
-      file.accept = '.csv';
-      file.required = true;
-      labeled(form, 'Session', week);
-      labeled(form, 'CSV of present UNIs', file);
-      form.append(
-        el('p', 'Use a UNI column or one UNI per line. Other attendance records stay unchanged.'),
-      );
-      const submit = button('Import present UNIs', () => {});
-      submit.type = 'submit';
-      form.append(submit);
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await run(async () => {
-          const rows = parsePresentCsv(await file.files[0].text(), data.roster);
-          await backend.saveAttendance(Number(week.value), rows);
-        }, 'Present UNIs imported.');
-      });
-      s.append(form);
-      root.append(s);
-      if (!canWrite(access)) root.querySelectorAll('.attendance-grid input, .attendance-grid select, #attendance-import input, #attendance-import select, #attendance-import button').forEach(n => n.disabled = true);
+      root.append(el('p', 'Attendance comes from quiz scores. Only the instructor can excuse an absence.', { class: 'attendance-legend' }), studentFilter(t, 'attendance'), wrapTable(t));
+      if (!canWrite(access)) t.querySelectorAll('input').forEach(n => n.disabled = true);
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
       t.classList.add('student-attendance-grid');
@@ -289,7 +276,7 @@ export function renderClassPage(ctx) {
         tr.append(
           el('th', `Week ${s.week}`, { scope: 'row' }),
           el('td', s.date || 'Date TBA'),
-          el('td', a?.status || 'Not recorded'),
+          el('td', { present: 'Present', absent: 'Absent', excused: 'Excused' }[a?.status] || 'Absent'),
           el('td', a ? statusNote(a) : ''),
         );
         body.append(tr);

@@ -24,9 +24,12 @@ async function seed(page){
     await b.submitLink(6,'https://example.test/prototype');
     await b.pickRole('instructor');
     await b.saveGrades([{uni:'ab1234',item_id:1,score:8,comment:'Visible feedback'},{uni:'ab1234',item_id:2,score:9,comment:'Private grading feedback'}]);
-    await b.saveAttendance(1,[{uni:'ab1234',status:'present'}]);
-    await b.saveAttendance(2,[{uni:'ab1234',status:'excused'}]);
-    await b.saveAttendance(3,[{uni:'ab1234',status:'absent'}]);
+    await b.saveGrades([{uni:'ab1234',item_id:7,score:0}]);
+    await b.saveAttendance(2,[{uni:'ab1234',status:'excused',excuse_reason:'Approved absence'}]);
+    // Retain one pre-lockdown absence so the legacy card style is still covered.
+    const old = JSON.parse(sessionStorage.getItem('b8403-demo-state-v3'));
+    old.attendance.push({term_id:'spring-2027',uni:'ab1234',week:3,status:'absent',manual_override:true,source_quiz:null});
+    sessionStorage.setItem('b8403-demo-state-v3',JSON.stringify(old));
   });
   await page.reload();await ready(page);
 }

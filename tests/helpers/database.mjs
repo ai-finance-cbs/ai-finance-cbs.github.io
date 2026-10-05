@@ -29,6 +29,7 @@ export const migrationFiles = [
   '014_uploader_delete_and_prep_privacy.sql',
   '015_calendar_student_profiles_groups.sql',
   '016_assignment_pages.sql',
+  '017_attendance_excuse.sql',
 ];
 export async function seedGoogleIdentity(db, userId, email) {
   await db.query(

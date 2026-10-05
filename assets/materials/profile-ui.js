@@ -71,6 +71,8 @@ export function installStudentProfiles({root,data,access,backend,refresh,openGra
       chip.onclick=()=>showGrade(item,student);chips.append(chip);
     }
     foot.append(chips);card.append(band,main,attendance,el('div',null,{class:'barcode','aria-hidden':'true'}),foot);
+    for (const a of data.attendance.filter(a => a.uni === uni && a.status === 'excused' && a.excuse_reason))
+      panel.append(el('p', `Week ${a.week} excused: ${a.excuse_reason}`, { class: 'profile-excuse-reason' }));
     // Keep the full record available without crowding the ID-card summary.
     const record=el('details',null,{class:'profile-record'});record.append(el('summary','Submissions and scores'),el('h3','Submissions'));
     for(const item of data.items.filter(i=>['file','link'].includes(i.kind))) {

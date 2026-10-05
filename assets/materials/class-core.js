@@ -88,24 +88,6 @@ export function checkGroupChange(data, access, setId, groupId, uni = access.uni)
   if (data.members.filter((m) => m.group_id === groupId).length >= set.max_size)
     throw new Error('This group is full.');
 }
-export function parsePresentCsv(text, roster) {
-  if (text.length > 1_000_000) throw new Error('CSV must be smaller than 1 MB.');
-  const rows = csvCells(text.replace(/^\uFEFF/, ''));
-  const header = (rows[0] || []).map((c) => c.trim().toLowerCase());
-  let index = header.findIndex((c) => ['uni', 'sis login id', 'login id'].includes(c));
-  if (index >= 0) rows.shift();
-  else index = 0;
-  const seen = new Set();
-  for (const row of rows) {
-    const raw = (row[index] || '').trim().toLowerCase();
-    const uni = normalizeUni(raw.endsWith('@columbia.edu') ? raw.split('@')[0] : raw);
-    if (!uni || !roster.some((r) => r.uni === uni))
-      throw new Error(`Unknown or invalid UNI: ${raw || '(empty)'}. Nothing was imported.`);
-    seen.add(uni);
-  }
-  if (!seen.size) throw new Error('No UNIs found.');
-  return [...seen].map((uni) => ({ uni, status: 'present' }));
-}
 export function scoreValue(raw, max) {
   if (String(raw).trim() === '') return null;
   if (!/^\d+(\.\d{1,2})?$/.test(String(raw).trim()))

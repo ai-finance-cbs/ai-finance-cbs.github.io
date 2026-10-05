@@ -12,25 +12,20 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
-test('compact attendance keeps simple overrides, class totals, filters, without whole-class batch actions', async ({ page }) => {
+test('compact read-only attendance keeps totals and filters without batch actions', async ({ page }) => {
   await enter(page, 'grader', 'attendance');
+  await page.evaluate(async () => {
+    const b=(await import('/assets/materials/demo.js')).createDemo();
+    await b.saveGrades([{uni:'cd5678',item_id:7,score:0},{uni:'ef9012',item_id:7,score:2}]);
+  });
+  await page.reload(); await ready(page);
   const filter = page.getByRole('searchbox', { name: 'Filter by name or UNI' });
-  const cell = page.getByLabel('ab1234 Week 1 attendance', { exact: true });
-  await expect(cell.locator('option')).toHaveText(['Quiz / clear', 'Present', 'Absent', 'Excused']);
+  await expect(page.locator('.attendance-grid select, .attendance-action, #attendance-import')).toHaveCount(0);
   await expect(page.locator('.student-count')).toHaveText('4 students');
   await filter.fill('AB1234');
   await expect(page.locator('.student-count')).toHaveText('1 of 4 students');
-  for (const [value, totals] of [['present', '1P0A0E'], ['absent', '0P1A0E'], ['excused', '0P0A1E']]) {
-    await cell.selectOption(value);
-    await expect(page.locator('[data-admin-status]')).toHaveText('Attendance saved.');
-    await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(totals);
-    await expect(filter).toHaveValue('AB1234');
-  }
-  await expect(page.getByRole('button', { name: /Mark all present/ })).toHaveCount(0);
-  await page.evaluate(async () => { const b=(await import('/assets/materials/demo.js')).createDemo(); await b.saveAttendance(1,[{uni:'cd5678',status:'present'},{uni:'ef9012',status:'present'}]); });
-  await cell.selectOption('');
-  await expect(cell).toHaveValue('');
   await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('2P0A0E');
+  await expect(page.getByRole('button', { name: /Mark all present/ })).toHaveCount(0);
   await filter.fill('no such student');
   await expect(page.locator('.empty-filter')).toBeVisible();
   await expect(page.locator('.student-count')).toHaveText('0 of 4 students');
@@ -39,10 +34,9 @@ test('compact attendance keeps simple overrides, class totals, filters, without 
   await expect(page.locator('tr[data-student]:visible')).toContainText('cd5678');
   await expect(page.locator('.topbar [data-demo-tag]')).toHaveCount(1);
   await expect(page.locator('#materials-root')).not.toContainText('Local demo');
-  // Replacing a roster retains historical records, which must not inflate current class totals.
+  // Historical records must not inflate current class totals after roster replacement.
   await page.evaluate(async () => {
-    const { createDemo } = await import('/assets/materials/demo.js');
-    const b = createDemo();
+    const b = (await import('/assets/materials/demo.js')).createDemo();
     await b.pickRole('instructor');
     const { roster } = await b.adminData();
     await b.replaceRoster(roster.filter(r => r.uni !== 'cd5678'));
@@ -52,11 +46,11 @@ test('compact attendance keeps simple overrides, class totals, filters, without 
   await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('1P0A0E');
 });
 
-test('a rejected attendance save restores the previous select and permits a retry', async ({ page }) => {
-  await enter(page, 'grader', 'attendance');
+test('a rejected excuse save keeps the reason and permits a retry', async ({ page }) => {
+  await enter(page, 'instructor', 'attendance');
   const cell = page.getByLabel('ab1234 Week 2 attendance', { exact: true });
-  await cell.selectOption('excused');
-  await expect(page.locator('[data-admin-status]')).toHaveText('Attendance saved.');
+  await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
+  await cell.getByRole('textbox').fill('Approved absence');
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
@@ -67,14 +61,14 @@ test('a rejected attendance save restores the previous select and permits a retr
       return original.call(this, key, value);
     };
   });
-  await cell.selectOption('absent');
+  await cell.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Test save rejected.');
-  await expect(cell).toHaveValue('excused');
-  await expect(cell).toBeEnabled();
+  await expect(cell.getByRole('textbox')).toHaveValue('Approved absence');
+  await expect(cell.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText('0P0A0E');
+  await cell.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('[data-admin-status]')).toHaveText('Absence excused.');
   await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText('0P0A1E');
-  await cell.selectOption('absent');
-  await expect(page.locator('[data-admin-status]')).toHaveText('Attendance saved.');
-  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText('0P1A0E');
 });
 
 test('gradebook keyboard entry and filtering retain unsaved scores and show recorded totals', async ({ page }) => {
@@ -153,8 +147,9 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
     await b.setSessionDate(1, '2027-01-25');
     await b.setSessionDate(2, '2027-02-01');
     await b.saveGrades(students.map(r => ({ uni: r.uni, item_id: 7, score: 2 })));
-    await b.saveAttendance(1, [{ uni: 'cd5678', status: 'absent' }, { uni: 'ef9012', status: 'excused' }]);
-    await b.saveAttendance(2, students.slice(0, 12).map(r => ({ uni: r.uni, status: 'present' })));
+    await b.saveGrades([{uni:'cd5678',item_id:7,score:null},{uni:'ef9012',item_id:7,score:null}]);
+    await b.saveAttendance(1, [{ uni: 'ef9012', status: 'excused', excuse_reason: 'Approved absence' }]);
+    await b.saveGrades(students.slice(0, 12).map(r => ({ uni: r.uni, item_id: 8, score: 0 })));
     await b.uploadFile(new File(['%PDF-1.4 synthetic local example'], 'demo.pdf', { type: 'application/pdf' }), { title: 'Week 1 lecture notes', week: 1, auditor_visible: false });
   });
   for (const width of [1440, 390]) {

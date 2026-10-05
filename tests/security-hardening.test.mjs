@@ -195,14 +195,7 @@ test('private test accounts do not bypass Google identity verification', async (
 
 test('student attendance reveals no quiz provenance before release, including raw filters and preview', async () => {
   await as('teacher');
-  await rpc('save_attendance', 1, '[{"uni":"ab1234","status":"present"}]');
-  await as('student');
-  const manual = await attendance();
-  assert.deepEqual(manual, [
-    { uni: 'ab1234', week: 1, status: 'present', source_quiz: null, manual_override: null },
-  ]);
-  await as('teacher');
-  await rpc('save_attendance', 1, '[{"uni":"ab1234","status":null}]');
+  const manual = [{ uni: 'ab1234', week: 1, status: 'present', source_quiz: null, manual_override: null }];
   await rpc('save_grades', '[{"uni":"ab1234","item_id":7,"score":0}]');
   await as('grader');
   assert.equal((await attendance())[0].source_quiz, 1);
@@ -231,7 +224,8 @@ test('student attendance reveals no quiz provenance before release, including ra
   ]);
   assert.equal((await rpc('class_data')).grades[0].score, 0);
   await as('teacher');
-  await rpc('save_attendance', 1, '[{"uni":"ab1234","status":"excused"}]');
+  await rpc('save_grades', '[{"uni":"ab1234","item_id":7,"score":null}]');
+  await rpc('save_attendance', 1, '[{"uni":"ab1234","status":"excused","excuse_reason":"Approved absence"}]');
   await rpc('release_grade_item', 7, false);
   await as('student');
   assert.deepEqual(await attendance(), [

@@ -38,6 +38,13 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       .filter((t) => d.terms.find(term => term.id === d.term_id)?.status === 'active' && t.role === 'student' && !d.roster.some((r) => r.uni === t.uni))
       .map((t) => ({ uni: t.uni, name: `Test student ${t.uni}`, email: null, is_test: true })),
   ];
+  // Synthetic history stays in local storage and is never included in student snapshots.
+  function auditAttendance(d, old, row) {
+    if (!old && !row) return;
+    d.attendance_audit ||= [];
+    d.attendance_audit.push({ actor_email: access().email, changed_at: new Date().toISOString(),
+      old_row: old ? { ...old } : null, new_row: row ? { ...row } : null });
+  }
   function snapshot(term) {
     const a = access(),
       d = read(term);
@@ -73,13 +80,14 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       attendance: d.attendance
         .filter((r) => admin || r.uni === a.uni)
         .map((r) => {
-          if (admin || d.items.some((i) => i.quiz_week === r.source_quiz && i.released)) return r;
+          if (admin) return r;
+          const released = d.items.some(i => i.quiz_week === r.source_quiz && i.released);
           return {
             uni: r.uni,
             week: r.week,
             status: r.status,
-            source_quiz: null,
-            manual_override: null,
+            source_quiz: released ? r.source_quiz : null,
+            manual_override: released ? r.manual_override : null,
           };
         }),
       items: d.items.filter((i) => admin || i.released),
@@ -137,24 +145,31 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       save(d);
     },
     async saveAttendance(week, entries) {
-      requireGrader();
+      requireAdmin();
       const d = read();
+      if (!d.sessions.some(s => s.week === week)) throw new Error('Invalid session.');
+      if (!Array.isArray(entries) || entries.length > 5000) throw new Error('Invalid attendance rows.');
       for (const entry of entries) {
-        if (!roster(d).some((r) => r.uni === entry.uni))
-          throw new Error(`Unknown UNI: ${entry.uni}.`);
-        const quiz = d.items.find(
-          (i) =>
-            i.quiz_week === week && d.grades.some((g) => g.item_id === i.id && g.uni === entry.uni),
-        );
-        d.attendance = d.attendance.filter((a) => a.uni !== entry.uni || a.week !== week);
-        if (entry.status || quiz)
-          d.attendance.push({
-            uni: entry.uni,
-            week,
-            status: entry.status || 'present',
-            source_quiz: quiz?.quiz_week || null,
-            manual_override: !!entry.status,
-          });
+        if (!entry || !Object.hasOwn(entry, 'status') || !['excused', null].includes(entry.status))
+          throw new Error('Only excuse or remove excuse is allowed.');
+        if (!roster(d).some(r => r.uni === entry.uni)) throw new Error(`Unknown UNI: ${entry.uni}.`);
+        const old = d.attendance.find(a => a.uni === entry.uni && a.week === week);
+        const quiz = d.items.find(i => i.quiz_week === week && d.grades.some(g => g.item_id === i.id && g.uni === entry.uni));
+        let row;
+        if (entry.status === 'excused') {
+          const reason = typeof entry.excuse_reason === 'string' ? entry.excuse_reason.trim() : '';
+          if (!reason || [...reason].length > 300) throw new Error('An excuse reason of 1–300 characters is required.');
+          if (quiz || old?.status === 'present') throw new Error('Present attendance cannot be excused. Correct quiz scores in the Gradebook.');
+          row = { uni: entry.uni, week, status: 'excused', source_quiz: null, manual_override: true,
+            excuse_reason: reason, excused_at: new Date().toISOString(), excused_by: access().email };
+        } else {
+          if (old?.status !== 'excused') continue;
+          if (quiz) row = { uni: entry.uni, week, status: 'present', source_quiz: week, manual_override: false,
+            excuse_reason: null, excused_at: null, excused_by: null };
+        }
+        d.attendance = d.attendance.filter(a => a !== old);
+        if (row) d.attendance.push(row);
+        auditAttendance(d, old, row);
       }
       save(d);
     },
@@ -171,11 +186,13 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         if (score != null) d.grades.push({ ...e, score, comment: 'comment' in e ? e.comment : old?.comment || null });
         if (item.quiz_week) {
           const record = d.attendance.find((a) => a.uni === e.uni && a.week === item.quiz_week);
+          const before = record ? { ...record } : null;
           if (score == null) {
             if (record?.manual_override) record.source_quiz = null;
             else d.attendance = d.attendance.filter((a) => a !== record);
           } else if (record) {
             record.source_quiz = item.quiz_week;
+            if (record.status === 'excused') Object.assign(record, { manual_override: false, excuse_reason: null, excused_at: null, excused_by: null });
             if (!record.manual_override) record.status = 'present';
           } else
             d.attendance.push({
@@ -185,6 +202,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
               source_quiz: item.quiz_week,
               manual_override: false,
             });
+          auditAttendance(d, before, d.attendance.find(a => a.uni === e.uni && a.week === item.quiz_week));
         }
       }
       refreshDemoLocks(d, entries.map(e => e.item_id));

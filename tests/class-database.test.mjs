@@ -83,14 +83,10 @@ test('migration preserves legacy roles/visibility and seeds six sessions and six
 });
 test('students read only own attendance and released grades; auditors get only course material data', async () => {
   await as('teacher');
-  await rpc(
-    'save_attendance',
-    1,
-    JSON.stringify([
-      { uni: 'ab1234', status: 'present' },
-      { uni: 'cd5678', status: 'absent' },
-    ]),
-  );
+  // Historical manual rows remain readable after the lockdown.
+  await db.exec('reset role');
+  await db.exec("insert into attendance(uni,week,status,manual_override) values('ab1234',1,'present',true),('cd5678',1,'absent',true)");
+  await as('teacher');
   await rpc(
     'save_grades',
     JSON.stringify([
@@ -204,7 +200,7 @@ test('view-as uses the same student projection and blocks every write path', asy
   await assert.rejects(rpc('list_test_accounts'), /Instructor/);
   await rpc('set_student_preview', null);
   assert.equal((await rpc('get_access')).role, 'instructor');
-  await rpc('save_attendance', 2, '[{"uni":"ab1234","status":"excused"}]');
+  await rpc('save_attendance', 2, '[{"uni":"ab1234","status":"excused","excuse_reason":"Approved absence"}]');
 });
 test('private test accounts receive stable student identities without exposing their email', async () => {
   await as('test');
@@ -226,17 +222,17 @@ test('roster replacement keeps grades and attendance for returning students', as
   assert.equal((await rows("select * from attendance where uni='ab1234'")).length, 2);
 });
 
-test('grader quiz entry, including zero, records attendance and preserves manual overrides', async () => {
+test('grader quiz entry replaces excuses, denies manual writes, and preserves other legacy overrides', async () => {
   await as('grader');
   const d = await rpc('class_data');
   assert.ok(d.roster.every((r) => Object.keys(r).sort().join(',') === 'name,uni'));
   assert.ok(Array.isArray(d.groups)); assert.ok(Array.isArray(d.sets)); assert.ok(Array.isArray(d.members));
   await rpc('save_grades', '[{"uni":"ab1234","item_id":8,"score":0}]');
   let a = (await rows("select * from attendance where uni='ab1234' and week=2"))[0];
-  assert.equal(a.status, 'excused');
+  assert.equal(a.status, 'present');
   assert.equal(a.source_quiz, 2);
-  assert.equal(a.manual_override, true);
-  await rpc('save_attendance', 2, '[{"uni":"ab1234","status":null}]');
+  assert.equal(a.manual_override, false);
+  await assert.rejects(rpc('save_attendance', 2, '[{"uni":"ab1234","status":null}]'), /Instructor/);
   a = (await rows("select * from attendance where uni='ab1234' and week=2"))[0];
   assert.equal(a.status, 'present');
   assert.equal(a.manual_override, false);
@@ -246,7 +242,11 @@ test('grader quiz entry, including zero, records attendance and preserves manual
   a = (await rows("select * from attendance where uni='ab1234' and week=3"))[0];
   assert.equal(a.status, 'present');
   assert.equal(a.source_quiz, 3);
-  await rpc('save_attendance', 3, '[{"uni":"ab1234","status":"absent"}]');
+  await assert.rejects(rpc('save_attendance', 3, '[{"uni":"ab1234","status":"absent"}]'), /Instructor/);
+  // Seed a historical override to test 008's unchanged preservation rule.
+  await db.exec('reset role');
+  await db.exec("update attendance set status='absent',manual_override=true where uni='ab1234' and week=3");
+  await as('grader');
   await rpc('save_grades', '[{"uni":"ab1234","item_id":9,"score":null}]');
   a = (await rows("select * from attendance where uni='ab1234' and week=3"))[0];
   assert.equal(a.status, 'absent');
@@ -358,7 +358,7 @@ const fnCases = {
   replace_roster: ['[{"uni":"ab1234"}]'],
   set_student_preview: ['ab1234'],
   set_session_date: [1, '2027-01-01'],
-  save_attendance: [1, '[{"uni":"ab1234","status":"present"}]'],
+  save_attendance: [1, '[{"uni":"ab1234","status":null}]'],
   save_grades: ['[{"uni":"ab1234","item_id":1,"score":8}]'],
   release_grade_item: [1, true],
   create_group_set: ['Forbidden', 1, 1, null],
@@ -513,7 +513,7 @@ test('each role calls each public function, including guessed identities and gra
             'get_access',
             ...(['a', 'grader','auditor'].includes(who) ? ['class_data','assignment_catalog'] : []),
             ...(who === 'a' ? ['begin_submission'] : []),
-            ...(who === 'grader' ? ['save_grades', 'save_attendance', 'student_profile'] : []),
+            ...(who === 'grader' ? ['save_grades', 'student_profile'] : []),
           ];
     for (const [fn, args] of Object.entries(fnCases)) {
       if (who === 'a' && fn === 'delete_submission') await assert.rejects(rpc(fn,...args), /Submission unavailable/);

@@ -42,7 +42,7 @@ test('grader menu and direct page gates expose only materials, grades, and atten
   await expect(page.getByLabel('ab1234 Week 1 attendance')).toBeVisible();
   await expect(page.locator('input[type=date]')).toHaveCount(0);
 });
-test('grader enters quiz scores by column and CSV; attendance shows quiz source and manual overrides', async ({
+test('grader enters quiz scores by column and CSV; attendance is read-only and follows corrections', async ({
   page,
 }) => {
   await enter(page, 'grader', 'gradebook');
@@ -65,19 +65,18 @@ test('grader enters quiz scores by column and CSV; attendance shows quiz source 
   await expect(page.locator('[data-admin-status]')).toContainText('Scores imported');
   await page.goto('/materials/attendance/');
   await ready(page);
-  await expect(page.getByLabel('ab1234 Week 1 attendance')).toHaveValue('present');
-  await expect(page.getByLabel('cd5678 Week 2 attendance')).toHaveValue('present');
+  await expect(page.getByLabel('ab1234 Week 1 attendance', { exact: true }).locator('.attendance-status')).toHaveText('✓');
+  await expect(page.getByLabel('cd5678 Week 2 attendance', { exact: true }).locator('.attendance-status')).toHaveText('✓');
   await expect(page.locator('#materials-root')).toContainText('from Quiz 2');
-  await page.getByLabel('ab1234 Week 2 attendance').selectOption('excused');
-  await expect(page.locator('#materials-root')).toContainText('Manual override; Quiz 2 recorded');
+  await expect(page.locator('.attendance-grid select, .attendance-action, #attendance-import')).toHaveCount(0);
   await page.goto('/materials/gradebook/');
   await ready(page);
-  await page.getByLabel('ab1234 In-class quiz 2', { exact: true }).fill('3');
+  await page.getByLabel('ab1234 In-class quiz 2', { exact: true }).fill('');
   await page.getByRole('button', { name: 'Save scores', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
   await page.goto('/materials/attendance/');
   await ready(page);
-  await expect(page.getByLabel('ab1234 Week 2 attendance')).toHaveValue('excused');
+  await expect(page.getByLabel('ab1234 Week 2 attendance', { exact: true }).locator('.attendance-status')).toHaveText('');
 });
 test('student sees own released scores and teammate identities only after joining', async ({
   page,
@@ -107,19 +106,16 @@ test('student sees own released scores and teammate identities only after joinin
     page.getByRole('button', { name: 'Join Group 2 in Week 2 lab', exact: true }),
   ).toBeVisible();
 });
-test('instructor can import attendance, create and lock groups, and release scores', async ({
+test('instructor can excuse attendance, create and lock groups, and release scores', async ({
   page,
 }) => {
   await enter(page, 'instructor', 'attendance');
   await page.getByLabel('Week 1 date', { exact: true }).fill('2027-01-25');
-  await page.locator('#attendance-import > summary').click();
-  await page.getByLabel('Present UNI CSV').setInputFiles({
-    name: 'present.csv',
-    mimeType: 'text/csv',
-    buffer: Buffer.from('UNI\nab1234\ncd5678'),
-  });
-  await page.getByRole('button', { name: 'Import present UNIs' }).click();
-  await expect(page.getByLabel('ab1234 Week 1 attendance')).toHaveValue('present');
+  const cell = page.getByLabel('ab1234 Week 1 attendance', { exact: true });
+  await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
+  await cell.getByRole('textbox').fill('Approved absence');
+  await cell.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(cell.locator('.attendance-status')).toHaveText('Excused');
   await page.goto('/materials/groups/');
   await ready(page);
   await page.getByLabel('Group set title', { exact: true }).fill('Final project');
@@ -222,7 +218,7 @@ test('students and preview see plain attendance until the matching quiz is relea
   await expect(page.locator('#materials-root')).toContainText('from Quiz 1');
   await enter(page, 'student', 'attendance');
   const firstWeek = page.locator('.class-grid tbody tr').first();
-  await expect(firstWeek).toContainText('present');
+  await expect(firstWeek).toContainText('Present');
   await expect(firstWeek.locator('td').last()).toHaveText('');
   await expect(page.locator('#my-grades')).toHaveCount(0);
   const hidden = await page.evaluate(async () => {
