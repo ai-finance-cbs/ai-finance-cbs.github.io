@@ -190,7 +190,7 @@ async function refresh() {
       const data = prep ? await state.backend.instructorNote(Number(root.dataset.week)) : await state.backend.speakers();
       if (version !== state.version) return;
       root.replaceChildren();
-      if (prep) renderPreparationOutline({ root, note:data, backend:state.backend,
+      if (prep) renderPreparationOutline({ root, note:data, backend:state.backend, confirmInline,
         outline:JSON.parse(document.querySelector('[data-preparation-outline]').textContent) });
       else renderSpeakers({ root, rows:data, backend:state.backend, confirmInline,
         weeks:JSON.parse(document.querySelector('[data-speaker-weeks]').textContent) });

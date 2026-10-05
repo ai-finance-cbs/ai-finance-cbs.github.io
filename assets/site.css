@@ -1178,3 +1178,17 @@ body.standalone-tool .content { max-width:none; }
 .class-tools #materials-root .preparation-appendix > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
 .preparation-plan + .preparation-section, .preparation-appendix + .preparation-section { border-top:1px solid #ececec; }
 .class-tools #materials-root .preparation-appendix .prep-section-heading > h3 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; }
+
+/* Card controls use the existing text actions and keep drafts inline. */
+.preparation-section { position:relative; }
+.prep-section-heading { padding-right:28px; }
+.prep-drag-grip { position:absolute; right:12px; top:12px; cursor:grab; font-size:21px; line-height:1; text-decoration:none; }
+.prep-drag-grip:disabled { cursor:default; }
+.prep-card-form { display:flex; flex-wrap:wrap; align-items:end; gap:10px 16px; padding:10px 0; border-top:1px solid #ECECEC; }
+.prep-card-form label { display:flex; flex-direction:column; gap:4px; font-size:12px; min-width:0; }
+.prep-card-form label:first-child { flex:1 1 200px; }
+.prep-card-form input, .prep-card-form select { width:100%; max-width:100%; font:inherit; border:0; border-bottom:1px solid #D8D8D8; background:transparent; padding:5px 0; }
+.prep-card-actions { flex-basis:100%; display:flex; flex-wrap:wrap; gap:8px 16px; }
+.prep-card-form [role="status"], [data-prep-layout-status] { font-size:12px; color:#555; }
+.prep-add-card { align-self:flex-start; }
+.prep-drop-target { outline:1px dashed #888; outline-offset:2px; }
