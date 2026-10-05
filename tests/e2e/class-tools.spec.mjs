@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-const editAttendance = async page => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await page.getByRole('button', { name: 'Yes, edit attendance', exact: true }).click(); };
+const openCell = async (page, cell) => { await cell.locator('.attendance-mark').click(); return page.getByRole('dialog'); };
 const ready = async (page) =>
   expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role, path) => {
@@ -66,10 +66,10 @@ test('grader enters quiz scores by column and CSV; attendance is read-only and f
   await expect(page.locator('[data-admin-status]')).toContainText('Scores imported');
   await page.goto('/materials/attendance/');
   await ready(page);
-  await expect(page.getByLabel('ab1234 Week 1 attendance', { exact: true }).locator('.attendance-status')).toHaveText('✓');
-  await expect(page.getByLabel('cd5678 Week 2 attendance', { exact: true }).locator('.attendance-status')).toHaveText('✓');
+  await expect(page.getByLabel('ab1234 Week 1 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('✓');
+  await expect(page.getByLabel('cd5678 Week 2 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('✓');
   await expect(page.locator('#materials-root')).toContainText('from Quiz 2');
-  await expect(page.locator('.attendance-grid select, .attendance-action, #attendance-import')).toHaveCount(0);
+  await expect(page.locator('.attendance-grid select, .attendance-action, .attendance-edit-toggle, #attendance-import')).toHaveCount(0);
   await page.goto('/materials/gradebook/');
   await ready(page);
   await page.getByLabel('ab1234 In-class quiz 2', { exact: true }).fill('');
@@ -77,7 +77,7 @@ test('grader enters quiz scores by column and CSV; attendance is read-only and f
   await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
   await page.goto('/materials/attendance/');
   await ready(page);
-  await expect(page.getByLabel('ab1234 Week 2 attendance', { exact: true }).locator('.attendance-status')).toHaveText('');
+  await expect(page.getByLabel('ab1234 Week 2 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('–');
 });
 test('student sees own released scores and teammate identities only after joining', async ({
   page,
@@ -111,12 +111,11 @@ test('instructor can excuse attendance, create and lock groups, and release scor
   page,
 }) => {
   await enter(page, 'instructor', 'attendance');
-  await editAttendance(page);
   const cell = page.getByLabel('ab1234 Week 1 attendance', { exact: true });
-  await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
-  await cell.getByRole('textbox').fill('Approved absence');
-  await cell.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(cell.locator('.attendance-status')).toHaveText('Excused');
+  const dialog = await openCell(page, cell);
+  await dialog.getByRole('textbox').fill('Approved absence');
+  await dialog.getByRole('button', { name: 'Excuse absence', exact: true }).click();
+  await expect(cell.locator('.attendance-mark')).toHaveText('EX');
   await page.goto('/materials/groups/');
   await ready(page);
   await page.getByLabel('Group set title', { exact: true }).fill('Final project');

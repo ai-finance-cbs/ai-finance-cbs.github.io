@@ -1167,7 +1167,6 @@ body.standalone-tool .content { max-width:none; }
 @media (max-width:480px) { .auth-controls:has(.staff-menu:not([hidden])) .role-badge { display:none !important; } }
 
 /* Attendance has one compact instructor action; the record itself is read-only. */
-.attendance-grid .attendance-action { display:block; margin:3px auto 0; padding:2px 0; border:0; background:none; font-size:11px; text-decoration:underline; }
 .attendance-excuse-form { min-width:150px; text-align:left; white-space:normal; }
 .attendance-excuse-form textarea { display:block; width:100%; min-height:54px; }
 .attendance-excuse-form button { margin:4px 5px 0 0; }
@@ -1185,11 +1184,20 @@ body.standalone-tool .content { max-width:none; }
 .class-tools #materials-root .preparation-appendix > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
 .preparation-plan + .preparation-section, .preparation-appendix + .preparation-section { border-top:1px solid #ececec; }
 .class-tools #materials-root .preparation-appendix .prep-section-heading > h3 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; }
-/* Attendance: excuse actions appear only after Edit is confirmed. */
-.attendance-bar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-.attendance-grid:not(.is-editing) .attendance-action, .attendance-grid:not(.is-editing) .attendance-excuse-form { display:none; }
-.attendance-edit-toggle { border:0; background:none; padding:0; color:#8C2F39; font-size:13px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
-.attendance-totals td span, .attendance-totals td span + span { display:block; margin:0 !important; padding:0; font-size:11.5px; line-height:1.45; }
+/* Attendance, Canvas-style: compact columns, UNI under the name, click a mark for a pop-up. */
+.class-grid.attendance-grid { min-width:0; width:max-content; }
+.attendance-grid th, .attendance-grid td { min-width:0; }
+.attendance-grid td, .attendance-grid thead th:not(:first-child) { width:72px; text-align:center; }
+.class-grid th[scope="row"] .student-identity { display:flex; flex-direction:column; line-height:1.15; }
+.class-grid th[scope="row"] .student-uni { font-size:11px; color:#8a8a8a; }
+.attendance-mark { border:0; background:none; padding:4px 10px; border-radius:4px; font:500 13px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif; cursor:pointer; }
+.attendance-mark:hover, .attendance-mark:focus-visible { background:#EEF2F7; }
+.attendance-mark.mark-present { color:#2E7D4F; }
+.attendance-mark.mark-excused { color:#6b5a00; }
+.attendance-mark.mark-absent { color:#b0b0b0; }
+.attendance-totals td span, .attendance-totals td span + span { display:block; margin:0 !important; padding:0; font-size:11px; line-height:1.4; }
+.attendance-confirm h3 { margin:0 0 8px; font:600 15px/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif; text-transform:none; letter-spacing:0; }
+.attendance-confirm textarea { display:block; width:100%; box-sizing:border-box; margin:0 0 12px; font:13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
 .attendance-confirm { border:1px solid #ECECEC; border-radius:10px; padding:20px 22px; max-width:380px; box-shadow:0 12px 32px rgba(0,0,0,.12); }
 .attendance-confirm::backdrop { background:rgba(0,0,0,.25); }
 .attendance-confirm p { margin:0 0 14px; font-size:14px; line-height:1.5; }

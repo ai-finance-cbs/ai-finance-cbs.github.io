@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-const editAttendance = async page => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await page.getByRole('button', { name: 'Yes, edit attendance', exact: true }).click(); };
+const openCell = async (page, cell) => { await cell.locator('.attendance-mark').click(); return page.getByRole('dialog'); };
 import { mkdirSync } from 'node:fs';
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role, section) => {
@@ -21,7 +21,7 @@ test('compact read-only attendance keeps totals and filters without batch action
   });
   await page.reload(); await ready(page);
   const filter = page.getByRole('searchbox', { name: 'Filter by name or UNI' });
-  await expect(page.locator('.attendance-grid select, .attendance-action, #attendance-import')).toHaveCount(0);
+  await expect(page.locator('.attendance-grid select, .attendance-action, .attendance-edit-toggle, #attendance-import')).toHaveCount(0);
   await expect(page.locator('.student-count')).toHaveText('4 students');
   await filter.fill('AB1234');
   await expect(page.locator('.student-count')).toHaveText('1 of 4 students');
@@ -49,10 +49,9 @@ test('compact read-only attendance keeps totals and filters without batch action
 
 test('a rejected excuse save keeps the reason and permits a retry', async ({ page }) => {
   await enter(page, 'instructor', 'attendance');
-  await editAttendance(page);
   const cell = page.getByLabel('ab1234 Week 2 attendance', { exact: true });
-  await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
-  await cell.getByRole('textbox').fill('Approved absence');
+  const dialog = await openCell(page, cell);
+  await dialog.getByRole('textbox').fill('Approved absence');
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
@@ -63,12 +62,12 @@ test('a rejected excuse save keeps the reason and permits a retry', async ({ pag
       return original.call(this, key, value);
     };
   });
-  await cell.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toHaveText('Test save rejected.');
-  await expect(cell.getByRole('textbox')).toHaveValue('Approved absence');
-  await expect(cell.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Excuse absence', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('Test save rejected.');
+  await expect(dialog.getByRole('textbox')).toHaveValue('Approved absence');
+  await expect(dialog.getByRole('button', { name: 'Excuse absence', exact: true })).toBeEnabled();
   await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 0$/);
-  await cell.getByRole('button', { name: 'Save', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Excuse absence', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Absence excused.');
   await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 1$/);
 });
@@ -174,7 +173,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
             font: getComputedStyle(row.querySelector('td')).fontFamily };
         });
         expect(geometry.rowHeight).toBeGreaterThanOrEqual(32);
-        expect(geometry.rowHeight).toBeLessThanOrEqual(36);
+        expect(geometry.rowHeight).toBeLessThanOrEqual(44); // two lines: name, then UNI
         expect(Math.abs(geometry.left - geometry.before)).toBeLessThan(1);
         expect(Math.abs(geometry.top - geometry.containerTop)).toBeLessThan(2);
         expect(geometry.font).toContain('Helvetica');

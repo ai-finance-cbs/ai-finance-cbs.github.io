@@ -105,18 +105,39 @@ function labeled(parent, label, node) {
   parent.append(l);
   return node;
 }
-// Attendance edit mode survives the page refresh that follows each save.
-let attendanceEditing = false;
-function confirmAttendanceEdit() {
-  return new Promise(resolve => {
-    const dialog = el('dialog', null, { class: 'attendance-confirm', 'aria-label': 'Edit attendance' });
-    dialog.append(el('p', 'Attendance comes from quiz scores. Do you really want to change it by hand?'));
-    const finish = value => { dialog.close(); dialog.remove(); resolve(value); };
-    const yes = button('Yes, edit attendance', () => finish(true)), no = button('Cancel', () => finish(false));
-    const row = el('div', null, { class: 'attendance-confirm-actions' }); row.append(yes, no); dialog.append(row);
-    dialog.addEventListener('cancel', e => { e.preventDefault(); finish(false); });
-    document.body.append(dialog); dialog.showModal(); no.focus();
-  });
+// Canvas-style: clicking a cell opens a small pop-up. Only an excuse can be added or removed by hand.
+function attendanceDialog({ student, week, state, record, editable, save }) {
+  const dialog = el('dialog', null, { class: 'attendance-confirm', 'aria-label': `${student} Week ${week} attendance` });
+  const close = () => { dialog.close(); dialog.remove(); };
+  dialog.append(el('h3', `${student} · Week ${week}`));
+  const actions = el('div', null, { class: 'attendance-confirm-actions' });
+  if (state === 'present') {
+    dialog.append(el('p', `Present${record?.source_quiz ? ` (Quiz ${record.source_quiz} score recorded)` : ''}. To change this, edit the quiz score in the Gradebook.`));
+    actions.append(button('Close', close));
+  } else if (!editable) {
+    dialog.append(el('p', state === 'excused' ? `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}.` : 'Absent: no quiz score for this week.'));
+    actions.append(button('Close', close));
+  } else if (state === 'excused') {
+    dialog.append(el('p', `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}. Attendance normally comes from quiz scores. Do you really want to remove this excuse?`));
+    const remove = button('Remove excuse', async () => { remove.disabled = true; if (await save({ status: null })) close(); else remove.disabled = false; });
+    actions.append(remove, button('Cancel', close));
+  } else {
+    dialog.append(el('p', 'Absent: no quiz score for this week. Attendance normally comes from quiz scores. Do you really want to excuse this absence?'));
+    const reason = el('textarea', null, { required: '', maxlength: '300', rows: '3', 'aria-label': 'Excuse reason', placeholder: 'Reason (required)' });
+    const ok = button('Excuse absence', async () => {
+      if (!reason.value.trim()) { reason.setCustomValidity('Enter an excuse reason.'); reason.reportValidity(); return; }
+      ok.disabled = true; if (await save({ status: 'excused', excuse_reason: reason.value.trim() })) close(); else ok.disabled = false;
+    });
+    reason.addEventListener('input', () => reason.setCustomValidity(''));
+    dialog.append(reason); actions.append(ok, button('Cancel', close));
+  }
+  const error = el('p', '', { class: 'attendance-dialog-error', role: 'alert' });
+  dialog.append(error, actions);
+  const original = save;
+  save = async entry => { error.textContent = ''; const ok = await original(entry); if (!ok) error.textContent = document.querySelector('[data-admin-status]')?.textContent || 'Could not save.'; return ok; };
+  dialog.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  document.body.append(dialog); dialog.showModal();
+  (dialog.querySelector('textarea') || actions.lastElementChild).focus();
 }
 function statusNote(a) {
   if (!a) return '';
@@ -226,60 +247,25 @@ export function renderClassPage(ctx) {
             td = el('td');
           td.setAttribute('aria-label', `${r.uni} Week ${s.week} attendance`);
           const state = a?.status || 'absent';
-          td.append(el('span', state === 'present' ? '✓' : state === 'excused' ? 'Excused' : '', {
-            class: 'attendance-status', 'aria-label': state,
+          const mark = el('button', state === 'present' ? '✓' : state === 'excused' ? 'EX' : '–', {
+            type: 'button', class: `attendance-mark mark-${state}`, 'aria-label': `${r.name || r.uni} Week ${s.week}: ${state}`,
             ...(state === 'excused' && a.excuse_reason ? { title: a.excuse_reason } : {}),
+          });
+          mark.addEventListener('click', () => attendanceDialog({
+            student: r.name || r.uni, week: s.week, state, record: a, editable: admin && canWrite(access),
+            save: entry => run(() => backend.saveAttendance(s.week, [{ uni: r.uni, ...entry }]), entry.status ? 'Absence excused.' : 'Excuse removed.'),
           }));
+          td.append(mark);
           if (a?.source_quiz) {
             const source = el('span', `Q${a.source_quiz}${a.manual_override ? '*' : ''}`, { class: 'quiz-marker', title: statusNote(a) });
             source.append(el('span', ` ${statusNote(a)}`, { class: 'sr-only' }));
             td.append(source);
           }
-          if (admin && canWrite(access) && state !== 'present') {
-            const action = button(state === 'excused' ? 'Remove excuse' : 'Excuse', async () => {
-              if (state === 'excused') {
-                action.disabled = true;
-                await run(() => backend.saveAttendance(s.week, [{ uni: r.uni, status: null }]), 'Excuse removed.');
-                action.disabled = false;
-                return;
-              }
-              action.hidden = true;
-              const form = el('form', null, { class: 'attendance-excuse-form' });
-              const reason = el('textarea', null, { required: '', maxlength: '300', rows: '2', 'aria-label': `${r.uni} Week ${s.week} excuse reason` });
-              labeled(form, 'Reason', reason);
-              const save = button('Save', () => {}); save.type = 'submit';
-              const cancel = button('Cancel', () => { form.remove(); action.hidden = false; action.focus(); });
-              form.append(save, cancel);
-              reason.addEventListener('input', () => reason.setCustomValidity(''));
-              form.addEventListener('submit', async e => {
-                e.preventDefault();
-                if (!reason.value.trim()) { reason.setCustomValidity('Enter an excuse reason.'); reason.reportValidity(); return; }
-                save.disabled = cancel.disabled = true;
-                await run(() => backend.saveAttendance(s.week, [{ uni: r.uni, status: 'excused', excuse_reason: reason.value.trim() }]), 'Absence excused.');
-                save.disabled = cancel.disabled = false;
-              });
-              td.append(form); reason.focus();
-            });
-            action.classList.add('attendance-action');
-            td.append(action);
-          }
           tr.append(td);
         }
         body.append(tr);
       }
-      // Manual changes are hidden behind one Edit button and a confirmation.
-      const bar = el('div', null, { class: 'attendance-bar' });
-      bar.append(el('p', 'Attendance comes from quiz scores. Only the instructor can excuse an absence.', { class: 'attendance-legend' }));
-      t.classList.toggle('is-editing', attendanceEditing);
-      if (admin && canWrite(access)) {
-        const toggle = button(attendanceEditing ? 'Done editing' : 'Edit', async () => {
-          if (attendanceEditing || await confirmAttendanceEdit()) {
-            attendanceEditing = !attendanceEditing; t.classList.toggle('is-editing', attendanceEditing);
-            toggle.textContent = attendanceEditing ? 'Done editing' : 'Edit';
-          }
-        });
-        toggle.classList.add('attendance-edit-toggle'); bar.append(toggle);
-      }
+      const bar = el('p', 'Attendance comes from quiz scores. Click a cell for details; only the instructor can excuse an absence.', { class: 'attendance-legend' });
       root.append(bar, studentFilter(t, 'attendance'), wrapTable(t));
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
