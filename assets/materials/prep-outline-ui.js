@@ -21,16 +21,18 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
   root.append(el('p',outline.goal,{class:'preparation-goal'}));
   let plan, appendix;
   for (const [index,section] of sections.entries()) {
-    if (section.name === OTHER_NOTES && !saved[section.name]) continue;
+    // Other notes stay stored with the week but are not shown.
+    if (section.name === OTHER_NOTES) continue;
     // Each plan item is its own card: lecture parts light red, exercises light blue.
     if (section.kind && !section.appendix && !plan) { plan = el('div',null,{class:'preparation-plan'}); root.append(plan); }
     if (section.appendix && !appendix) {
       appendix = el('section',null,{class:'preparation-appendix'});
       appendix.append(el('h2','Appendix')); root.append(appendix);
     }
-    const panel = el('section',null,{class:`preparation-section${section.kind ? ` prep-${section.kind}` : ''}`,'data-prep-section':section.name,id:`prep-section-${index+1}`});
+    const panel = el('section',null,{class:`preparation-section${section.kind ? ` prep-${section.kind === 'quiz' ? 'lecture' : section.kind}` : ''}`,'data-prep-section':section.name,id:`prep-section-${index+1}`});
     const heading = el('div',null,{class:'prep-section-heading'});
-    heading.append(el(section.appendix ? 'h3' : 'h2',section.name));
+    const prefix = { exercise:'In-Class Exercise: ', lecture:'Lecture: ' }[section.kind] || '';
+    heading.append(el(section.appendix ? 'h3' : 'h2',prefix + section.name));
     const edit = el('button','',{type:'button',class:'prep-text-action'});
     heading.append(edit); panel.append(heading);
     const output = el('div',null,{class:'prep-markdown','data-prep-markdown':''});

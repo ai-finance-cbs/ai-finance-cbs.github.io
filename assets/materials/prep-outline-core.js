@@ -11,7 +11,7 @@ export function preparationSections(outline) {
   const plan = outline.plan || ['Introduction', ...outline.topics.map(t => t.name), QUIZ, ...exercises.filter(n => !appendix.includes(n))];
   // An exercise left out of both lists still gets a place at the end of the plan.
   const missing = exercises.filter(n => !plan.includes(n) && !appendix.includes(n));
-  const kind = name => exercises.includes(name) ? 'exercise' : 'lecture';
+  const kind = name => exercises.includes(name) ? 'exercise' : name === QUIZ ? 'quiz' : 'lecture';
   return [
     { name:'Logistics' },
     ...[...plan, ...missing].map(name => ({ name, kind:kind(name) })),

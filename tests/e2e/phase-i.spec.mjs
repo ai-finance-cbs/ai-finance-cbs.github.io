@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter = async (page,week=1) => { await page.goto(`/materials/preparation/week-${week}/?fakeauth=instructor`); await ready(page); };
-const section = (page,name) => page.locator('[data-prep-section]').filter({has:page.locator('.prep-section-heading').getByRole('heading',{name,exact:true})});
+const section = (page,name) => page.locator(`[data-prep-section="${name}"]`);
 const noteBody = page => page.evaluate(async () => (await (await import('/assets/materials/demo.js')).createDemo().instructorNote(1)).body);
 const edit = async panel => panel.locator('.prep-section-heading button').click();
 const save = async panel => { await panel.getByRole('button',{name:'Save',exact:true}).click(); await expect(panel.locator('[data-prep-status]')).toContainText('Saved'); };
@@ -17,11 +17,12 @@ test('every week renders its public outline and no reading links and no editor o
     const outline = await page.locator('[data-preparation-outline]').evaluate(n => JSON.parse(n.textContent));
     const plan = outline.plan || ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises];
     const appendix = outline.appendix || [];
-    const expected = ['Logistics',...plan,...(appendix.length?['Appendix']:[]),...appendix,...(week===1?['Other notes']:[])];
+    const label = n => outline.exercises.includes(n) ? `In-Class Exercise: ${n}` : n === 'Quiz (3 questions)' ? n : `Lecture: ${n}`;
+    const expected = ['Logistics',...plan.map(label),...(appendix.length?['Appendix']:[]),...appendix.map(label)];
     expect(await page.locator('.prep-section-heading :is(h2,h3), .preparation-appendix > h2').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
-    expect(await page.locator('.preparation-plan .prep-exercise h2').allTextContents()).toEqual(plan.filter(n=>outline.exercises.includes(n)));
-    expect(await page.locator('.preparation-appendix h3').allTextContents()).toEqual(appendix);
+    expect(await page.locator('.preparation-plan .prep-exercise h2').allTextContents()).toEqual(plan.filter(n=>outline.exercises.includes(n)).map(label));
+    expect(await page.locator('.preparation-appendix h3').allTextContents()).toEqual(appendix.map(label));
     await expect(page.locator('[data-prep-section="Milestone"], .preparation-exercises')).toHaveCount(0);
     await expect(page.getByRole('textbox')).toHaveCount(0);
     await expect(page.locator('.prep-reading-list, .prep-reading-level')).toHaveCount(0);
@@ -55,7 +56,8 @@ test('each section edits, cancels, saves, and reloads independently while legacy
     await edit(panel); await expect(panel.getByRole('textbox')).toHaveValue(`**Saved for ${name}**\n\n## Logistics\nKeep this nested heading here.`);
     await panel.getByRole('button',{name:'Cancel',exact:true}).click();
   }
-  await edit(section(page,'Other notes')); await expect(section(page,'Other notes').getByRole('textbox')).toHaveValue(original);
+  // Other notes are hidden but stay stored after other sections save.
+  expect(await noteBody(page)).toContain('## Other notes');
 });
 
 test('saving one section preserves other drafts; oversized saves keep the draft and leave stored notes intact',async ({page}) => {
