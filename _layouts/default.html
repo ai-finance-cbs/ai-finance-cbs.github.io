@@ -14,7 +14,7 @@
   <script src="{{ '/assets/materials-config.js' | relative_url }}" defer></script>
   <script type="module" src="{{ '/assets/materials/app.js' | relative_url }}"></script>
 </head>
-<body data-calendar-url="{{ site.supabase_url | escape }}" class="{% if page.url contains '/library/' or page.url contains '/syllabus/' or page.url contains '/materials/' %}in-library{% endif %}{% if page.material_week %} week-page{% endif %}">
+<body data-calendar-url="{{ site.supabase_url | escape }}" class="{% if page.url contains '/library/' or page.url contains '/syllabus/' or page.url contains '/materials/' %}in-library{% endif %}{% if page.material_week %} week-page{% endif %}{% if page.standalone %} standalone-tool{% endif %}">
   <a class="skip-link" href="#main">Skip to content</a>
   {% include sidebar.html %}
   <main id="main" tabindex="-1">
