@@ -27,9 +27,8 @@ test('grader menu and direct page gates expose only materials, grades, and atten
     'Nota Bene',
     'Course Materials',
     'Assignments',
-    'Gradebook',
-    'Attendance',
   ]);
+  await expect(page.locator('.staff-menu li:not([hidden]) a')).toHaveText(['Gradebook', 'Attendance']);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.locator('[data-view-picker]')).toBeHidden();
   for (const path of ['roster', 'files', 'settings', 'groups', 'grades', 'submit']) {

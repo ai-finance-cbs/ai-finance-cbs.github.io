@@ -192,9 +192,12 @@ test('individual milestones upload without a group and keep the saved filename o
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
   const publicMenu=['Home','Syllabus','Library','Staff','Nota Bene'];
-  for(const [role,extra] of Object.entries({student:['Course Materials','Assignments','Attendance','Grades','Groups','Submit'],auditor:['Course Materials','Assignments'],grader:['Course Materials','Assignments','Gradebook','Attendance'],instructor:['Course Materials','Assignments','Groups','Gradebook','Attendance','Roster','Settings','Preparation','Speakers']})) {
+  for(const [role,extra] of Object.entries({student:['Course Materials','Assignments','Attendance','Grades','Groups','Submit'],auditor:['Course Materials','Assignments'],grader:['Course Materials','Assignments'],instructor:['Course Materials','Assignments','Groups']})) {
+    const tools={student:[],auditor:[],grader:['Gradebook','Attendance'],instructor:['Gradebook','Attendance','Roster','Settings','Preparation','Speakers']}[role];
     await enter(page,role);
     await expect(page.locator('.topnav a:visible')).toHaveText([...publicMenu,...extra]);
+    await expect(page.locator('.staff-menu')).toBeVisible({visible:tools.length>0});
+    if(tools.length) await expect(page.locator('.staff-menu li:not([hidden]) a')).toHaveText(tools);
     await expect(page.locator('.topnav a[href="/materials/files/"]')).toHaveCount(0);
     await page.goto('/materials/files/'); await ready(page);
     await expect(page.locator('#file-form')).toHaveCount(role==='instructor'?1:0);

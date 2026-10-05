@@ -11,7 +11,7 @@ test.beforeEach(async ({page}) => {
 test('both tabs and all preparation weeks belong only to instructors; other roles cannot fetch demo data', async ({page}) => {
   for (const role of ['instructor','grader','student','auditor','unlisted']) {
     await enter(page,role);
-    for (const name of ['Preparation','Speakers']) await expect(page.locator('.topnav').getByRole('link',{name,exact:true})).toHaveCount(role === 'instructor' ? 1 : 0);
+    for (const name of ['Preparation','Speakers']) await expect(page.locator('.staff-menu li:not([hidden])').getByRole('link',{name,exact:true,includeHidden:true})).toHaveCount(role === 'instructor' ? 1 : 0);
     if (role === 'instructor') {
       await expect(page.locator('.topbar .preparation-nav a')).toHaveCount(6);
       await expect(page.locator('.topbar .preparation-nav a').first()).toContainText('Week 1AI Economics');
@@ -31,7 +31,7 @@ test('both tabs and all preparation weeks belong only to instructors; other role
   await page.locator('[data-signout]').click(); await ready(page);
   for (const slug of ['preparation','speakers']) {
     await page.goto(`/materials/${slug}/`); await ready(page); await expect(root(page)).toContainText('Sign in');
-    for (const name of ['Preparation','Speakers']) await expect(page.locator('.topnav').getByRole('link',{name,exact:true})).toHaveCount(0);
+    for (const name of ['Preparation','Speakers']) await expect(page.locator('.staff-menu li:not([hidden])').getByRole('link',{name,exact:true,includeHidden:true})).toHaveCount(0);
   }
 });
 
@@ -62,7 +62,7 @@ test('notes save explicitly, survive reload, remain separate by week, and render
 test('unsaved changes warn inline on navigation and sign-out, and in the browser on reload', async ({page}) => {
   await enter(page); await section(page).getByRole('button',{name:'Edit Other notes',exact:true}).click();
   await page.getByLabel('Other notes',{exact:true}).fill('Unsaved draft');
-  await page.locator('.topnav').getByRole('link',{name:'Speakers',exact:true}).click();
+  await page.locator('.staff-menu summary').click(); await page.locator('.staff-menu').getByRole('link',{name:'Speakers',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('Unsaved changes');
   await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.getByLabel('Other notes',{exact:true})).toHaveValue('Unsaved draft');
   const warning = page.waitForEvent('dialog');
@@ -71,7 +71,7 @@ test('unsaved changes warn inline on navigation and sign-out, and in the browser
   await expect(page.getByLabel('Other notes',{exact:true})).toHaveValue('Unsaved draft');
   await page.locator('[data-signout]').click(); await expect(page.getByRole('alert')).toContainText('Unsaved changes');
   await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.locator('[data-role]')).toHaveText('Instructor');
-  await page.locator('.topnav').getByRole('link',{name:'Speakers',exact:true}).click();
+  await page.locator('.staff-menu summary').click(); await page.locator('.staff-menu').getByRole('link',{name:'Speakers',exact:true}).click();
   await page.getByRole('button',{name:'Leave without saving'}).click(); await ready(page); await expect(page).toHaveURL(/\/speakers\/$/);
   await page.goto('/materials/preparation/week-1/'); await ready(page); await expect(root(page)).not.toContainText('Unsaved draft');
 });
@@ -84,8 +84,8 @@ test('preview warns about unsaved notes and then denies both workspace pages and
   await expect(page).toHaveURL(/\/attendance\/$/); await ready(page);
   for (const slug of ['preparation/week-1','speakers']) {
     await page.goto(`/materials/${slug}/`); await ready(page); await expect(root(page)).toContainText('for instructors');
-    await expect(page.locator('.topnav').getByRole('link',{name:'Preparation',exact:true})).toHaveCount(0);
-    await expect(page.locator('.topnav').getByRole('link',{name:'Speakers',exact:true})).toHaveCount(0);
+    await expect(page.locator('.staff-menu li:not([hidden])').getByRole('link',{name:'Preparation',exact:true,includeHidden:true})).toHaveCount(0);
+    await expect(page.locator('.staff-menu li:not([hidden])').getByRole('link',{name:'Speakers',exact:true,includeHidden:true})).toHaveCount(0);
   }
   expect(await page.evaluate(async () => {
     const b=(await import('/assets/materials/demo.js')).createDemo(), result=[];

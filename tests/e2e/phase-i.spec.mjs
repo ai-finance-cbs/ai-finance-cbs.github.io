@@ -67,7 +67,7 @@ test('saving one section preserves other drafts; oversized saves keep the draft 
   await edit(quiz); await quiz.getByRole('textbox').fill('Unsaved quiz draft');
   await save(first); await expect(quiz.getByRole('textbox')).toHaveValue('Unsaved quiz draft');
   expect(await noteBody(page)).not.toContain('Unsaved quiz draft');
-  await page.locator('.topnav').getByRole('link',{name:'Speakers',exact:true}).click();
+  await page.locator('.staff-menu summary').click(); await page.locator('.staff-menu').getByRole('link',{name:'Speakers',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('Unsaved changes'); await page.getByRole('button',{name:'Keep editing'}).click();
   await save(quiz); const before=await noteBody(page);
   await edit(first); await first.getByRole('textbox').fill('x'.repeat(50000));

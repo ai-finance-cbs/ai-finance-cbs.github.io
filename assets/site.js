@@ -60,3 +60,10 @@ if (reqToggle) reqToggle.addEventListener('click', () => {
     if (hasItems) note.hidden = !(on && !hasReq);
   });
 });
+
+// Staff tools dropdown: close on an outside click or Escape.
+const staffMenu = document.querySelector('.staff-menu');
+if (staffMenu) {
+  document.addEventListener('click', e => { if (staffMenu.open && !staffMenu.contains(e.target)) staffMenu.open = false; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && staffMenu.open) { staffMenu.open = false; staffMenu.querySelector('summary').focus(); } });
+}

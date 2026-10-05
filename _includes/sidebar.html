@@ -15,6 +15,22 @@
       <div class="auth-controls" aria-label="Course account">
         <button type="button" class="auth-login" data-login><span class="auth-long">Sign in with Columbia UNI</span><span class="auth-short">Sign in</span></button>
         <span class="role-badge" data-role hidden></span>
+        <!-- Staff tools live in one dropdown beside the role badge, so the main menu stays short. -->
+        {% assign staff_current = false %}{% assign staff_all = 'Gradebook,Attendance,Roster,Settings,Preparation,Speakers' | split: ',' %}{% for tab in staff_all %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}{% if page.url == u %}{% assign staff_current = true %}{% endif %}{% endfor %}{% if page.preparation_week %}{% assign staff_current = true %}{% endif %}
+        <details class="staff-menu{% if staff_current %} is-current{% endif %}" data-grading-member hidden>
+          <summary>Tools</summary>
+          <ul>
+        {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
+        {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
+            <li data-zone="staff"><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}{% if tab == 'Gradebook' %} target="_blank" rel="noopener"{% endif %}>{{ tab }}</a></li>
+        {% endfor %}
+            <li class="staff-sep" data-materials-admin hidden aria-hidden="true"></li>
+        {% assign admin_tabs = 'Roster,Settings,Preparation,Speakers' | split: ',' %}
+        {% for tab in admin_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
+            <li data-materials-admin data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u or tab == 'Preparation' and page.preparation_week %} aria-current="page"{% endif %}>{{ tab }}</a></li>
+        {% endfor %}
+          </ul>
+        </details>
         <div class="preview-banner" data-preview-banner hidden role="status"><span class="preview-pill"><span data-preview-name></span><span class="preview-readonly"> · Read-only</span></span><button type="button" data-preview-exit>Exit</button></div>
         <label class="view-picker" data-view-picker hidden><span class="sr-only">View as student</span><select data-view-select aria-label="View as student"><option value="">View as student</option></select></label>
         <button type="button" class="auth-signout" data-signout hidden>Sign out</button>
@@ -34,15 +50,6 @@
         <li {% if tab == 'Groups' %}data-class-member{% else %}data-student-only{% endif %} data-zone="class" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
         {% if site.ed_discussion_url != nil and site.ed_discussion_url != "" %}<li data-ed-member data-zone="class" hidden><a href="{{ site.ed_discussion_url }}" target="_blank" rel="noopener">Ed Discussion</a></li>{% endif %}
-        <li class="member-sep" data-grading-member hidden aria-hidden="true"></li>
-        {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
-        {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-grading-member data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}{% if tab == 'Gradebook' %} target="_blank" rel="noopener"{% endif %}>{{ tab }}</a></li>
-        {% endfor %}
-        {% assign admin_tabs = 'Roster,Settings,Preparation,Speakers' | split: ',' %}
-        {% for tab in admin_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-        <li data-materials-admin data-zone="staff" hidden><a href="{{ u | relative_url }}"{% if page.url == u or tab == 'Preparation' and page.preparation_week %} aria-current="page"{% endif %}>{{ tab }}</a></li>
-        {% endfor %}
       </ul>
     </nav>
     </div>

@@ -1150,3 +1150,19 @@ body.standalone-tool .content { max-width:none; }
 .speaker-detail .speaker-notes:first-child::before { content:""; }
 .speaker-actions { flex:none; margin-left:auto; }
 @media (max-width:819px) { .speaker-heading { flex-wrap:wrap; } .speaker-detail { flex-basis:100%; white-space:normal; } }
+
+/* Staff tools: one burgundy dropdown beside the role badge. */
+.staff-menu { position:relative; }
+.staff-menu summary { list-style:none; cursor:pointer; color:#8C2F39; border:1px solid #E3C5CA; border-radius:999px; padding:3px 11px; font:500 12.5px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; white-space:nowrap; background:#fff; }
+.staff-menu summary::-webkit-details-marker { display:none; }
+.staff-menu summary::after { content:"\25BE"; margin-left:6px; font-size:10px; }
+.staff-menu summary:hover, .staff-menu[open] summary { background:#F8EEF0; }
+.staff-menu.is-current summary { background:#8C2F39; border-color:#8C2F39; color:#fff; }
+.staff-menu ul { position:absolute; right:0; top:calc(100% + 6px); min-width:170px; margin:0; padding:6px 0; list-style:none; background:#fff; border:1px solid #ECECEC; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.08); z-index:40; }
+.staff-menu li a { display:block; padding:7px 16px; color:#8C2F39; text-decoration:none; font:400 13.5px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; white-space:nowrap; }
+.staff-menu li a:hover { background:#FAF3F4; }
+.staff-menu li a[aria-current="page"] { font-weight:600; }
+.staff-menu .staff-sep { border-top:1px solid #ECECEC; margin:5px 0; }
+@media (max-width:819px) { .staff-menu summary { font-size:11.5px; padding:3px 9px; } }
+/* Phones: the Tools pill already marks a staff account, so the role badge steps aside to save room. */
+@media (max-width:480px) { .auth-controls:has(.staff-menu:not([hidden])) .role-badge { display:none !important; } }
