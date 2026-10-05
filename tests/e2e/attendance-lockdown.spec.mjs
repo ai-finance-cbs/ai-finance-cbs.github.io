@@ -13,7 +13,7 @@ for (const width of [1440, 390]) test(`instructor excuses and removes inline at 
   await expect(page.locator('.attendance-legend')).toHaveText('Attendance comes from quiz scores. Click a cell for details; only the instructor can excuse an absence.');
   await expect(page.locator('.attendance-action, .attendance-edit-toggle')).toHaveCount(0);
   let dialog = await openCell(page, cell(page));
-  await expect(dialog).toContainText('Do you really want to excuse this absence?');
+  await expect(dialog).toContainText('Do you really want to change the attendance?');
   const reason = dialog.getByRole('textbox');
   await expect(reason).toBeFocused(); await expect(reason).toHaveAttribute('maxlength', '300');
   await dialog.getByRole('button', { name: 'Excuse absence', exact: true }).click();
@@ -33,7 +33,7 @@ for (const width of [1440, 390]) test(`instructor excuses and removes inline at 
   await page.getByRole('button', { name: 'Close student card', exact: true }).click();
   await page.screenshot({ path: `evidence/attendance-lockdown/instructor-${width}.png`, fullPage: true });
   dialog = await openCell(page, cell(page));
-  await expect(dialog).toContainText('Do you really want to remove this excuse?');
+  await expect(dialog).toContainText('Do you really want to change the attendance?');
   await dialog.getByRole('button', { name: 'Remove excuse', exact: true }).click();
   await expect(cell(page).locator('.attendance-mark')).toHaveText('–');
   await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 0$/);

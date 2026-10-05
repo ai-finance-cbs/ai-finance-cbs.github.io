@@ -1202,3 +1202,8 @@ body.standalone-tool .content { max-width:none; }
 .attendance-confirm::backdrop { background:rgba(0,0,0,.25); }
 .attendance-confirm p { margin:0 0 14px; font-size:14px; line-height:1.5; }
 .attendance-confirm-actions { display:flex; gap:10px; justify-content:flex-end; }
+.class-tools #materials-root table.attendance-grid { width:auto !important; min-width:0 !important; }
+.class-tools #materials-root .attendance-grid td, .class-tools #materials-root .attendance-grid thead th:not(:first-child) { width:auto; min-width:76px; padding:3px 6px; }
+.class-grid-wrap:has(> .attendance-grid) { width:max-content; max-width:100%; }
+.attendance-grid .session-date { width:auto; text-align:center; }
+.attendance-confirm .attendance-question { font-weight:600; }

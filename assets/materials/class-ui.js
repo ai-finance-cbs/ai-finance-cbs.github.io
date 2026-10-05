@@ -118,11 +118,11 @@ function attendanceDialog({ student, week, state, record, editable, save }) {
     dialog.append(el('p', state === 'excused' ? `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}.` : 'Absent: no quiz score for this week.'));
     actions.append(button('Close', close));
   } else if (state === 'excused') {
-    dialog.append(el('p', `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}. Attendance normally comes from quiz scores. Do you really want to remove this excuse?`));
+    dialog.append(el('p', `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}. Attendance normally comes from quiz scores.`), el('p', 'Do you really want to change the attendance?', { class: 'attendance-question' }));
     const remove = button('Remove excuse', async () => { remove.disabled = true; if (await save({ status: null })) close(); else remove.disabled = false; });
     actions.append(remove, button('Cancel', close));
   } else {
-    dialog.append(el('p', 'Absent: no quiz score for this week. Attendance normally comes from quiz scores. Do you really want to excuse this absence?'));
+    dialog.append(el('p', 'Absent: no quiz score for this week. Attendance normally comes from quiz scores.'), el('p', 'Do you really want to change the attendance?', { class: 'attendance-question' }));
     const reason = el('textarea', null, { required: '', maxlength: '300', rows: '3', 'aria-label': 'Excuse reason', placeholder: 'Reason (required)' });
     const ok = button('Excuse absence', async () => {
       if (!reason.value.trim()) { reason.setCustomValidity('Enter an excuse reason.'); reason.reportValidity(); return; }
