@@ -131,8 +131,9 @@ test('Speakers use all six Library week headings and Unscheduled, with safe fiel
   for (const week of [...weeks,{week:'unscheduled'}]) {
     const group=page.locator(`[data-speaker-week="${week.week}"]`); await expect(group.locator('.speaker-row')).toHaveCount(1);
     expect(await group.locator('h2').evaluate(n=>getComputedStyle(n).fontFamily)).toContain('Source Serif');
-    await expect(group.locator('.speaker-status')).toHaveCSS('font-size','11px');
-    await expect(group.locator('.speaker-contact a')).toHaveAttribute('rel','noopener noreferrer');
+    await expect(group.locator('.speaker-status')).toHaveCount(0);
+    await expect(group.locator('.speaker-row h3 a')).toHaveAttribute('rel','noopener noreferrer');
+    for (const row of await group.locator('.speaker-row').all()) expect((await row.boundingBox()).height).toBeLessThan(40);
     for (const edge of ['left','right','bottom']) await expect(group).toHaveCSS(`border-${edge}-width`,'0px');
     for (const row of await group.locator('.speaker-row').all()) await expect(row).toHaveCSS('border-top-width','0px');
   }
