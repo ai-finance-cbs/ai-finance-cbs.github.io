@@ -15,17 +15,19 @@ test('every week renders its public outline and no reading links and no editor o
   for (let week=1;week<=6;week++) {
     await enter(page,week);
     const outline = await page.locator('[data-preparation-outline]').evaluate(n => JSON.parse(n.textContent));
-    const expected = ['Logistics','Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone',...(week===1?['Other notes']:[])];
-    expect(await page.locator('.prep-section-heading :is(h2,h3)').allTextContents()).toEqual(expected);
+    const plan = outline.plan || ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises];
+    const appendix = outline.appendix || [];
+    const expected = ['Logistics',...plan,...(appendix.length?['Appendix']:[]),...appendix,...(week===1?['Other notes']:[])];
+    expect(await page.locator('.prep-section-heading :is(h2,h3), .preparation-appendix > h2').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
-    await expect(page.locator('.preparation-exercises > h2')).toHaveText('In-class exercises');
-    expect(await page.locator('.preparation-exercises h3').allTextContents()).toEqual(outline.exercises);
-    await expect(section(page,'Milestone').locator('.prep-reference')).toHaveText(outline.milestone);
+    expect(await page.locator('.preparation-plan .prep-exercise h2').allTextContents()).toEqual(plan.filter(n=>outline.exercises.includes(n)));
+    expect(await page.locator('.preparation-appendix h3').allTextContents()).toEqual(appendix);
+    await expect(page.locator('[data-prep-section="Milestone"], .preparation-exercises')).toHaveCount(0);
     await expect(page.getByRole('textbox')).toHaveCount(0);
     await expect(page.locator('.prep-reading-list, .prep-reading-level')).toHaveCount(0);
     await expect(page.locator('main h1').first()).toHaveText(new RegExp(`^Week ${week}: `));
     await expect(section(page,'Logistics')).toHaveCSS('background-color','rgb(244, 246, 249)');
-    for (const panel of await page.locator('.preparation-section:not([data-prep-section="Logistics"])').all()) {
+    for (const panel of await page.locator('.preparation-section:not([data-prep-section="Logistics"]):not(.prep-lecture):not(.prep-exercise)').all()) {
       for (const edge of ['left','right','bottom']) await expect(panel).toHaveCSS(`border-${edge}-width`,'0px');
       expect(await panel.locator('.prep-section-heading :is(h2,h3)').evaluate(n=>getComputedStyle(n).fontFamily)).toContain('Source Serif');
     }

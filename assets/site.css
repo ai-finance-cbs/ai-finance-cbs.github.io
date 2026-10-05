@@ -1170,9 +1170,11 @@ body.standalone-tool .content { max-width:none; }
 /* Preparation: Logistics sits first in a light shaded panel. */
 .preparation-section[data-prep-section="Logistics"] { background:#F4F6F9; border:1px solid #E3E8EF; border-radius:10px; padding:16px 20px; margin:6px 0 10px; }
 .preparation-section[data-prep-section="Logistics"] + .preparation-section { border-top:0; }
-/* Lecture topics in a light red block; in-class exercises in a light blue block. */
-.preparation-lecture { background:#FBF4F4; border:1px solid #F0DCDE; border-radius:10px; padding:4px 20px; margin:10px 0; }
-.preparation-lecture > .preparation-section:first-child { border-top:0; }
-.preparation-lecture > .preparation-section { border-top-color:#F0DCDE; }
-.preparation-exercises { background:#F1F6FC; border:1px solid #D9E5F3; border-radius:10px; padding:18px 20px; margin:10px 0; }
-.preparation-lecture + .preparation-section, .preparation-exercises + .preparation-section { border-top:0; }
+/* Preparation class plan: each part is its own card. Lecture parts light red, exercises light blue. */
+.preparation-plan, .preparation-appendix { display:flex; flex-direction:column; gap:10px; margin:10px 0 18px; }
+.preparation-section.prep-lecture, .preparation-section.prep-exercise { border-radius:10px; padding:14px 20px; }
+.preparation-section.prep-lecture { background:#FBF4F4; border:1px solid #F0DCDE; }
+.preparation-section.prep-exercise { background:#F1F6FC; border:1px solid #D9E5F3; }
+.preparation-appendix { border-top:1px solid #ececec; padding-top:20px; }
+.class-tools #materials-root .preparation-appendix > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
+.preparation-plan + .preparation-section, .preparation-appendix + .preparation-section { border-top:1px solid #ececec; }
