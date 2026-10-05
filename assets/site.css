@@ -1166,3 +1166,7 @@ body.standalone-tool .content { max-width:none; }
 @media (max-width:819px) { .staff-menu summary { font-size:11.5px; padding:3px 9px; } }
 /* Phones: the Tools pill already marks a staff account, so the role badge steps aside to save room. */
 @media (max-width:480px) { .auth-controls:has(.staff-menu:not([hidden])) .role-badge { display:none !important; } }
+
+/* Preparation: Logistics sits first in a light shaded panel. */
+.preparation-section[data-prep-section="Logistics"] { background:#F4F6F9; border:1px solid #E3E8EF; border-radius:10px; padding:16px 20px; margin:6px 0 10px; }
+.preparation-section[data-prep-section="Logistics"] + .preparation-section { border-top:0; }

@@ -15,7 +15,7 @@ test('every week renders its public outline and no reading links and no editor o
   for (let week=1;week<=6;week++) {
     await enter(page,week);
     const outline = await page.locator('[data-preparation-outline]').evaluate(n => JSON.parse(n.textContent));
-    const expected = ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone','Logistics',...(week===1?['Other notes']:[])];
+    const expected = ['Logistics','Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone',...(week===1?['Other notes']:[])];
     expect(await page.locator('.prep-section-heading :is(h2,h3)').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
     await expect(page.locator('.preparation-exercises > h2')).toHaveText('In-class exercises');
@@ -24,7 +24,8 @@ test('every week renders its public outline and no reading links and no editor o
     await expect(page.getByRole('textbox')).toHaveCount(0);
     await expect(page.locator('.prep-reading-list, .prep-reading-level')).toHaveCount(0);
     await expect(page.locator('main h1').first()).toHaveText(new RegExp(`^Week ${week}: `));
-    for (const panel of await page.locator('.preparation-section').all()) {
+    await expect(section(page,'Logistics')).toHaveCSS('background-color','rgb(244, 246, 249)');
+    for (const panel of await page.locator('.preparation-section:not([data-prep-section="Logistics"])').all()) {
       for (const edge of ['left','right','bottom']) await expect(panel).toHaveCSS(`border-${edge}-width`,'0px');
       expect(await panel.locator('.prep-section-heading :is(h2,h3)').evaluate(n=>getComputedStyle(n).fontFamily)).toContain('Source Serif');
     }
