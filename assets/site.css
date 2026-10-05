@@ -1133,8 +1133,7 @@ body.standalone-tool main { margin-left:0; padding:32px 40px 0; }
 body.standalone-tool .content { max-width:none; }
 
 /* Speakers: one line per person, filter box inline with Add speaker. */
-.speakers-toolbar { align-items:center; justify-content:space-between; padding-bottom:6px; }
-.speakers-toolbar input[type="search"] { flex:1; max-width:340px; }
+.speakers-toolbar { align-items:center; justify-content:flex-end; padding-bottom:6px; }
 .speaker-week { padding:16px 0 10px; }
 .class-tools #materials-root .speaker-week > h2 { font-size:19px; margin:0 0 6px; }
 .class-tools #materials-root .speaker-row { padding:4px 0; margin:0; border-bottom:1px solid #f4f4f4; }

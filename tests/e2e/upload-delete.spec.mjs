@@ -90,6 +90,6 @@ test('twelve speakers group by week, keep all fields and notes, and preserve inl
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:'evidence/phase-e/speakers-1440.png',fullPage:true});
   const first=page.locator('.speaker-row').first();await first.getByRole('button',{name:'Edit',exact:true}).click();await first.getByLabel('Topic').fill('Updated topic');await first.getByRole('button',{name:'Save speaker'}).click();
-  await page.getByLabel('Filter speakers').fill('Updated topic');await expect(page.locator('.speaker-row')).toHaveCount(1);
+  await expect(page.locator('.speaker-row').filter({hasText:'Updated topic'})).toHaveCount(1);
   await page.setViewportSize({width:320,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

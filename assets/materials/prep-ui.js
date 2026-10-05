@@ -87,9 +87,8 @@ export function renderPreparation({ root, note, backend, assignment = false, lab
 
 export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
   const toolbar = el('div', null, { class:'speakers-toolbar' });
-  const filter = el('input', null, { type:'search', placeholder:'Filter speakers', 'aria-label':'Filter speakers' });
   const add = button('Add speaker', () => { if (!composer.childElementCount) edit(composer); });
-  toolbar.append(filter, add);
+  toolbar.append(add);
   const composer = el('div'), list = el('div', null, { class:'speakers-list' }), status = el('p', '', { role:'status' });
   root.append(toolbar, status, composer, list);
   function edit(container, row = {}) {
@@ -121,7 +120,7 @@ export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
   }
   function draw() {
     list.replaceChildren();
-    const matches = sortedSpeakers(rows, filter.value);
+    const matches = sortedSpeakers(rows, '');
     if (!matches.length) list.append(el('p', 'No speakers found.'));
     for (const week of [...weeks,{week:null,title:'Unscheduled'}]) {
       const group = el('section',null,{class:'speaker-week','data-speaker-week':week.week ?? 'unscheduled'});
@@ -153,5 +152,5 @@ export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
       }
     }
   }
-  filter.addEventListener('input', draw); draw();
+  draw();
 }

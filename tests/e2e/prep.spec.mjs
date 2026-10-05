@@ -108,12 +108,13 @@ test('speaker add, inline edit, filtering, ordering, confirmed delete, and reloa
   await expect(row.locator('script')).toHaveCount(0); await expect(row.getByRole('link',{name:'A new guest'})).toHaveAttribute('href','mailto:guest@example.test');
   await row.getByRole('button',{name:'Edit',exact:true}).click(); await row.getByLabel('Name',{exact:true}).fill('Updated guest'); await row.getByLabel('Week',{exact:true}).selectOption('');
   await row.getByRole('button',{name:'Save speaker'}).click(); await expect(page.locator('.speaker-row h3').last()).toHaveText('Updated guest');
-  await page.reload(); await ready(page); await page.getByLabel('Filter speakers').fill('Credit'); await expect(page.locator('.speaker-row')).toHaveCount(1);
-  await expect(page.locator('.speaker-row')).not.toContainText('Idea'); await expect(page.locator('.speaker-heading')).not.toContainText('Week');
-  await page.locator('.speaker-row').getByRole('button',{name:'Delete',exact:true}).click(); await expect(page.locator('.inline-confirm')).toContainText('Delete Updated guest?');
-  await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(page.locator('.speaker-row')).toHaveCount(1);
-  await page.locator('.speaker-row').getByRole('button',{name:'Delete',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click();
-  await expect(page.locator('.speaker-row')).toHaveCount(0); await page.getByLabel('Filter speakers').fill(''); await expect(page.locator('.speaker-row')).toHaveCount(3);
+  await page.reload(); await ready(page); await expect(page.locator('input[type="search"]')).toHaveCount(0);
+  const target = page.locator('.speaker-row').filter({hasText:'Updated guest'}); await expect(target).toHaveCount(1);
+  await expect(target).not.toContainText('Idea'); await expect(target.locator('.speaker-heading')).not.toContainText('Week');
+  await target.getByRole('button',{name:'Delete',exact:true}).click(); await expect(page.locator('.inline-confirm')).toContainText('Delete Updated guest?');
+  await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(page.locator('.speaker-row')).toHaveCount(4);
+  await target.getByRole('button',{name:'Delete',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click();
+  await expect(page.locator('.speaker-row')).toHaveCount(3);
   await page.reload(); await ready(page); await expect(page.locator('.speaker-row')).toHaveCount(3);
 });
 
