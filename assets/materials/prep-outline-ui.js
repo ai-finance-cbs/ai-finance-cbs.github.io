@@ -19,9 +19,11 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
   let saved = parsePreparation(note.body,names), saving = false;
   const controls = [];
   root.append(el('p',outline.goal,{class:'preparation-goal'}));
-  let exercises;
+  let exercises, lecture;
   for (const [index,section] of sections.entries()) {
     if (section.name === OTHER_NOTES && !saved[section.name]) continue;
+    // Lecture topics share one reddish block; exercises share another.
+    if (section.lecture && !lecture) { lecture = el('div',null,{class:'preparation-lecture'}); root.append(lecture); }
     if (section.exercise && !exercises) {
       exercises = el('section',null,{class:'preparation-exercises'});
       exercises.append(el('h2','In-class exercises')); root.append(exercises);
@@ -41,7 +43,7 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
     const save = el('button','Save',{type:'submit',class:'prep-text-action'}), cancel = el('button','Cancel',{type:'button',class:'prep-text-action'});
     const status = el('span','',{role:'status','data-prep-status':''});
     actions.append(save,cancel); form.append(input,actions); panel.append(output,form,status);
-    (section.exercise ? exercises : root).append(panel);
+    (section.exercise ? exercises : section.lecture ? lecture : root).append(panel);
     let editing = false, updated = saved[section.name] ? note.updated_at : null;
     const dirty = () => input.value !== saved[section.name];
     const enable = () => { save.disabled = saving || !dirty(); cancel.disabled = saving; };
