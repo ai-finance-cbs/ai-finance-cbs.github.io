@@ -17,6 +17,7 @@
 - {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
 - {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
 - {week: 1, topic: Bulls vs. Skeptics, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
+- {week: 1, topic: "Bulls vs. Skeptics", level: optional, kind: Podcast, title: "Bill Gates: A.I. ‘Makes Nuclear Weapons Look Like Nothing’ (The Ezra Klein Show)", length: "1 hr 14 min", author: "Ezra Klein and Bill Gates", year: 2026, url: "https://www.youtube.com/watch?v=A_156w0aYtU"}
 
 - {week: 1, topic: Nature of Financial Work, level: recommended, kind: Writing, title: "2026 Global Annual Survey Report on AI Use in Financial Services", author: "Institute of International Finance and EY", year: 2026, url: "https://www.iif.com/Publications/ID/6722/2026-IIF-EY-Global-Annual-Survey-Report-on-AI-Use-in-Financial-Services"}
 - {week: 1, topic: Nature of Financial Work, level: recommended, kind: Writing, title: "GDPval: Measuring Model Performance on Real-World Tasks", length: "7 min", author: "OpenAI", year: 2025, url: "https://openai.com/index/gdpval/"}
