@@ -82,7 +82,7 @@ select jsonb_build_object(
   'items',(select coalesce(jsonb_agg(i order by id),'[]') from public.grade_items i where i.term_id=t and (r in ('instructor','grader') or (r='student' and i.released))),
   'grades',(select coalesce(jsonb_agg(g),'[]') from public.grades g join public.grade_items i on i.term_id=g.term_id and i.id=g.item_id
     where g.term_id=t and (r in ('instructor','grader') or (r='student' and g.uni=u and i.released))),
-  'sets',(select coalesce(jsonb_agg(s order by created_at),'[]') from public.group_sets s where s.term_id=t and r in ('instructor','grader','student')),
+  'sets',(select coalesce(jsonb_agg(to_jsonb(s)||jsonb_build_object('submission_deadline',(select min(i.due_at) from public.grade_items i where i.term_id=t and i.group_set_id=s.id and i.mode='group')) order by created_at),'[]') from public.group_sets s where s.term_id=t and r in ('instructor','grader','student')),
   'groups',(select coalesce(jsonb_agg(g order by number),'[]') from public.class_groups g where g.term_id=t and r in ('instructor','grader','student')),
   'members',(select coalesce(jsonb_agg(jsonb_build_object('set_id',m.set_id,'group_id',m.group_id,
     'uni',case when r in ('instructor','grader') or m.uni=u then m.uni else null end,

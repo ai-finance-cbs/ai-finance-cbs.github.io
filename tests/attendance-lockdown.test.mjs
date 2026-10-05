@@ -121,3 +121,9 @@ test('migration preserves legacy overrides and retains guards, audit, and restri
       assert.equal((await db.query("select has_function_privilege($1,'private.quiz_clears_excuse()','execute') allowed", [role])).rows[0].allowed, false);
   } finally { await db.close(); }
 });
+
+test('017 keeps every group set field from 007, including submission_deadline', async () => {
+  await h.as('teacher');
+  const sets = (await h.rpc('class_data')).sets;
+  for (const s of sets) assert.ok('submission_deadline' in s, 'group sets keep submission_deadline');
+});
