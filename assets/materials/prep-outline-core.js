@@ -5,6 +5,7 @@ export const OTHER_NOTES = 'Other notes';
 
 export function preparationSections(outline) {
   return [
+    { name:'Introduction' },
     ...outline.topics.map(topic => ({ name:topic.name, readings:topic.readings })),
     { name:'Quiz (3 questions)' },
     ...outline.exercises.map(name => ({ name, exercise:true })),

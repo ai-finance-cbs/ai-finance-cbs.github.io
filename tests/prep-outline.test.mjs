@@ -25,7 +25,7 @@ test('all six built Preparation outlines match Library order, Syllabus exercises
     assert.ok(json); assert.deepEqual(JSON.parse(json),expected);
     assert.doesNotMatch(json,/<\/?script|body_md|updated_at|instructor_notes/);
     const sections = preparationSections(expected);
-    assert.deepEqual(sections.map(s => s.name),[...expected.topics.map(t => t.name),'Quiz (3 questions)',...expected.exercises,'Milestone','Logistics','Other notes']);
+    assert.deepEqual(sections.map(s => s.name),['Introduction',...expected.topics.map(t => t.name),'Quiz (3 questions)',...expected.exercises,'Milestone','Logistics','Other notes']);
     assert.deepEqual(sections.filter(s => s.exercise).map(s => s.name),expected.exercises);
   }
   const landing = readFileSync(new URL('../_site/materials/preparation/index.html',import.meta.url),'utf8');

@@ -11,24 +11,19 @@ test.beforeEach(async ({page}) => {
   await page.clock.setFixedTime(new Date('2027-01-15T20:42:00Z'));
 });
 
-test('every week renders its public outline and only Required/Recommended references without an editor on load',async ({page}) => {
+test('every week renders its public outline and no reading links and no editor on load',async ({page}) => {
   for (let week=1;week<=6;week++) {
     await enter(page,week);
     const outline = await page.locator('[data-preparation-outline]').evaluate(n => JSON.parse(n.textContent));
-    const expected = [...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone','Logistics',...(week===1?['Other notes']:[])];
+    const expected = ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone','Logistics',...(week===1?['Other notes']:[])];
     expect(await page.locator('.prep-section-heading :is(h2,h3)').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
     await expect(page.locator('.preparation-exercises > h2')).toHaveText('In-class exercises');
     expect(await page.locator('.preparation-exercises h3').allTextContents()).toEqual(outline.exercises);
     await expect(section(page,'Milestone').locator('.prep-reference')).toHaveText(outline.milestone);
     await expect(page.getByRole('textbox')).toHaveCount(0);
-    for (const topic of outline.topics) {
-      const panel = section(page,topic.name), rows = panel.locator('.prep-reading-list li');
-      expect(await rows.allTextContents()).toEqual(topic.readings.map(r=>r.title+(r.author?` — ${r.author}`:'')));
-      for (const link of await rows.locator('a').all()) {
-        await expect(link).toHaveAttribute('target','_blank'); await expect(link).toHaveAttribute('rel','noopener noreferrer');
-      }
-    }
+    await expect(page.locator('.prep-reading-list, .prep-reading-level')).toHaveCount(0);
+    await expect(page.locator('main h1').first()).toHaveText(new RegExp(`^Week ${week}: `));
     for (const panel of await page.locator('.preparation-section').all()) {
       for (const edge of ['left','right','bottom']) await expect(panel).toHaveCSS(`border-${edge}-width`,'0px');
       expect(await panel.locator('.prep-section-heading :is(h2,h3)').evaluate(n=>getComputedStyle(n).fontFamily)).toContain('Source Serif');

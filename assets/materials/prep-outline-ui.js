@@ -1,4 +1,4 @@
-import { noteValues, prepMarkdown, safePrepLink } from './prep-core.js';
+import { noteValues, prepMarkdown } from './prep-core.js';
 import { OTHER_NOTES, preparationSections, parsePreparation, serializePreparation } from './prep-outline-core.js';
 import { trackPreparationEditor } from './prep-ui.js';
 
@@ -31,18 +31,6 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
     heading.append(el(section.exercise ? 'h3' : 'h2',section.name));
     const edit = el('button','',{type:'button',class:'prep-text-action'});
     heading.append(edit); panel.append(heading);
-    for (const level of ['required','recommended']) {
-      const readings = (section.readings || []).filter(item => item.level === level);
-      if (!readings.length) continue;
-      const list = el('ul',null,{class:'prep-reading-list','aria-label':level === 'required' ? 'Required readings' : 'Recommended readings'});
-      panel.append(el('p',level === 'required' ? 'Required' : 'Recommended',{class:'prep-reading-level'}),list);
-      for (const item of readings) {
-        const row = el('li');
-        row.append(safePrepLink(item.url || '') ? el('a',item.title,{href:item.url,target:'_blank',rel:'noopener noreferrer'}) : document.createTextNode(item.title));
-        if (item.author) row.append(el('span',` — ${item.author}`,{class:'prep-reading-author'}));
-        list.append(row);
-      }
-    }
     if (section.reference) panel.append(el('p',section.reference,{class:'prep-reference'}));
     const output = el('div',null,{class:'prep-markdown','data-prep-markdown':''});
     const form = el('form',null,{class:'prep-section-form'});
