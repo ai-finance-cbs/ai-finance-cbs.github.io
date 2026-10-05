@@ -123,3 +123,14 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
     writeFileSync(`evidence/phase-f/review-1/topbar/geometry-${width}.json`, JSON.stringify(measurements, null, 2));
   });
 }
+
+test('a new tab shows the signed-in menu at first paint, before sign-in is re-checked', async ({ context }) => {
+  const first = await context.newPage();
+  await first.goto('/materials/week-1/?fakeauth=instructor');
+  await expect(first.locator('html')).toHaveAttribute('data-materials-ready', 'true');
+  const second = await context.newPage();
+  await second.route('**/assets/materials/app.js', route => route.abort());
+  await second.goto('/library/');
+  await expect(second.locator('.topnav').getByRole('link', { name: 'Course Materials', exact: true })).toBeVisible();
+  await expect(second.locator('.staff-menu')).toBeVisible();
+});

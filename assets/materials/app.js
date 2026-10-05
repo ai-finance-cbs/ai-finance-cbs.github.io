@@ -136,18 +136,22 @@ async function refresh() {
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
   const visible = zones(state.access);
+  const roleMenu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
+    student: state.access?.role === 'student', klass: visible.class, ed: visible.class || visible.grading,
+    signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
+  // Show the role's menu as soon as sign-in resolves; the Assignments tab waits for its list.
+  let cached = null; try { cached = JSON.parse(localStorage.getItem('b8403-menu') || 'null'); } catch {}
+  applyMenu({ ...roleMenu, assignments: !!(visible.materials && cached?.assignments), assignmentCodes: visible.materials ? cached?.assignmentCodes || [] : [] });
   let catalog = [], catalogError;
   if (visible.materials) {
     try { catalog = await state.backend.assignmentCatalog(state.access.term_id); } catch (error) { catalogError = error; }
     if (version !== state.version) return;
   }
   // Menu visibility only; every page still checks access on the server. The same flags are
-  // remembered for this browser tab so the next page can show the menu before sign-in is re-checked.
-  const menu = { materials: visible.materials, assignments: catalog.length > 0, assignmentCodes:catalog.map(i => i.code), instructor: visible.instructor, grading: visible.grading,
-    student: state.access?.role === 'student', klass: visible.class, ed: visible.class || visible.grading,
-    signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
+  // remembered in this browser so the next page or tab can show the menu before sign-in is re-checked.
+  const menu = { ...roleMenu, assignments: catalog.length > 0, assignmentCodes:catalog.map(i => i.code) };
   applyMenu(menu);
-  try { if (state.access) sessionStorage.setItem('b8403-menu', JSON.stringify(menu)); else sessionStorage.removeItem('b8403-menu'); } catch {}
+  try { if (state.access) localStorage.setItem('b8403-menu', JSON.stringify(menu)); else localStorage.removeItem('b8403-menu'); } catch {}
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
   banner.hidden = !state.access?.view_as; document.body.classList.toggle('student-preview', !!state.access?.view_as);
@@ -548,7 +552,7 @@ document.querySelector('[data-preview-exit]').addEventListener('click', () => st
 document.querySelector('[data-signout]').addEventListener('click', async () => {
   if (!await leavePreparation()) return;
   ++state.version; state.access = null; showGate(); sessionStorage.removeItem('b8403-return');
-  try { sessionStorage.removeItem('b8403-menu'); } catch {}
+  try { localStorage.removeItem('b8403-menu'); } catch {}
   try { await state.backend?.signOut(); await refresh(); }
   catch (error) { openLogin(); showMessage(`Sign out could not finish. ${error.message}`); }
 });

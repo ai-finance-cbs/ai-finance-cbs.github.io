@@ -55,8 +55,8 @@
     </div>
     {% if page.url contains '/library/' %}{% include library-nav.html where=' subnav-top' %}{% elsif page.url contains '/syllabus/' %}{% include syllabus-nav.html where=' subnav-top' %}{% elsif page.url contains '/materials/' %}{% include materials-nav.html where=' subnav-top' %}{% else %}<div class="subnav subnav-top subnav-empty" aria-hidden="true"></div>{% endif %}
     <script>
-    /* Show the last known menu for this tab immediately (no flicker); app.js confirms it after re-checking sign-in. */
-    window.b8403Menu=function(){try{var m=JSON.parse(sessionStorage.getItem('b8403-menu')||'null');if(!m)return;
+    /* Show the last known menu immediately, in any tab (no flicker); app.js confirms it after re-checking sign-in. */
+    window.b8403Menu=function(){try{var m=JSON.parse(localStorage.getItem('b8403-menu')||'null');if(!m)return;
       var s=function(sel,show){document.querySelectorAll(sel).forEach(function(n){n.hidden=!show;});};
       s('[data-materials-member]',m.materials);s('[data-assignments-member]',m.assignments);
       document.querySelectorAll('[data-assignment-nav]').forEach(function(n){n.hidden=!(m.assignmentCodes||[]).some(function(c){return n.dataset.assignmentNav==='optional'?c.indexOf('O')===0:c===n.dataset.assignmentNav;});});s('[data-materials-admin]',m.instructor);s('[data-grading-member]',m.grading);
