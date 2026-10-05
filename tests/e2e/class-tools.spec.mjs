@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+const editAttendance = async page => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await page.getByRole('button', { name: 'Yes, edit attendance', exact: true }).click(); };
 const ready = async (page) =>
   expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role, path) => {
@@ -110,7 +111,7 @@ test('instructor can excuse attendance, create and lock groups, and release scor
   page,
 }) => {
   await enter(page, 'instructor', 'attendance');
-  await page.getByLabel('Week 1 date', { exact: true }).fill('2027-01-25');
+  await editAttendance(page);
   const cell = page.getByLabel('ab1234 Week 1 attendance', { exact: true });
   await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
   await cell.getByRole('textbox').fill('Approved absence');

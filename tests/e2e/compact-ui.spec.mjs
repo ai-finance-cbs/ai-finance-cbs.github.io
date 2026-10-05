@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+const editAttendance = async page => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await page.getByRole('button', { name: 'Yes, edit attendance', exact: true }).click(); };
 import { mkdirSync } from 'node:fs';
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role, section) => {
@@ -24,7 +25,7 @@ test('compact read-only attendance keeps totals and filters without batch action
   await expect(page.locator('.student-count')).toHaveText('4 students');
   await filter.fill('AB1234');
   await expect(page.locator('.student-count')).toHaveText('1 of 4 students');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('2P0A0E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(/^Present 2Absent (\d+|—)Excused 0$/);
   await expect(page.getByRole('button', { name: /Mark all present/ })).toHaveCount(0);
   await filter.fill('no such student');
   await expect(page.locator('.empty-filter')).toBeVisible();
@@ -43,11 +44,12 @@ test('compact read-only attendance keeps totals and filters without batch action
   });
   await enter(page, 'grader', 'attendance');
   await expect(page.locator('.student-count')).toHaveText('3 students');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('1P0A0E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(/^Present 1Absent (\d+|—)Excused 0$/);
 });
 
 test('a rejected excuse save keeps the reason and permits a retry', async ({ page }) => {
   await enter(page, 'instructor', 'attendance');
+  await editAttendance(page);
   const cell = page.getByLabel('ab1234 Week 2 attendance', { exact: true });
   await cell.getByRole('button', { name: 'Excuse', exact: true }).click();
   await cell.getByRole('textbox').fill('Approved absence');
@@ -65,10 +67,10 @@ test('a rejected excuse save keeps the reason and permits a retry', async ({ pag
   await expect(page.locator('[data-admin-status]')).toHaveText('Test save rejected.');
   await expect(cell.getByRole('textbox')).toHaveValue('Approved absence');
   await expect(cell.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
-  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText('0P0A0E');
+  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 0$/);
   await cell.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.locator('[data-admin-status]')).toHaveText('Absence excused.');
-  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText('0P0A1E');
+  await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 1$/);
 });
 
 test('gradebook keyboard entry and filtering retain unsaved scores and show recorded totals', async ({ page }) => {

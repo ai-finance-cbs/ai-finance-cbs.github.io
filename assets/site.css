@@ -1185,3 +1185,12 @@ body.standalone-tool .content { max-width:none; }
 .class-tools #materials-root .preparation-appendix > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
 .preparation-plan + .preparation-section, .preparation-appendix + .preparation-section { border-top:1px solid #ececec; }
 .class-tools #materials-root .preparation-appendix .prep-section-heading > h3 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; }
+/* Attendance: excuse actions appear only after Edit is confirmed. */
+.attendance-bar { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.attendance-grid:not(.is-editing) .attendance-action, .attendance-grid:not(.is-editing) .attendance-excuse-form { display:none; }
+.attendance-edit-toggle { border:0; background:none; padding:0; color:#8C2F39; font-size:13px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.attendance-totals td span { display:block; font-size:11.5px; line-height:1.45; }
+.attendance-confirm { border:1px solid #ECECEC; border-radius:10px; padding:20px 22px; max-width:380px; box-shadow:0 12px 32px rgba(0,0,0,.12); }
+.attendance-confirm::backdrop { background:rgba(0,0,0,.25); }
+.attendance-confirm p { margin:0 0 14px; font-size:14px; line-height:1.5; }
+.attendance-confirm-actions { display:flex; gap:10px; justify-content:flex-end; }

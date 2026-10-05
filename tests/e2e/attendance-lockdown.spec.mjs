@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+const editAttendance = async page => { await page.getByRole('button', { name: 'Edit', exact: true }).click(); await page.getByRole('button', { name: 'Yes, edit attendance', exact: true }).click(); };
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role) => { await page.goto(`/materials/attendance/?fakeauth=${role}`); await ready(page); };
 const cell = (page, week = 1) => page.getByLabel(`ab1234 Week ${week} attendance`, { exact: true });
@@ -10,6 +11,11 @@ for (const width of [1440, 390]) test(`instructor excuses and removes inline at 
   await page.setViewportSize({ width, height: 950 }); await enter(page, 'instructor');
   await expect(page.locator('.attendance-grid select, #attendance-import')).toHaveCount(0);
   await expect(page.locator('.attendance-legend')).toHaveText('Attendance comes from quiz scores. Only the instructor can excuse an absence.');
+  await expect(cell(page).getByRole('button', { name: 'Excuse', exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(cell(page).getByRole('button', { name: 'Excuse', exact: true })).toBeHidden();
+  await editAttendance(page);
   await cell(page).getByRole('button', { name: 'Excuse', exact: true }).click();
   const reason = cell(page).getByRole('textbox');
   await expect(reason).toBeFocused(); await expect(reason).toHaveAttribute('maxlength', '300');
@@ -23,7 +29,7 @@ for (const width of [1440, 390]) test(`instructor excuses and removes inline at 
   await reason.fill('Approved absence'); await cell(page).getByRole('button', { name: 'Save', exact: true }).click();
   await expect(cell(page).locator('.attendance-status')).toHaveText('Excused');
   await expect(cell(page).locator('.attendance-status')).toHaveAttribute('title', 'Approved absence');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('0P0A1E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 1$/);
   await page.locator('[data-student-profile="ab1234"]').click();
   await expect(page.locator('.profile-excuse-reason')).toHaveText('Week 1 excused: Approved absence');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -31,7 +37,7 @@ for (const width of [1440, 390]) test(`instructor excuses and removes inline at 
   await page.screenshot({ path: `evidence/attendance-lockdown/instructor-${width}.png`, fullPage: true });
   await cell(page).getByRole('button', { name: 'Remove excuse', exact: true }).click();
   await expect(cell(page).locator('.attendance-status')).toHaveText('');
-  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText('0P0A0E');
+  await expect(page.getByLabel('Week 1 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 0$/);
   await expect(cell(page).getByRole('button', { name: 'Excuse', exact: true })).toBeVisible();
 });
 

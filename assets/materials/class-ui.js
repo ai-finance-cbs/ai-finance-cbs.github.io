@@ -105,6 +105,19 @@ function labeled(parent, label, node) {
   parent.append(l);
   return node;
 }
+// Attendance edit mode survives the page refresh that follows each save.
+let attendanceEditing = false;
+function confirmAttendanceEdit() {
+  return new Promise(resolve => {
+    const dialog = el('dialog', null, { class: 'attendance-confirm', 'aria-label': 'Edit attendance' });
+    dialog.append(el('p', 'Attendance comes from quiz scores. Do you really want to change it by hand?'));
+    const finish = value => { dialog.close(); dialog.remove(); resolve(value); };
+    const yes = button('Yes, edit attendance', () => finish(true)), no = button('Cancel', () => finish(false));
+    const row = el('div', null, { class: 'attendance-confirm-actions' }); row.append(yes, no); dialog.append(row);
+    dialog.addEventListener('cancel', e => { e.preventDefault(); finish(false); });
+    document.body.append(dialog); dialog.showModal(); no.focus();
+  });
+}
 function statusNote(a) {
   if (!a) return '';
   if (a.status === 'excused') return 'Instructor excuse';
@@ -190,29 +203,18 @@ export function renderClassPage(ctx) {
       const { t, body, head } = table(['Student', ...data.sessions.map((s) => `Week ${s.week}`)]);
       const classUnis = new Set(data.roster.map(r => r.uni));
       t.classList.add('attendance-grid');
-      data.sessions.forEach((s, i) => {
-        const cell = head.children[i + 1],
-          date = input('date', `Week ${s.week} date`, s.date || '');
-        date.addEventListener('change', async () => {
-          if (await run(
-            () => backend.setSessionDate(s.week, date.value || null),
-            'Session date saved.',
-            false,
-          )) s.date = date.value || null;
-          else date.value = s.date || '';
-        });
-        if (admin) cell.append(date);
-        else cell.append(el('span', s.date || 'Date TBA', { class: 'session-date' }));
-
-      });
+      // Session dates come from the class schedule; nobody edits them here.
+      data.sessions.forEach((s, i) => head.children[i + 1].append(el('span', s.date ? new Date(`${s.date}T12:00:00`).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : 'Date TBA', { class: 'session-date' })));
       const totals = el('tr', null, { class: 'attendance-totals' });
       totals.append(el('th', 'Class totals', { scope: 'row' }));
       for (const s of data.sessions) {
         const cell = el('td', null, { 'aria-label': `Week ${s.week} totals` });
-        for (const [value, label] of [['present', 'P'], ['absent', 'A'], ['excused', 'E']]) {
-          const count = data.attendance.filter(a => classUnis.has(a.uni) && a.week === s.week && a.status === value).length;
-          cell.append(el('span', `${count}${label}`, { class: `total-${value}`, title: `${count} ${value}` }));
-        }
+        const count = value => data.attendance.filter(a => classUnis.has(a.uni) && a.week === s.week && a.status === value).length;
+        const present = count('present'), excused = count('excused');
+        // Absent is only counted once the class has happened; before that a blank cell means nothing yet.
+        const held = s.date && s.date <= new Date().toISOString().slice(0, 10);
+        for (const [value, n] of [['present', present], ['absent', held ? data.roster.length - present - excused : '—'], ['excused', excused]])
+          cell.append(el('span', `${value[0].toUpperCase()}${value.slice(1)} ${n}`, { class: `total-${value}` }));
         totals.append(cell);
       }
       body.append(totals);
@@ -265,8 +267,20 @@ export function renderClassPage(ctx) {
         }
         body.append(tr);
       }
-      root.append(el('p', 'Attendance comes from quiz scores. Only the instructor can excuse an absence.', { class: 'attendance-legend' }), studentFilter(t, 'attendance'), wrapTable(t));
-      if (!canWrite(access)) t.querySelectorAll('input').forEach(n => n.disabled = true);
+      // Manual changes are hidden behind one Edit button and a confirmation.
+      const bar = el('div', null, { class: 'attendance-bar' });
+      bar.append(el('p', 'Attendance comes from quiz scores. Only the instructor can excuse an absence.', { class: 'attendance-legend' }));
+      t.classList.toggle('is-editing', attendanceEditing);
+      if (admin && canWrite(access)) {
+        const toggle = button(attendanceEditing ? 'Done editing' : 'Edit', async () => {
+          if (attendanceEditing || await confirmAttendanceEdit()) {
+            attendanceEditing = !attendanceEditing; t.classList.toggle('is-editing', attendanceEditing);
+            toggle.textContent = attendanceEditing ? 'Done editing' : 'Edit';
+          }
+        });
+        toggle.classList.add('attendance-edit-toggle'); bar.append(toggle);
+      }
+      root.append(bar, studentFilter(t, 'attendance'), wrapTable(t));
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
       t.classList.add('student-attendance-grid');
