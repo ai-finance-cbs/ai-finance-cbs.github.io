@@ -5,6 +5,9 @@
   goal: Learn key frameworks for the economics of AI and how its core features interact with finance.
   topics: ["Economic Frameworks for AI", "Bulls vs. Skeptics", "Nature of Financial Work"]
   exercises: ["10x Richer", "Sort the Work", "Three Answers"]
+  # Preparation page: class plan in running order, then an appendix.
+  prep_plan: ["Introduction", "Economic Frameworks for AI", "Quiz (3 questions)", "10x Richer", "Bulls vs. Skeptics", "Nature of Financial Work", "Sort the Work"]
+  prep_appendix: ["Three Answers"]
   milestone: "Milestone #1: Pre-Class Survey"
 - number: 2
   short_date: "Wed, Feb 3 · 9:00 AM"

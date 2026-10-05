@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter = async (page, role = 'instructor', slug = 'preparation/week-1') => { await page.goto(`/materials/${slug}/?fakeauth=${role}`); await ready(page); };
 const root = page => page.locator('#materials-root');
-const section = (page,name='Other notes') => page.locator('[data-prep-section]').filter({has:page.locator('.prep-section-heading').getByRole('heading',{name,exact:true})});
+const section = (page,name='Logistics') => page.locator(`[data-prep-section="${name}"]`);
 test.beforeEach(async ({page}) => {
   await page.addInitScript(() => Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
 });
@@ -36,9 +36,9 @@ test('both tabs and all preparation weeks belong only to instructors; other role
 });
 
 test('notes save explicitly, survive reload, remain separate by week, and render safe Markdown', async ({page}) => {
-  await enter(page); await section(page).getByRole('button',{name:'Edit Other notes',exact:true}).click();
+  await enter(page); await section(page).getByRole('button',{name:'Add Logistics notes',exact:true}).click();
   const markdown = '# Opening\n\n**Evidence** and *judgment*\n\n- First\n- Second\n\n[Reading](https://example.test/read)\n<script>window.prepXss=1</script>\n<img src=x onerror="window.prepXss=2">\n[Unsafe](javascript:alert)';
-  await page.getByLabel('Other notes',{exact:true}).fill(markdown);
+  await page.getByLabel('Logistics notes',{exact:true}).fill(markdown);
   await expect(section(page).locator('[data-prep-status]')).toHaveText('Unsaved changes');
   await section(page).getByRole('button',{name:'Save',exact:true}).click();
   await expect(section(page).locator('[data-prep-status]')).toHaveText(/Saved \d{1,2}:\d{2} [AP]M/);
@@ -49,7 +49,7 @@ test('notes save explicitly, survive reload, remain separate by week, and render
   await expect(rendered.locator('li')).toHaveCount(2); await expect(rendered.locator('script,img')).toHaveCount(0);
   await expect(rendered).toContainText('<script>window.prepXss=1</script>'); expect(await page.evaluate(() => window.prepXss)).toBeUndefined();
   await expect(rendered.locator('a')).toHaveCount(1);
-  await section(page).getByRole('button',{name:'Edit Other notes',exact:true}).click(); await expect(page.getByLabel('Other notes',{exact:true})).toHaveValue(markdown);
+  await section(page).getByRole('button',{name:'Edit Logistics notes',exact:true}).click(); await expect(page.getByLabel('Logistics notes',{exact:true})).toHaveValue(markdown);
   await page.locator('.topbar .preparation-nav a').nth(1).click(); await ready(page);
   const logistics=section(page,'Logistics'); await logistics.getByRole('button',{name:'Add Logistics notes'}).click();
   await expect(page.getByLabel('Logistics notes',{exact:true})).toHaveValue('');
@@ -60,15 +60,15 @@ test('notes save explicitly, survive reload, remain separate by week, and render
 });
 
 test('unsaved changes warn inline on navigation and sign-out, and in the browser on reload', async ({page}) => {
-  await enter(page); await section(page).getByRole('button',{name:'Edit Other notes',exact:true}).click();
-  await page.getByLabel('Other notes',{exact:true}).fill('Unsaved draft');
+  await enter(page); await section(page).getByRole('button',{name:'Add Logistics notes',exact:true}).click();
+  await page.getByLabel('Logistics notes',{exact:true}).fill('Unsaved draft');
   await page.locator('.staff-menu summary').click(); await page.locator('.staff-menu').getByRole('link',{name:'Speakers',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('Unsaved changes');
-  await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.getByLabel('Other notes',{exact:true})).toHaveValue('Unsaved draft');
+  await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.getByLabel('Logistics notes',{exact:true})).toHaveValue('Unsaved draft');
   const warning = page.waitForEvent('dialog');
   await page.evaluate(() => { setTimeout(() => location.reload(),0); });
   const dialog = await warning; expect(dialog.type()).toBe('beforeunload'); await dialog.dismiss();
-  await expect(page.getByLabel('Other notes',{exact:true})).toHaveValue('Unsaved draft');
+  await expect(page.getByLabel('Logistics notes',{exact:true})).toHaveValue('Unsaved draft');
   await page.locator('[data-signout]').click(); await expect(page.getByRole('alert')).toContainText('Unsaved changes');
   await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.locator('[data-role]')).toHaveText('Instructor');
   await page.locator('.staff-menu summary').click(); await page.locator('.staff-menu').getByRole('link',{name:'Speakers',exact:true}).click();
@@ -77,7 +77,7 @@ test('unsaved changes warn inline on navigation and sign-out, and in the browser
 });
 
 test('preview warns about unsaved notes and then denies both workspace pages and backend methods', async ({page}) => {
-  await enter(page); await section(page).getByRole('button',{name:'Edit Other notes',exact:true}).click(); await page.getByLabel('Other notes',{exact:true}).fill('Preview draft');
+  await enter(page); await section(page).getByRole('button',{name:'Add Logistics notes',exact:true}).click(); await page.getByLabel('Logistics notes',{exact:true}).fill('Preview draft');
   await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');
   await page.getByRole('button',{name:'Keep editing'}).click(); await expect(page.locator('[data-view-select]')).toHaveValue('');
   await page.getByLabel('View as student',{exact:true}).selectOption('ab1234'); await page.getByRole('button',{name:'Leave without saving'}).click();
@@ -108,12 +108,13 @@ test('speaker add, inline edit, filtering, ordering, confirmed delete, and reloa
   await expect(row.locator('script')).toHaveCount(0); await expect(row.getByRole('link',{name:'A new guest'})).toHaveAttribute('href','mailto:guest@example.test');
   await row.getByRole('button',{name:'Edit',exact:true}).click(); await row.getByLabel('Name',{exact:true}).fill('Updated guest'); await row.getByLabel('Week',{exact:true}).selectOption('');
   await row.getByRole('button',{name:'Save speaker'}).click(); await expect(page.locator('.speaker-row h3').last()).toHaveText('Updated guest');
-  await page.reload(); await ready(page); await page.getByLabel('Filter speakers').fill('Credit'); await expect(page.locator('.speaker-row')).toHaveCount(1);
-  await expect(page.locator('.speaker-row')).not.toContainText('Idea'); await expect(page.locator('.speaker-heading')).not.toContainText('Week');
-  await page.locator('.speaker-row').getByRole('button',{name:'Delete',exact:true}).click(); await expect(page.locator('.inline-confirm')).toContainText('Delete Updated guest?');
-  await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(page.locator('.speaker-row')).toHaveCount(1);
-  await page.locator('.speaker-row').getByRole('button',{name:'Delete',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click();
-  await expect(page.locator('.speaker-row')).toHaveCount(0); await page.getByLabel('Filter speakers').fill(''); await expect(page.locator('.speaker-row')).toHaveCount(3);
+  await page.reload(); await ready(page); await expect(page.locator('input[type="search"]')).toHaveCount(0);
+  const target = page.locator('.speaker-row').filter({hasText:'Updated guest'}); await expect(target).toHaveCount(1);
+  await expect(target).not.toContainText('Idea'); await expect(target.locator('.speaker-heading')).not.toContainText('Week');
+  await target.getByRole('button',{name:'Delete',exact:true}).click(); await expect(page.locator('.inline-confirm')).toContainText('Delete Updated guest?');
+  await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(page.locator('.speaker-row')).toHaveCount(4);
+  await target.getByRole('button',{name:'Delete',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click();
+  await expect(page.locator('.speaker-row')).toHaveCount(3);
   await page.reload(); await ready(page); await expect(page.locator('.speaker-row')).toHaveCount(3);
 });
 
@@ -121,10 +122,10 @@ test('demo notes and speakers persist unchanged across term rollover', async ({p
   await enter(page);
   expect(await page.evaluate(async () => {
     const b=(await import('/assets/materials/demo.js')).createDemo();
-    await b.saveInstructorNote(1,'Carry into Spring 2028');
+    await b.saveInstructorNote(1,'## Logistics\n<!-- preparation-section -->\nCarry into Spring 2028\n\n');
     const before=await b.speakers(); await b.openTerm('Spring 2028');
     return {body:(await b.instructorNote(1)).body,same:JSON.stringify(before)===JSON.stringify(await b.speakers()),term:(await b.getAccess()).term_id};
-  })).toEqual({body:'Carry into Spring 2028',same:true,term:'spring-2028'});
+  })).toEqual({body:'## Logistics\n<!-- preparation-section -->\nCarry into Spring 2028\n\n',same:true,term:'spring-2028'});
   await page.reload(); await ready(page); await expect(section(page).locator('[data-prep-markdown]')).toHaveText('Carry into Spring 2028');
 });
 
@@ -145,6 +146,7 @@ test('preparation keeps the left Contents pane listing its sections', async ({pa
   await expect(page.locator('body')).not.toHaveClass(/full-tools/);
   const outline = page.locator('.site-sidebar #outline');
   await expect(page.locator('.site-sidebar')).toBeVisible();
-  await expect(outline.getByRole('link',{name:'Economic Frameworks for AI',exact:true})).toBeVisible();
-  await expect(outline.getByRole('link',{name:'Other notes',exact:true})).toBeVisible();
+  await expect(outline.getByRole('link',{name:'Lecture: Economic Frameworks for AI',exact:true})).toBeVisible();
+  await expect(outline.getByRole('link',{name:'Logistics',exact:true})).toBeVisible();
+  await expect(page.locator('[data-prep-section="Other notes"]')).toHaveCount(0);
 });

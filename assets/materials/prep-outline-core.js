@@ -3,14 +3,19 @@
 const marker = '<!-- preparation-section -->';
 export const OTHER_NOTES = 'Other notes';
 
+export const QUIZ = 'Quiz (3 questions)';
+// Logistics first, then the class plan in running order, then the appendix, then Other notes.
+// A week without a set plan uses: Introduction, the Library topics, the quiz, the exercises.
 export function preparationSections(outline) {
+  const exercises = outline.exercises || [], appendix = outline.appendix || [];
+  const plan = outline.plan || ['Introduction', ...outline.topics.map(t => t.name), QUIZ, ...exercises.filter(n => !appendix.includes(n))];
+  // An exercise left out of both lists still gets a place at the end of the plan.
+  const missing = exercises.filter(n => !plan.includes(n) && !appendix.includes(n));
+  const kind = name => exercises.includes(name) ? 'exercise' : name === QUIZ ? 'quiz' : 'lecture';
   return [
-    { name:'Introduction' },
-    ...outline.topics.map(topic => ({ name:topic.name, readings:topic.readings })),
-    { name:'Quiz (3 questions)' },
-    ...outline.exercises.map(name => ({ name, exercise:true })),
-    { name:'Milestone', reference:outline.milestone },
     { name:'Logistics' },
+    ...[...plan, ...missing].map(name => ({ name, kind:kind(name) })),
+    ...appendix.map(name => ({ name, kind:kind(name), appendix:true })),
     { name:OTHER_NOTES },
   ];
 }

@@ -10,7 +10,7 @@ const data = JSON.parse(execFileSync('ruby',['-ryaml','-rjson','-e',
   'puts %w[weeks library materials].to_h { |name| [name, YAML.load_file("_data/#{name}.yml")] }.to_json'],
   { cwd:new URL('../',import.meta.url),encoding:'utf8' }));
 const outlines = data.weeks.map(week => ({
-  goal:week.goal, exercises:week.exercises, milestone:week.milestone,
+  goal:week.goal, exercises:week.exercises, plan:week.prep_plan ?? null, appendix:week.prep_appendix ?? null,
   topics:data.library.find(entry => entry.week === week.number).topics.map(name => ({ name,
     readings:['required','recommended'].flatMap(level => data.materials.filter(item => item.week === week.number && item.topic === name && item.level === level)
       .map(({title,author,url,level}) => ({title,author:author ?? null,url:url ?? null,level}))),
@@ -25,8 +25,10 @@ test('all six built Preparation outlines match Library order, Syllabus exercises
     assert.ok(json); assert.deepEqual(JSON.parse(json),expected);
     assert.doesNotMatch(json,/<\/?script|body_md|updated_at|instructor_notes/);
     const sections = preparationSections(expected);
-    assert.deepEqual(sections.map(s => s.name),['Introduction',...expected.topics.map(t => t.name),'Quiz (3 questions)',...expected.exercises,'Milestone','Logistics','Other notes']);
-    assert.deepEqual(sections.filter(s => s.exercise).map(s => s.name),expected.exercises);
+    const plan = expected.plan || ['Introduction',...expected.topics.map(t => t.name),'Quiz (3 questions)',...expected.exercises];
+    assert.deepEqual(sections.map(s => s.name),['Logistics',...plan,...(expected.appendix || []),'Other notes']);
+    assert.deepEqual(sections.filter(s => s.kind === 'exercise').map(s => s.name).sort(),[...expected.exercises].sort());
+    assert.deepEqual(sections.filter(s => s.appendix).map(s => s.name),expected.appendix || []);
   }
   const landing = readFileSync(new URL('../_site/materials/preparation/index.html',import.meta.url),'utf8');
   assert.deepEqual(JSON.parse(landing.match(/data-preparation-outline>([\s\S]*?)<\/script>/)[1]),outlines[0]);

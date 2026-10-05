@@ -1133,8 +1133,7 @@ body.standalone-tool main { margin-left:0; padding:32px 40px 0; }
 body.standalone-tool .content { max-width:none; }
 
 /* Speakers: one line per person, filter box inline with Add speaker. */
-.speakers-toolbar { align-items:center; justify-content:space-between; padding-bottom:6px; }
-.speakers-toolbar input[type="search"] { flex:1; max-width:340px; }
+.speakers-toolbar { align-items:center; justify-content:flex-end; padding-bottom:6px; }
 .speaker-week { padding:16px 0 10px; }
 .class-tools #materials-root .speaker-week > h2 { font-size:19px; margin:0 0 6px; }
 .class-tools #materials-root .speaker-row { padding:4px 0; margin:0; border-bottom:1px solid #f4f4f4; }
@@ -1174,3 +1173,15 @@ body.standalone-tool .content { max-width:none; }
 .attendance-excuse-form button { margin:4px 5px 0 0; }
 .class-tools #materials-root .attendance-legend, .class-tools #materials-root .profile-excuse-reason { font-size:12px; color:#555; }
 .profile-excuse-reason { white-space:pre-wrap; overflow-wrap:anywhere; }
+/* Preparation: Logistics sits first in a light shaded panel. */
+.preparation-section[data-prep-section="Logistics"] { background:#F4F6F9; border:1px solid #E3E8EF; border-radius:10px; padding:16px 20px; margin:6px 0 10px; }
+.preparation-section[data-prep-section="Logistics"] + .preparation-section { border-top:0; }
+/* Preparation class plan: each part is its own card. Lecture parts light red, exercises light blue. */
+.preparation-plan, .preparation-appendix { display:flex; flex-direction:column; gap:10px; margin:10px 0 18px; }
+.preparation-section.prep-lecture, .preparation-section.prep-exercise { border-radius:10px; padding:14px 20px; }
+.preparation-section.prep-lecture { background:#FBF4F4; border:1px solid #F0DCDE; }
+.preparation-section.prep-exercise { background:#F1F6FC; border:1px solid #D9E5F3; }
+.preparation-appendix { border-top:1px solid #ececec; padding-top:20px; }
+.class-tools #materials-root .preparation-appendix > h2 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; margin:0; }
+.preparation-plan + .preparation-section, .preparation-appendix + .preparation-section { border-top:1px solid #ececec; }
+.class-tools #materials-root .preparation-appendix .prep-section-heading > h3 { font:600 23px/1.35 "Source Serif 4",Georgia,serif; }

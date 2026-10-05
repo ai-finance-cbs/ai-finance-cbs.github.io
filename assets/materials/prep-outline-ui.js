@@ -19,19 +19,22 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
   let saved = parsePreparation(note.body,names), saving = false;
   const controls = [];
   root.append(el('p',outline.goal,{class:'preparation-goal'}));
-  let exercises;
+  let plan, appendix;
   for (const [index,section] of sections.entries()) {
-    if (section.name === OTHER_NOTES && !saved[section.name]) continue;
-    if (section.exercise && !exercises) {
-      exercises = el('section',null,{class:'preparation-exercises'});
-      exercises.append(el('h2','In-class exercises')); root.append(exercises);
+    // Other notes stay stored with the week but are not shown.
+    if (section.name === OTHER_NOTES) continue;
+    // Each plan item is its own card: lecture parts light red, exercises light blue.
+    if (section.kind && !section.appendix && !plan) { plan = el('div',null,{class:'preparation-plan'}); root.append(plan); }
+    if (section.appendix && !appendix) {
+      appendix = el('section',null,{class:'preparation-appendix'});
+      appendix.append(el('h2','Appendix')); root.append(appendix);
     }
-    const panel = el('section',null,{class:'preparation-section','data-prep-section':section.name,id:`prep-section-${index+1}`});
+    const panel = el('section',null,{class:`preparation-section${section.kind ? ` prep-${section.kind === 'quiz' ? 'lecture' : section.kind}` : ''}`,'data-prep-section':section.name,id:`prep-section-${index+1}`});
     const heading = el('div',null,{class:'prep-section-heading'});
-    heading.append(el(section.exercise ? 'h3' : 'h2',section.name));
+    const prefix = { exercise:'In-Class Exercise: ', lecture:'Lecture: ' }[section.kind] || '';
+    heading.append(el(section.appendix ? 'h3' : 'h2',prefix + section.name));
     const edit = el('button','',{type:'button',class:'prep-text-action'});
     heading.append(edit); panel.append(heading);
-    if (section.reference) panel.append(el('p',section.reference,{class:'prep-reference'}));
     const output = el('div',null,{class:'prep-markdown','data-prep-markdown':''});
     const form = el('form',null,{class:'prep-section-form'});
     const label = section.name === OTHER_NOTES ? section.name : `${section.name} notes`;
@@ -41,7 +44,7 @@ export function renderPreparationOutline({ root, note, outline, backend }) {
     const save = el('button','Save',{type:'submit',class:'prep-text-action'}), cancel = el('button','Cancel',{type:'button',class:'prep-text-action'});
     const status = el('span','',{role:'status','data-prep-status':''});
     actions.append(save,cancel); form.append(input,actions); panel.append(output,form,status);
-    (section.exercise ? exercises : root).append(panel);
+    (section.appendix ? appendix : section.kind ? plan : root).append(panel);
     let editing = false, updated = saved[section.name] ? note.updated_at : null;
     const dirty = () => input.value !== saved[section.name];
     const enable = () => { save.disabled = saving || !dirty(); cancel.disabled = saving; };

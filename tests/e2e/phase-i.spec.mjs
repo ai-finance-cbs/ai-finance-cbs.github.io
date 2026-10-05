@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter = async (page,week=1) => { await page.goto(`/materials/preparation/week-${week}/?fakeauth=instructor`); await ready(page); };
-const section = (page,name) => page.locator('[data-prep-section]').filter({has:page.locator('.prep-section-heading').getByRole('heading',{name,exact:true})});
+const section = (page,name) => page.locator(`[data-prep-section="${name}"]`);
 const noteBody = page => page.evaluate(async () => (await (await import('/assets/materials/demo.js')).createDemo().instructorNote(1)).body);
 const edit = async panel => panel.locator('.prep-section-heading button').click();
 const save = async panel => { await panel.getByRole('button',{name:'Save',exact:true}).click(); await expect(panel.locator('[data-prep-status]')).toContainText('Saved'); };
@@ -15,16 +15,20 @@ test('every week renders its public outline and no reading links and no editor o
   for (let week=1;week<=6;week++) {
     await enter(page,week);
     const outline = await page.locator('[data-preparation-outline]').evaluate(n => JSON.parse(n.textContent));
-    const expected = ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises,'Milestone','Logistics',...(week===1?['Other notes']:[])];
-    expect(await page.locator('.prep-section-heading :is(h2,h3)').allTextContents()).toEqual(expected);
+    const plan = outline.plan || ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises];
+    const appendix = outline.appendix || [];
+    const label = n => outline.exercises.includes(n) ? `In-Class Exercise: ${n}` : n === 'Quiz (3 questions)' ? n : `Lecture: ${n}`;
+    const expected = ['Logistics',...plan.map(label),...(appendix.length?['Appendix']:[]),...appendix.map(label)];
+    expect(await page.locator('.prep-section-heading :is(h2,h3), .preparation-appendix > h2').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
-    await expect(page.locator('.preparation-exercises > h2')).toHaveText('In-class exercises');
-    expect(await page.locator('.preparation-exercises h3').allTextContents()).toEqual(outline.exercises);
-    await expect(section(page,'Milestone').locator('.prep-reference')).toHaveText(outline.milestone);
+    expect(await page.locator('.preparation-plan .prep-exercise h2').allTextContents()).toEqual(plan.filter(n=>outline.exercises.includes(n)).map(label));
+    expect(await page.locator('.preparation-appendix h3').allTextContents()).toEqual(appendix.map(label));
+    await expect(page.locator('[data-prep-section="Milestone"], .preparation-exercises')).toHaveCount(0);
     await expect(page.getByRole('textbox')).toHaveCount(0);
     await expect(page.locator('.prep-reading-list, .prep-reading-level')).toHaveCount(0);
     await expect(page.locator('main h1').first()).toHaveText(new RegExp(`^Week ${week}: `));
-    for (const panel of await page.locator('.preparation-section').all()) {
+    await expect(section(page,'Logistics')).toHaveCSS('background-color','rgb(244, 246, 249)');
+    for (const panel of await page.locator('.preparation-section:not([data-prep-section="Logistics"]):not(.prep-lecture):not(.prep-exercise)').all()) {
       for (const edge of ['left','right','bottom']) await expect(panel).toHaveCSS(`border-${edge}-width`,'0px');
       expect(await panel.locator('.prep-section-heading :is(h2,h3)').evaluate(n=>getComputedStyle(n).fontFamily)).toContain('Source Serif');
     }
@@ -52,7 +56,8 @@ test('each section edits, cancels, saves, and reloads independently while legacy
     await edit(panel); await expect(panel.getByRole('textbox')).toHaveValue(`**Saved for ${name}**\n\n## Logistics\nKeep this nested heading here.`);
     await panel.getByRole('button',{name:'Cancel',exact:true}).click();
   }
-  await edit(section(page,'Other notes')); await expect(section(page,'Other notes').getByRole('textbox')).toHaveValue(original);
+  // Other notes are hidden but stay stored after other sections save.
+  expect(await noteBody(page)).toContain('## Other notes');
 });
 
 test('saving one section preserves other drafts; oversized saves keep the draft and leave stored notes intact',async ({page}) => {
@@ -138,9 +143,8 @@ test('Speakers use all six Library week headings and Unscheduled, with safe fiel
   await first.getByRole('button',{name:'Save speaker'}).click();
   const unscheduled=page.locator('[data-speaker-week="unscheduled"]'); await expect(unscheduled.locator('.speaker-row')).toHaveCount(2);
   await expect(unscheduled.locator('img,script')).toHaveCount(0); expect(await page.evaluate(()=>window.speakerXss)).toBeUndefined();
-  await page.getByLabel('Filter speakers').fill('Example guest 1'); await expect(page.locator('.speaker-row')).toHaveCount(1);
-  await expect(unscheduled.locator('h3')).toHaveText('Example guest 1');
-  await page.getByLabel('Filter speakers').fill(''); await page.reload(); await ready(page);
+  await expect(unscheduled.locator('h3').filter({hasText:'Example guest 1'})).toHaveCount(1);
+  await page.reload(); await ready(page);
   await expect(unscheduled.locator('.speaker-row')).toHaveCount(2);
   for (const width of [390,320]) {
     await page.setViewportSize({width,height:900}); expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
