@@ -139,3 +139,12 @@ for (const width of [1440,390,320]) test(`instructor workspace fits at ${width}p
     }
   }
 });
+
+test('preparation keeps the left Contents pane listing its sections', async ({page}) => {
+  await enter(page);
+  await expect(page.locator('body')).not.toHaveClass(/full-tools/);
+  const outline = page.locator('.site-sidebar #outline');
+  await expect(page.locator('.site-sidebar')).toBeVisible();
+  await expect(outline.getByRole('link',{name:'Economic Frameworks for AI',exact:true})).toBeVisible();
+  await expect(outline.getByRole('link',{name:'Other notes',exact:true})).toBeVisible();
+});
