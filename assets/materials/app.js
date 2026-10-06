@@ -178,7 +178,7 @@ async function refresh() {
   document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
-  if (root) { root.onclick=null;root.replaceChildren(loader()); }
+  if (root) { root.onclick=null;root.replaceChildren(); } // loading image turned off for now; loader() kept for later
   try {
     if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
       const sessions = await state.backend.sessions();
