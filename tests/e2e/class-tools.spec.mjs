@@ -100,8 +100,8 @@ test('view-as matches student content and denies writes even when calling the ba
     const { createDemo } = await import('/assets/materials/demo.js');
     const b = createDemo(),
       results = [];
+    results.push('saveGrades' in b ? 'Retired wrapper remains' : 'Retired wrapper removed');
     for (const task of [
-      () => b.saveGrades([{ uni: 'ab1234', item_id: 1, score: 10 }]),
       () => b.saveAttendance(1, [{ uni: 'ab1234', status: 'present' }]),
       () => b.chooseGroup('demo-set', 'demo-group-1'),
       () => b.saveAllowlist({ email: 'x@columbia.edu', role: 'instructor' }),
@@ -114,7 +114,7 @@ test('view-as matches student content and denies writes even when calling the ba
       }
     return results;
   });
-  expect(errors).toHaveLength(4);
+  expect(errors).toHaveLength(4);expect(errors[0]).toBe('Retired wrapper removed');
   expect(errors.every((e) => e !== 'ALLOWED')).toBe(true);
   await page.setViewportSize({ width: 390, height: 900 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -1,4 +1,4 @@
-import { canWrite, gradeCode, scoreValue } from './class-core.js';
+import { canWrite, gradeCode } from './class-core.js';
 import { checkSubmissionFile, submissionContentType, defaultSubmissionItem, safeSubmission } from './submission-core.js';
 const arrays=['assignment_pages','roster','assignments','sessions','attendance','attendance_audit','items','grades','sets','groups','members','files','announcements','submissions','pending_uploads','group_grades'];
 export function normalizeTerms(d) {
@@ -24,9 +24,6 @@ export function mergeTerm(all,data,term) {
   const result={...all,...data}; delete result.term_id;
   for(const key of arrays) result[key]=[...all[key].filter(r=>r.term_id!==term),...data[key].map(r=>({...r,term_id:term}))];
   return result;
-}
-export function refreshDemoLocks(d,items) {
-  for(const s of d.submissions.filter(s=>items.includes(s.item_id))) s.graded_at=d.grades.some(g=>g.item_id===s.item_id && s.member_unis.includes(g.uni)) ? s.graded_at || new Date().toISOString() : null;
 }
 export function demoSubmissionLocked(d,item,owner,group) {
   return d.submissions.some(s=>s.item_id===item && (owner ? s.owner_uni===owner : s.group_id===group) && s.graded_at) ||
@@ -129,16 +126,5 @@ export function extendSubmissions({read,save,access,allTerms}) {
       const url=URL.createObjectURL(await (await fetch(data)).blob());setTimeout(()=>URL.revokeObjectURL(url),300000);return url;
     },
     async sweepSubmissions() {requireRole(['instructor']);const d=read(),before=d.pending_uploads.length;d.pending_uploads=d.pending_uploads.filter(p=>new Date(p.expires_at)>new Date());save(d);return {removed:before-d.pending_uploads.length};},
-    async gradeGroup(id,group,score,comment=null) {
-      requireRole(['instructor','grader']);const d=read(),i=d.items.find(i=>i.id===id),s=d.submissions.find(s=>s.item_id===id && s.group_id===group);
-      if(!i || i.mode!=='group' || !d.groups.some(g=>g.id===group && g.set_id===i.group_set_id))throw new Error('Group does not belong to this item set.');
-      if(!s)throw new Error('No submitted work for this group.');
-      if(comment?.length>10000)throw new Error('Comment is too long.');
-      const value=score==null?null:scoreValue(score,i.max_points);
-      for(const uni of s.member_unis){d.grades=d.grades.filter(g=>g.item_id!==id || g.uni!==uni);if(value!=null)d.grades.push({uni,item_id:id,score:value,comment});}
-      d.group_grades=d.group_grades.filter(g=>g.item_id!==id || g.group_id!==group);
-      d.group_grades.push({item_id:id,group_id:group,score:value,comment});
-      refreshDemoLocks(d,[id]);save(d);
-    },
   };
 }

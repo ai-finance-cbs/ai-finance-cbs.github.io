@@ -7,9 +7,9 @@ export function demoQuizPresent(d,term,uni,week) {
 }
 export function demoQuizPosted(d,term,uni,week) {
   const v=d.canvas?.[term],mapping=v?.mappings.find(m=>m.kind==='quiz' && m.week===week);
-  if(!mapping)return d.items.some(i=>i.quiz_week===week && i.released);
-  const e=v.enrollments.find(e=>e.uni===uni && e.match_status==='matched');
-  return !!e && v.submissions.some(s=>String(s.user_id)===String(e.user_id) && String(s.assignment_id)===String(mapping.canvas_assignment_id) && canvasPosted(s));
+  if(!mapping)return false;
+  const e=v.enrollments.find(e=>e.uni===uni && e.match_status==='matched' && (e.enrollment_states.includes('active') || d.terms.some(t=>t.id===term && t.status==='archived-readable') && e.enrollment_states.includes('completed')));
+  return !!e && v.assignments.some(a=>String(a.id)===String(mapping.canvas_assignment_id) && a.published) && d.roster.some(r=>r.term_id===term && r.uni===uni) && v.submissions.some(s=>String(s.user_id)===String(e.user_id) && String(s.assignment_id)===String(mapping.canvas_assignment_id) && canvasPosted(s));
 }
 export function refreshCanvasAttendance(d,term,actor) {
   if(!d.terms.some(t=>t.id===term && t.status==='active'))return;
@@ -25,4 +25,18 @@ export function refreshCanvasAttendance(d,term,actor) {
     d.attendance=d.attendance.filter(a=>a!==old);if(row)d.attendance.push(row);
     d.attendance_audit ||= [];d.attendance_audit.push({term_id:term,actor_email:actor,changed_at:new Date().toISOString(),old_row:old || null,new_row:row || null});
   }
+}
+
+export function studentAttendance(d,uni) {
+  const rows=d.attendance.filter(a=>a.uni===uni),mappings=d.canvas?.[d.term_id]?.mappings.filter(m=>m.kind==='quiz') || [];
+  const weeks=new Set([...rows.map(a=>a.week),...mappings.map(m=>m.week)]);
+  return [...weeks].sort((a,b)=>a-b).flatMap(week=>{
+    const row=rows.find(a=>a.week===week),mapped=mappings.some(m=>m.week===week);
+    const posted=demoQuizPosted(d,d.term_id,uni,week);
+    const pending=(mapped || row?.canvas_derived) && !posted && row?.status!=='excused';
+    if(!row && !pending)return [];
+    const released=row?.source_quiz && (mapped ? posted : d.items.some(i=>i.quiz_week===row.source_quiz && i.released));
+    return [{uni,week,status:pending?'pending':row.status,source_quiz:!pending && released ? row.source_quiz : null,
+      manual_override:!pending && released ? row.manual_override : null}];
+  });
 }

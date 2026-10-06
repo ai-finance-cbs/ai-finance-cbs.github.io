@@ -1,7 +1,7 @@
-import {demoQuizPresent,demoQuizPosted} from './canvas-attendance-demo.js';
+import {demoQuizPresent,studentAttendance} from './canvas-attendance-demo.js';
 import { safeSubmission } from './submission-core.js';
-import { refreshDemoLocks, demoSubmissionLocked, studentSubmissionItems } from './submission-demo.js';
-import { GRADE_ITEMS, checkGroupChange, canWrite, scoreValue } from './class-core.js';
+import { demoSubmissionLocked, studentSubmissionItems } from './submission-demo.js';
+import { GRADE_ITEMS, checkGroupChange, canWrite } from './class-core.js';
 export function classSeed() {
   return {
     sessions: Array.from({ length: 6 }, (_, i) => ({ week: i + 1, date: null })),
@@ -25,11 +25,6 @@ export function extendDemo({ read, save, user, saveUser, access }) {
     const a = access();
     if (!canWrite(a) || a.role !== 'instructor')
       throw new Error('Instructor access required. Student preview is read-only.');
-  };
-  const requireGrader = () => {
-    const a = access();
-    if (!canWrite(a) || !['instructor', 'grader'].includes(a.role))
-      throw new Error('Grading access required.');
   };
   const roster = (d) => [
     ...d.roster
@@ -78,19 +73,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       ...shared,
       ...(admin ? { roster: students, group_grades:d.group_grades } : {}),
       sessions: d.sessions,
-      attendance: d.attendance
-        .filter((r) => admin || r.uni === a.uni)
-        .map((r) => {
-          if (admin) return r;
-          const released = demoQuizPosted(d,d.term_id,a.uni,r.source_quiz);
-          return {
-            uni: r.uni,
-            week: r.week,
-            status: r.status,
-            source_quiz: released ? r.source_quiz : null,
-            manual_override: released ? r.manual_override : null,
-          };
-        }),
+      attendance: admin ? d.attendance : studentAttendance(d,a.uni),
       items: d.items.filter((i) => admin || i.released),
       grades: d.grades.filter(
         (g) => admin || (g.uni === a.uni && d.items.find((i) => i.id === g.item_id)?.released),
@@ -173,47 +156,6 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         if (row) d.attendance.push(row);
         auditAttendance(d, old, row);
       }
-      save(d);
-    },
-    async saveGrades(entries) {
-      requireGrader();
-      const d = read();
-      for (const e of entries) {
-        const item = d.items.find((i) => i.id === e.item_id);
-        if (!item || !roster(d).some((r) => r.uni === e.uni)) throw new Error('Invalid grade row.');
-        if (e.comment?.length > 10000) throw new Error('Comment is too long.');
-        const score = e.score == null ? null : scoreValue(e.score, item.max_points);
-        const old = d.grades.find(g => g.uni === e.uni && g.item_id === e.item_id);
-        d.grades = d.grades.filter((g) => g.uni !== e.uni || g.item_id !== e.item_id);
-        if (score != null) d.grades.push({ ...e, score, comment: 'comment' in e ? e.comment : old?.comment || null });
-        if (item.quiz_week) {
-          const record = d.attendance.find((a) => a.uni === e.uni && a.week === item.quiz_week);
-          const before = record ? { ...record } : null;
-          if (score == null) {
-            if (record?.manual_override) record.source_quiz = null;
-            else d.attendance = d.attendance.filter((a) => a !== record);
-          } else if (record) {
-            record.source_quiz = item.quiz_week;
-            if (record.status === 'excused') Object.assign(record, { manual_override: false, excuse_reason: null, excused_at: null, excused_by: null });
-            if (!record.manual_override) record.status = 'present';
-          } else
-            d.attendance.push({
-              uni: e.uni,
-              week: item.quiz_week,
-              status: 'present',
-              source_quiz: item.quiz_week,
-              manual_override: false,
-            });
-          auditAttendance(d, before, d.attendance.find(a => a.uni === e.uni && a.week === item.quiz_week));
-        }
-      }
-      refreshDemoLocks(d, entries.map(e => e.item_id));
-      save(d);
-    },
-    async releaseItem(id, released) {
-      requireAdmin();
-      const d = read();
-      d.items.find((i) => i.id === id).released = released;
       save(d);
     },
     async createSet(fields) {

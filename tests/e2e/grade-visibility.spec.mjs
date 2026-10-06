@@ -75,6 +75,5 @@ test('graders read archived column states and the correct panel message without 
   await expect(page.getByLabel('Score',{exact:true})).toBeDisabled();
   await page.locator('[data-grade-cell="ab1234:1"]').click(); await expect(page.locator('[data-panel-visibility]')).toHaveText('Visible to students now.');
   await expect(row(page).locator('[data-visible-total]')).toHaveText('23'); await expect(row(page).locator('[data-all-total]')).toHaveText('55');
-  const denial = await page.evaluate(async () => { try { await (await import('/assets/materials/demo.js')).createDemo().releaseItem(2,true); return 'allowed'; } catch(e) { return e.message; } });
-  expect(denial).toContain('CourseWorks');
+  expect(await page.evaluate(async () => 'releaseItem' in (await import('/assets/materials/demo.js')).createDemo())).toBe(false);
 });

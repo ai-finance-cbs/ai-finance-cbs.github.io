@@ -44,8 +44,8 @@ test('unposted excused/missing/late grading flags cannot change student status; 
 test('SQL and demo status masking agree for unposted receipt, due, optional, paper, and posted outcomes',async()=>{
   const now=Date.parse('2027-03-01T14:00:00Z');
   const base={assignment_visible:true,posted_visible:false,workflow_state:'unsubmitted',cached_due_at:'2027-03-01T14:00:00Z',submitted_at:null,excused:true,late:true,missing:true,late_policy_status:'missing'};
-  for(const [change,kind,expected] of [[{},'milestone','Missing'],[{cached_due_at:'2027-03-02T14:00:00Z'},'milestone','Not yet due'],[{cached_due_at:null},'milestone','No due date'],[{},'optional','Optional'],[{workflow_state:'graded'},'quiz','Done'],[{submitted_at:'2027-02-28T14:00:00Z'},'milestone','Done'],[{submitted_at:'2027-03-01T14:00:01Z'},'milestone','Late'],[{posted_visible:true},'milestone','Excused'],[{assignment_visible:false},'milestone','Status unavailable']]) {
-    const s={...base,...change};assert.equal(canvasStudentStatus(s,{kind},now),expected);
+  for(const [change,kind,expected] of [[{},'milestone','Missing'],[{cached_due_at:'2027-03-02T14:00:00Z'},'milestone','Not yet due'],[{cached_due_at:null},'milestone','No due date'],[{},'optional','Optional'],[{workflow_state:'graded'},'quiz','Missing'],[{workflow_state:'graded',submission_types:['on_paper']},'quiz','Not posted'],[{submission_types:['none']},'participation','Not posted'],[{submission_types:['external_tool']},'quiz','Not posted'],[{submission_types:['external_tool'],workflow_state:'pending_review'},'quiz','Done'],[{submission_types:['on_paper','online_upload']},'quiz','Missing'],[{submitted_at:'2027-02-28T14:00:00Z'},'milestone','Done'],[{submitted_at:'2027-03-01T14:00:01Z'},'milestone','Late'],[{posted_visible:true},'milestone','Excused'],[{assignment_visible:false},'milestone','Status unavailable']]) {
+    const s={...base,...change};assert.equal(canvasStudentStatus(s,{kind,submission_types:s.submission_types},now),expected);
     assert.equal((await h.rows('select private.canvas_student_status($1,$2,$3) value',[JSON.stringify(s),kind,new Date(now).toISOString()]))[0].value,expected);
   }
 });
@@ -92,7 +92,7 @@ for(const who of ['teacher','grader','a','auditor','outside','anon','service','p
 test('staff still read archived local grades and current Canvas; student and preview mask unposted provenance and reasons',async()=>{
   await seed(raw=>{target(raw).posted_at=null;});
   for(const who of ['teacher','grader']){await h.as(who);assert.equal((await h.rpc('class_data',TERM)).grades.length,2);assert.equal((await h.rpc('canvas_staff_data',TERM)).enrollments.length,6);}
-  await h.as('a');const a=(await h.rpc('class_data',TERM)).attendance[0];assert.equal(a.status,'present');assert.equal(a.source_quiz,null);assert.ok(!('excuse_reason' in a));
+  await h.as('a');const a=(await h.rpc('class_data',TERM)).attendance[0];assert.equal(a.status,'pending');assert.equal(a.source_quiz,null);assert.ok(!('excuse_reason' in a));
   await h.as('teacher');await h.rpc('set_student_preview','aa1001',TERM);assert.deepEqual((await h.rpc('class_data',TERM)).attendance[0],a);
 });
 test('new term sync and instructor excuses cannot change archived attendance',async()=>{
@@ -100,4 +100,54 @@ test('new term sync and instructor excuses cannot change archived attendance',as
   await h.as('owner');await h.rows("insert into roster(term_id,uni,name) values('spring-2028','aa1001','Alice')");
   await h.as('teacher');await h.rpc('save_attendance',1,'[{"uni":"aa1001","status":"excused","excuse_reason":"New term"}]');
   assert.deepEqual((await h.rpc('class_data',TERM)).attendance.find(a=>a.uni==='aa1001'&&a.week===1),before);
+});
+
+test('C1: attendance is identical for unposted quiz absence, scores, missing-policy zeros, and row deletion',async()=>{
+  const raw=await seed(raw=>{raw.assignments.find(a=>a.id===101).submission_types=['on_paper'];Object.assign(target(raw),{score:null,submitted_at:null,posted_at:null,workflow_state:'unsubmitted'});});
+  const read=async who=>{await h.as(who);return (await h.rpc('class_data',TERM)).attendance;};
+  const expected=[{uni:'aa1001',week:1,status:'pending',source_quiz:null,manual_override:null}];
+  assert.deepEqual(await read('a'),expected);assert.equal(await attendance(),undefined);
+  const projected=(await student()).items.find(i=>i.site_key==='Q1');assert.equal(projected.status,'Not posted');
+  for(const fields of [{score:0,workflow_state:'graded'},{missing:true,late_policy_status:'missing'},{score:null}]) {
+    Object.assign(target(raw),fields);await publish(raw);
+    assert.deepEqual(await read('a'),expected);
+    assert.deepEqual((await student()).items.find(i=>i.site_key==='Q1'),projected);
+    assert.equal((await attendance())?.status,fields.score===0?'present':undefined);
+    await h.as('teacher');await h.rpc('set_student_preview','aa1001',TERM);
+    assert.deepEqual((await h.rpc('class_data',TERM)).attendance,expected);
+    assert.deepEqual((await h.rpc('view_as_student','aa1001')).attendance,expected);
+    assert.deepEqual((await h.rpc('canvas_student_data',TERM)).items.find(i=>i.site_key==='Q1'),projected);
+    assert.deepEqual(await h.rows('select * from attendance'),[]);
+    await h.rpc('set_student_preview',null,null);
+  }
+  raw.submissions=raw.submissions.filter(s=>s!==target(raw));await publish(raw);assert.deepEqual(await read('a'),expected);
+});
+test('C1: posting reveals attendance; unposting hides it; instructor excuses remain visible with no reason',async()=>{
+  const raw=await seed(raw=>Object.assign(target(raw),{score:null,posted_at:null}));
+  await h.as('teacher');await h.rpc('save_attendance',1,'[{"uni":"aa1001","status":"excused","excuse_reason":"PRIVATE"}]');
+  await h.as('a');let rows=(await h.rpc('class_data',TERM)).attendance;assert.equal(rows[0].status,'excused');assert.ok(!JSON.stringify(rows).includes('PRIVATE'));
+  Object.assign(target(raw),{score:0,posted_at:null});await publish(raw);
+  await h.as('a');assert.equal((await h.rpc('class_data',TERM)).attendance[0].status,'pending');
+  target(raw).posted_at='2027-03-02T14:00:00Z';await publish(raw);
+  await h.as('a');rows=(await h.rpc('class_data',TERM)).attendance;assert.equal(rows[0].status,'present');assert.equal(rows[0].source_quiz,1);
+  target(raw).missing=true;await publish(raw);await h.as('a');assert.deepEqual((await h.rpc('class_data',TERM)).attendance,[]);
+  target(raw).posted_at=null;await publish(raw);await h.as('a');assert.equal((await h.rpc('class_data',TERM)).attendance[0].status,'pending');
+});
+test('C1: submission types already survive normalization and publication; unposted offline work never says Missing or Late',async()=>{
+  const raw=await seed();const a=raw.assignments[0],s=raw.submissions[0];
+  Object.assign(s,{submitted_at:null,posted_at:null,workflow_state:'graded',missing:true,late:true,late_policy_status:'late'});
+  for(const types of [['on_paper'],['none'],['external_tool'],['on_paper','none']]) {
+    a.submission_types=types;await publish(raw);
+    assert.equal((await student()).items.find(i=>i.site_key==='M1').status,'Not posted');
+    await h.as('teacher');assert.deepEqual((await h.rpc('canvas_staff_data',TERM)).assignments.find(a=>a.id===100).submission_types,types);
+  }
+  a.submission_types=['online_upload'];await publish(raw);assert.notEqual((await student()).items[0].status,'Done');
+  a.submission_types=['external_tool'];Object.assign(s,{workflow_state:'submitted',submitted_at:'2027-02-28T14:00:00Z'});await publish(raw);assert.equal((await student()).items[0].status,'Done');
+  a.submission_types=['on_paper'];await publish(raw);assert.equal((await student()).items[0].status,'Not posted');
+  s.posted_at='2027-03-02T14:00:00Z';await publish(raw);assert.equal((await student()).items[0].status,'Missing');
+});
+test('C1: authenticated has no EXECUTE grants on retired grade or roster functions',async()=>{
+  for(const signature of ['public.grade_group(integer,uuid,numeric,text)','public.save_grades(jsonb)','public.release_grade_item(integer,boolean)','public.replace_roster(jsonb)','private.canvas_quiz_posted(text,text,integer)']) {
+    assert.equal((await h.rows("select has_function_privilege('authenticated',$1,'EXECUTE') allowed",[signature]))[0].allowed,false,signature);
+  }
 });

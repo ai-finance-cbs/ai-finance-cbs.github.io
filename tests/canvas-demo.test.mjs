@@ -10,8 +10,8 @@ test('demo mappings and sync persist, update quiz attendance, and do not copy Ca
   await b.pickRole('student');const before=await b.classData();await b.pickRole('instructor');const data=await b.canvasData('spring-2027');
   await b.saveCanvasMapping('spring-2027',{site_key:'Q6',kind:'quiz',week:6,canvas_assignment_id:data.assignments.at(-1).id});
   await b.syncCanvas('spring-2027');assert.ok((await createDemo().canvasData('spring-2027')).mappings.some(m=>m.site_key==='Q6'));
-  await b.pickRole('student');const after=await b.classData();assert.deepEqual(after.grades,before.grades);assert.equal(after.attendance.find(a=>a.week===6).status,'present');assert.ok(!JSON.stringify(before).includes('canvas'));
-  await b.pickRole('instructor');await b.openTerm('Spring 2028');assert.equal((await b.canvasData('spring-2028')).course,null);
+  await b.pickRole('student');const after=await b.classData();assert.deepEqual(after.grades,before.grades);assert.equal(after.attendance.find(a=>a.week===6).status,'pending');assert.ok(!JSON.stringify(before).includes('canvas'));
+  await b.pickRole('instructor');assert.equal((await b.classData()).attendance.find(a=>a.week===6).status,'present');await b.openTerm('Spring 2028');assert.equal((await b.canvasData('spring-2028')).course,null);
   await assert.rejects(b.syncCanvas('spring-2027'),/active term/);
 });
 for(const role of ['grader','student','auditor','unlisted','preview'])test(`demo ${role} boundaries match staff-only Phase A`,async()=>{

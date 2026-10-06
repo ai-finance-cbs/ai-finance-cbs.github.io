@@ -97,15 +97,12 @@ export async function createBackend(config) {
     async deleteSubmission(id) { return fileAction({ action:'delete', id }, 'submission-file'); },
     async submissionUrl(id, version = 'current') { return (await fileAction({ action:'download', id, version }, 'submission-file')).url; },
     async sweepSubmissions() { return fileAction({ action:'sweep' }, 'submission-file'); },
-    async gradeGroup(item, group, score, comment = null) { return rpc('grade_group', { p_item:item, p_group:group, p_score:score, p_comment:comment }); },
     async testAccounts() { return rpc('list_test_accounts'); },
     async studentAccounts() { return rpc('list_student_accounts'); },
     async linkStudent(email, uni) { return rpc('link_student_account', { p_email: email, p_uni: uni }); },
     async setPreview(uni, term = null) { access = await rpc('set_student_preview', { target_uni: uni, p_term: term }); return access; },
     async setSessionDate(week, date) { return rpc('set_session_date', { p_week: week, p_date: date }); },
     async saveAttendance(week, entries) { return rpc('save_attendance', { p_week: week, entries }); },
-    async saveGrades(entries) { return rpc('save_grades', { entries }); },
-    async releaseItem(id, released) { return rpc('release_grade_item', { p_item: id, p_released: released }); },
     async createSet(f) { return rpc('create_group_set', { p_title: f.title, p_count: f.count, p_max: f.max_size, p_deadline: f.deadline }); },
     async updateSet(id, open, deadline) { return rpc('update_group_set', { p_set: id, p_open: open, p_deadline: deadline }); },
     async chooseGroup(set, group, uni = null) { return rpc('choose_group', { p_set: set, p_group: group, p_uni: uni }); },
@@ -136,7 +133,6 @@ export async function createBackend(config) {
       const [roster, allowlist] = await Promise.all([client.from('roster').select('*').eq('term_id', access.term_id).order('uni'), client.from('allowlist').select('*').order('email')]);
       return { roster: checked(roster), allowlist: checked(allowlist) };
     },
-    async replaceRoster(rows) { checked(await client.rpc('replace_roster', { rows })); },
     async saveAllowlist(row) { checked(await client.from('allowlist').upsert(row)); },
     async removeAllowlist(email) { checked(await client.from('allowlist').delete().eq('email', email)); },
     async saveAssignment(row) { const values = Object.fromEntries(['title','due','points','description','deliverable','grading','auditor_visible'].filter(key => key in row).map(key => [key, row[key]])); checked(await client.from('assignments').update(values).eq('term_id', access.term_id).eq('id', row.id)); },

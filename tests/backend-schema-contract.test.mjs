@@ -1,4 +1,5 @@
 // Historical archive workflow: run before migration 019 retires submission and group writes.
+// Retired grade/roster APIs seed historical rows directly; their client wrappers no longer exist.
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createBackend} from '../assets/materials/supabase.js';
@@ -74,12 +75,12 @@ test('review 12: legacy file upload, visibility and release work under narrow co
   const changed=(await backend.files())[0];assert.equal(changed.auditor_visible,false);assert.equal(changed.released,false);
 });
 test('review 12: existing staff tools use the new RPC signatures and term-scoped tables',async()=>{
-  await backend.replaceRoster([{uni:'aa1001',name:'Alice'},{uni:'bb1002',name:'Bob'}]);assert.equal((await backend.adminData()).roster.length,2);
+  await h.rpc('replace_roster',JSON.stringify([{uni:'aa1001',name:'Alice'},{uni:'bb1002',name:'Bob'}]));assert.equal((await backend.adminData()).roster.length,2);
   await backend.saveAllowlist({email:'extra@columbia.edu',role:'auditor'});await backend.removeAllowlist('extra@columbia.edu');
   await backend.linkStudent('alias@gsb.columbia.edu','aa1001');assert.ok((await backend.studentAccounts()).some(r=>r.uni==='aa1001'));await backend.linkStudent('alias@gsb.columbia.edu',null);
   assert.ok(Array.isArray(await backend.testAccounts()));assert.equal((await backend.terms())[0].id,TERM);
   await backend.setSessionDate(1,'2027-03-01');await backend.setSessionTimes(1,'2027-03-01T14:00Z','2027-03-01T17:00Z');assert.equal(new Date((await backend.sessions())[0].date).toISOString().slice(0,10),'2027-03-01');
-  await backend.saveAttendance(1,[{uni:'aa1001',status:'excused',excuse_reason:'Approved absence'}]);await backend.saveGrades([{uni:'aa1001',item_id:1,score:8,comment:'Comment'}]);await backend.releaseItem(1,true);
+  await backend.saveAttendance(1,[{uni:'aa1001',status:'excused',excuse_reason:'Approved absence'}]);await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:8,comment:'Comment'}]));await h.rpc('release_grade_item',1,true);
   await backend.createSet({title:'Adapter group',count:2,max_size:4,deadline:null});let d=await backend.classData();const set=d.sets[0],group=d.groups[0];
   await backend.updateSet(set.id,true,null);await backend.chooseGroup(set.id,group.id,'aa1001');
   await backend.configureItem(2,{kind:'file',mode:'group',group_set_id:set.id,due_at:null});
@@ -88,7 +89,7 @@ test('review 12: existing staff tools use the new RPC signatures and term-scoped
   await backend.setPreview('bb1002');assert.equal((await backend.classData()).grades.length,0);await backend.setPreview(null);
   assert.equal((await backend.assignments())[0].title,'Edited');
   who='a';await h.as('a');await backend.getAccess();assert.equal((await backend.classData()).grades[0].comment,'Comment');
-  await assert.rejects(backend.saveGrades([{uni:'aa1001',item_id:1,score:9}]),/Grading/);
+  assert.equal('saveGrades' in backend,false);
 });
 
 test('Phase C adapter keeps term settings and rollover RPC names aligned with database grants',async()=>{
@@ -110,7 +111,7 @@ test('Phase D adapter reads and saves only global instructor fields under actual
   const speaker = await backend.saveSpeaker({name:'Adapter guest',affiliation:'',topic:'',week:null,status:'Idea',contact:'',notes:'',term_id:'forged',created_at:'forged'});
   assert.equal(speaker.term_id,undefined); assert.notEqual(speaker.created_at,'forged');
   await backend.saveSpeaker({...speaker,status:'Contacted'}); assert.equal((await backend.speakers())[0].status,'Contacted');
-  await backend.replaceRoster([{uni:'aa1001',name:'Alice'}]);
+  await h.rpc('replace_roster',JSON.stringify([{uni:'aa1001',name:'Alice'}]));
   await backend.setPreview('aa1001');
   assert.equal((await backend.instructorNote(1)).body,''); assert.deepEqual(await backend.speakers(),[]);
   await assert.rejects(backend.saveInstructorNote(1,'Forbidden'),/read-only/);

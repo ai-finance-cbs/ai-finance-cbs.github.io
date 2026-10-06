@@ -17,7 +17,12 @@ language sql immutable security definer set search_path='' as $$
       when s->>'cached_due_at' is null then 'No due date'
       when (s->>'cached_due_at')::timestamptz<=at_time then 'Missing'
       else 'Not yet due' end
-    when s->>'submitted_at' is not null or s->>'workflow_state' in ('submitted','pending_review','graded') then case
+    -- Offline grades have no submission receipt. A graded workflow must not expose an unposted score.
+    when jsonb_array_length(coalesce(s->'submission_types','[]'::jsonb))>0
+      and (s->'submission_types') <@ '["on_paper","none","external_tool"]'::jsonb
+      and (not ((s->'submission_types') ? 'external_tool') or
+        (s->>'submitted_at' is null and s->>'workflow_state' not in ('submitted','pending_review'))) then 'Not posted'
+    when s->>'submitted_at' is not null or s->>'workflow_state' in ('submitted','pending_review') then case
       when (s->>'submitted_at')::timestamptz>(s->>'cached_due_at')::timestamptz then 'Late' else 'Done' end
     when kind='optional' then 'Optional'
     when s->>'cached_due_at' is null then 'No due date'
@@ -115,18 +120,46 @@ begin
   end loop;
 end $$;
 
+-- The raw attendance table stays staff-only. Student projections depend on posting, never row existence.
+create function private.canvas_quiz_posted(t text,u text,w integer) returns boolean
+language sql stable security definer set search_path='' as $$
+  select exists(select 1 from public.canvas_assignment_map m
+    join public.canvas_assignments a on a.term_id=m.term_id and a.id=m.canvas_assignment_id
+    join public.canvas_submissions s on s.term_id=m.term_id and s.assignment_id=m.canvas_assignment_id
+    join public.canvas_enrollments e on e.term_id=s.term_id and e.user_id=s.user_id
+    where m.term_id=t and m.kind='quiz' and m.week=w and e.uni=u and e.match_status='matched'
+      and a.published and s.posted_visible and exists(select 1 from private.term_roster(t) r where r.uni=u)
+      and (e.enrollment_states @> array['active'] or
+        (exists(select 1 from public.terms where id=t and status='archived-readable') and e.enrollment_states @> array['completed'])))
+$$;
+
 create or replace function private.term_snapshot(t text,u text,r text) returns jsonb
 language sql stable security definer set search_path='' as $$
 select jsonb_build_object(
   'term_id',t,
   'sessions',(select coalesce(jsonb_agg(s order by week),'[]') from public.attendance_sessions s where s.term_id=t),
   'attendance',(select coalesce(jsonb_agg(jsonb_build_object('uni',a.uni,'week',a.week,'status',a.status,
-    'source_quiz',case when r in ('instructor','grader') or case when exists(select 1 from public.canvas_assignment_map m where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz) then exists(select 1 from public.canvas_assignment_map m join public.canvas_submissions s on s.term_id=m.term_id and s.assignment_id=m.canvas_assignment_id join public.canvas_enrollments e on e.term_id=s.term_id and e.user_id=s.user_id where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz and e.uni=u and e.match_status='matched' and s.posted_visible) else i.released end then a.source_quiz else null end,
-    'manual_override',case when r in ('instructor','grader') or case when exists(select 1 from public.canvas_assignment_map m where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz) then exists(select 1 from public.canvas_assignment_map m join public.canvas_submissions s on s.term_id=m.term_id and s.assignment_id=m.canvas_assignment_id join public.canvas_enrollments e on e.term_id=s.term_id and e.user_id=s.user_id where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz and e.uni=u and e.match_status='matched' and s.posted_visible) else i.released end then a.manual_override else null end) || case when r in ('instructor','grader') then
-      jsonb_build_object('excuse_reason',a.excuse_reason,'excused_at',a.excused_at,'excused_by',a.excused_by)
-      else '{}'::jsonb end order by a.week),'[]')
-    from public.attendance a left join public.grade_items i on i.term_id=a.term_id and i.quiz_week=a.source_quiz
-    where a.term_id=t and (r in ('instructor','grader') or (r='student' and a.uni=u))),
+    'source_quiz',case when r in ('instructor','grader') or (a.status<>'pending' and case
+      when exists(select 1 from public.canvas_assignment_map m where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz)
+        then private.canvas_quiz_posted(t,u,a.source_quiz) else i.released end) then a.source_quiz end,
+    'manual_override',case when r in ('instructor','grader') or (a.status<>'pending' and case
+      when exists(select 1 from public.canvas_assignment_map m where m.term_id=t and m.kind='quiz' and m.week=a.source_quiz)
+        then private.canvas_quiz_posted(t,u,a.source_quiz) else i.released end) then a.manual_override end) ||
+    case when r in ('instructor','grader') then jsonb_build_object(
+      'excuse_reason',a.excuse_reason,'excused_at',a.excused_at,'excused_by',a.excused_by) else '{}'::jsonb end order by a.week),'[]')
+    from (
+      select a.uni,a.week,case when r='student' and a.status<>'excused'
+        and (a.canvas_derived or exists(select 1 from public.canvas_assignment_map m where m.term_id=t and m.kind='quiz' and m.week=a.week))
+        and not private.canvas_quiz_posted(t,u,a.week) then 'pending' else a.status end status,
+        a.source_quiz,a.manual_override,a.excuse_reason,a.excused_at,a.excused_by
+      from public.attendance a where a.term_id=t and (r in ('instructor','grader') or (r='student' and a.uni=u))
+      union all
+      -- A missing-policy change can remove the row. Return the same Pending shape before and after that change.
+      select u,m.week,'pending',null::integer,null::boolean,null::text,null::timestamptz,null::text
+      from public.canvas_assignment_map m where r='student' and m.term_id=t and m.kind='quiz'
+        and not private.canvas_quiz_posted(t,u,m.week)
+        and not exists(select 1 from public.attendance a where a.term_id=t and a.uni=u and a.week=m.week)
+    ) a left join public.grade_items i on i.term_id=t and i.quiz_week=a.source_quiz),
   'items',(select coalesce(jsonb_agg(i order by id),'[]') from public.grade_items i where i.term_id=t and (r in ('instructor','grader') or (r='student' and i.released))),
   'grades',(select coalesce(jsonb_agg(g),'[]') from public.grades g join public.grade_items i on i.term_id=g.term_id and i.id=g.item_id
     where g.term_id=t and (r in ('instructor','grader') or (r='student' and g.uni=u and i.released))),
@@ -145,7 +178,54 @@ select jsonb_build_object(
   (select coalesce(jsonb_agg(case when r='grader' then jsonb_build_object('uni',c.uni,'name',c.name) else to_jsonb(c) end order by c.uni),'[]') from private.term_roster(t) c)) else '{}'::jsonb end
 $$;
 
-revoke all on function private.canvas_student_status(jsonb,text,timestamptz),private.canvas_quiz_present(text,text,integer),private.refresh_canvas_attendance(text),private.canvas_attendance_changed()
+create or replace function public.canvas_student_data(p_term text default null) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare t text:=coalesce(p_term,private.current_term()); u text:=private.current_uni();
+  c public.canvas_courses; run public.canvas_sync_runs; student_id bigint; available boolean;
+begin
+  if private.current_role()<>'student' or u is null or not private.can_read_term(t)
+    or (private.preview_uni() is not null and t is distinct from private.current_term()) then
+    raise exception 'Student access required for this term.';
+  end if;
+  -- No caller-supplied UNI. Recheck the roster because it can change between syncs.
+  select e.user_id into student_id from public.canvas_enrollments e
+    where e.term_id=t and e.uni=u and e.match_status='matched'
+      and exists(select 1 from private.term_roster(t) r where r.uni=u)
+      and (e.enrollment_states @> array['active'] or
+        (exists(select 1 from public.terms where id=t and status='archived-readable') and e.enrollment_states @> array['completed']));
+  select * into c from public.canvas_courses where term_id=t;
+  -- A new in-flight run does not hide a previous failure until it succeeds.
+  select * into run from public.canvas_sync_runs where term_id=t and status<>'running'
+    order by started_at desc,id desc limit 1;
+  available:=student_id is not null and c.generation is not null
+    and coalesce(run.status='succeeded',false)
+    and not exists(select 1 from public.canvas_sync_runs where term_id=t and status='running'
+      and started_at<now()-interval '10 minutes');
+  return jsonb_build_object('term_id',t,'last_synced_at',c.last_synced_at,'available',coalesce(available,false),
+    'items',coalesce((select jsonb_agg(jsonb_build_object(
+      'site_key',m.site_key,'kind',m.kind,'week',m.week,
+      'title',(select i.title from public.grade_items i where i.term_id=t and i.code=m.site_key),
+      'status',case when available and a.published then private.canvas_student_status(to_jsonb(s)||jsonb_build_object('submission_types',a.submission_types),m.kind,now()) else 'Status unavailable' end,
+      'due_at',case when available and a.published and s.assignment_visible then s.cached_due_at end,
+      'url',case when student_id is not null and a.published and s.assignment_visible then
+        'https://courseworks2.columbia.edu/courses/'||c.course_id||'/assignments/'||a.id end,
+      'posted_visible',coalesce(available and a.published and s.posted_visible,false),
+      'score',case when available and a.published and s.posted_visible then s.score end,
+      'grade',case when available and a.published and s.posted_visible then s.grade end,
+      'points_possible',case when available and a.published and s.assignment_visible then a.points_possible end
+    ) order by case m.kind when 'milestone' then 0 when 'final' then 1 when 'quiz' then 2 when 'participation' then 3 else 4 end,m.week,m.site_key) from public.canvas_assignment_map m
+      left join public.canvas_assignments a on a.term_id=t and a.id=m.canvas_assignment_id
+      left join public.canvas_submissions s on s.term_id=t and s.assignment_id=a.id and s.user_id=student_id
+      where m.term_id=t),'[]'::jsonb),
+    'groups',coalesce((select jsonb_agg(jsonb_build_object(
+      'id',g.id,'category_id',g.category_id,'category_name',g.category_name,'name',g.name,
+      'members',(select coalesce(jsonb_agg(jsonb_build_object('name',gm.name) order by gm.name,gm.user_id),'[]')
+        from public.canvas_group_members gm where gm.term_id=t and gm.group_id=g.id)
+    ) order by g.category_id,g.name,g.id) from public.canvas_groups g where g.term_id=t and available
+      and exists(select 1 from public.canvas_group_members mine where mine.term_id=t and mine.group_id=g.id and mine.user_id=student_id)),'[]'::jsonb));
+end $$;
+
+revoke all on function private.canvas_student_status(jsonb,text,timestamptz),private.canvas_quiz_present(text,text,integer),private.refresh_canvas_attendance(text),private.canvas_attendance_changed(),private.canvas_quiz_posted(text,text,integer)
   from public,anon,authenticated,service_role;
 -- These RPCs only wrote the active term. Archives remain readable, never editable.
 revoke all on function public.save_grades(jsonb),public.grade_group(integer,uuid,numeric,text),public.release_grade_item(integer,boolean),public.replace_roster(jsonb)

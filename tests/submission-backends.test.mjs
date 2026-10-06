@@ -28,7 +28,7 @@ test('demo archived access, roster write denial and file release keep term bound
   const state=JSON.parse(sessionStorage.getItem(KEY));state.terms[0].status='archived-readable';state.terms.push({id:'spring-2028',title:'Spring 2028',status:'active'});
   state.roster.push({term_id:'spring-2028',uni:'zz9999',name:'New Student'});
   state.items.push({...state.items[0],id:17,term_id:'spring-2028'});sessionStorage.setItem(KEY,JSON.stringify(state));
-  await d.pickRole('instructor');await assert.rejects(d.replaceRoster([{uni:'zz9999',name:'New Student updated'}]),/CourseWorks/);
+  await d.pickRole('instructor');assert.equal('replaceRoster' in d,false);
   await d.pickRole('student');assert.equal((await d.getAccess()).read_only,true);
   assert.equal((await d.classData()).term_id,'spring-2027');assert.equal((await d.classData()).grades.length,1);
   await assert.rejects(d.beginSubmission(1,pdf()),/read-only/);await assert.rejects(d.classData('spring-2028'),/Class access/);
@@ -52,7 +52,7 @@ test('real browser adapter scopes term reads and routes upload finish and downlo
   await b.getAccess();await b.files();await b.sessions();await b.assignments();await b.classData('spring-2026');
   assert.ok(calls.some(c=>c.rpc==='class_data' && c.args.p_term==='spring-2026'));
   assert.ok(calls.filter(c=>c.table).every(c=>c.column==='term_id' && c.value==='spring-2027'));
-  await b.submitFile(1,pdf());await b.submissionUrl('submission-id','on-time');await b.deleteSubmission('submission-id');await b.gradeGroup(2,'group-id',8,'Comment');
+  await b.submitFile(1,pdf());await b.submissionUrl('submission-id','on-time');await b.deleteSubmission('submission-id');
   assert.equal(uploads[0].method,'POST'); assert.equal(uploads[0].url,'https://db.example/storage/v1/object/submissions/server-path.pdf');
   assert.equal(uploads[0].headers['Content-Type'],'application/pdf'); assert.equal(uploads[0].headers['x-upsert'],'false');
   assert.deepEqual(calls.filter(c=>c.function),[
@@ -61,7 +61,8 @@ test('real browser adapter scopes term reads and routes upload finish and downlo
     {function:'submission-file',body:{action:'delete',id:'submission-id'}},
   ]);
   assert.equal(calls.some(c=>c.rpc==='finish_submission'),false);
-  const fake=createDemo();for(const method of ['terms','setSessionTimes','configureItem','beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission','submissionUrl','sweepSubmissions','gradeGroup','setFileRelease'])assert.equal(typeof fake[method],typeof b[method],method);
+  const fake=createDemo();for(const method of ['gradeGroup','saveGrades','releaseItem','replaceRoster']){assert.equal(method in b,false);assert.equal(method in fake,false);}
+  for(const method of ['terms','setSessionTimes','configureItem','beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission','submissionUrl','sweepSubmissions','setFileRelease'])assert.equal(typeof fake[method],typeof b[method],method);
 });
 
 test('review 7/8: demo preview switches directly and normalizes Windows file MIME labels',async()=>{

@@ -280,7 +280,7 @@ export function renderClassPage(ctx) {
         tr.append(
           el('th', `Week ${s.week}`, { scope: 'row' }),
           el('td', s.date || 'Date TBA'),
-          el('td', unavailable ? 'Status unavailable' : { present: 'Present', absent: 'Absent', excused: 'Excused' }[a?.status] || 'Absent'),
+          el('td', unavailable ? 'Status unavailable' : { present: 'Present', absent: 'Absent', excused: 'Excused', pending: 'Pending' }[a?.status] || 'Absent'),
           el('td', a && !unavailable ? statusNote(a) : ''),
         );
         body.append(tr);

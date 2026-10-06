@@ -14,7 +14,7 @@ export function extendCanvas({readAll,saveAll,access}) {
     if (term!=='spring-2027') return empty(term);
     const result=empty(term), now=new Date().toISOString();
     result.course={term_id:term,course_id:'240315',generation:'demo',last_synced_at:now};
-    result.assignments=canvasItems(d.items.filter(i=>i.term_id===term)).map((i,n)=>({id:String(100+n),name:i.title,published:true,points_possible:10,due_at:'2027-03-01T14:00:00Z'}));
+    result.assignments=canvasItems(d.items.filter(i=>i.term_id===term)).map((i,n)=>({id:String(100+n),name:i.title,published:true,submission_types:i.kind==='quiz'?['on_paper']:['online_upload'],points_possible:10,due_at:'2027-03-01T14:00:00Z'}));
     result.mappings=canvasItems(d.items.filter(i=>i.term_id===term)).filter(i=>i.site_key!=='Q6').map((i,n)=>({...i,canvas_assignment_id:String(100+n)}));
     result.enrollments=d.roster.filter(r=>r.term_id===term).map((r,n)=>({...r,user_id:String(n+1),login_id:r.uni,section_ids:['10'],match_status:'matched',enrollment_states:['active']}));
     result.enrollments.push({user_id:'99',login_id:'zz9999',name:'Unmatched Canvas student',uni:null,match_status:'unmatched',enrollment_states:['active']});

@@ -8,7 +8,7 @@ const setQuiz=fields=>change(c=>{const id=c.mappings.find(m=>m.site_key==='Q1').
 const record=async()=>(await b.classData()).attendance.find(a=>a.uni==='ab1234'&&a.week===1);
 for(const role of ['student','instructor','grader','auditor','unlisted','preview'])test(`demo ${role} cannot change grades, posting, or roster`,async()=>{
   if(role==='preview')await b.setPreview('ab1234');else await b.pickRole(role);
-  const before=sessionStorage.getItem(KEY);for(const name of ['saveGrades','gradeGroup','releaseItem','replaceRoster'])await assert.rejects(b[name](),/CourseWorks/);
+  const before=sessionStorage.getItem(KEY);for(const name of ['saveGrades','gradeGroup','releaseItem','replaceRoster'])assert.equal(name in b,false);
   assert.equal(sessionStorage.getItem(KEY),before);
 });
 test('demo sync applies quiz facts once, supersedes an excuse, and preserves its audit after withdrawal',async()=>{
@@ -37,4 +37,16 @@ test('staff download current and on-time archived files after rollover; closed-t
     await b.pickRole('instructor');const d=JSON.parse(sessionStorage.getItem(KEY));d.terms.find(t=>t.id===TERM).status='closed';sessionStorage.setItem(KEY,JSON.stringify(d));
     await b.pickRole('student');await assert.rejects(b.submissionUrl('archive-file'),/unavailable/);
   } finally {globalThis.setTimeout=timer;}
+});
+
+test('C1 demo attendance stays Pending through unposted grade and missing-policy changes, then follows posting',async()=>{
+  await b.pickRole('student');const before=(await b.classData()).attendance.find(a=>a.week===1);assert.equal(before.status,'pending');
+  for(const fields of [{score:0,workflow_state:'graded'},{missing:true,late_policy_status:'missing'}]) {
+    await b.pickRole('instructor');setQuiz(fields);await b.syncCanvas(TERM);
+    await b.pickRole('student');assert.deepEqual((await b.classData()).attendance.find(a=>a.week===1),before);
+    assert.equal((await b.canvasStudentData(TERM)).items.find(i=>i.site_key==='Q1').status,'Not posted');
+    await b.pickRole('instructor');await b.setPreview('ab1234');assert.deepEqual((await b.classData()).attendance.find(a=>a.week===1),before);await b.setPreview(null);
+  }
+  setQuiz({missing:false,late_policy_status:null,posted_at:'2027-03-02T14:00:00Z'});await b.syncCanvas(TERM);
+  await b.pickRole('student');assert.equal((await b.classData()).attendance.find(a=>a.week===1).status,'present');
 });

@@ -67,7 +67,7 @@ test('grader has no attendance actions or CSV import; quiz scores replace excuse
   await expect(cell(page).locator('.quiz-marker')).toHaveCount(0);
 });
 
-test('students and preview see Present, Absent, Excused without reasons or edit controls', async ({ page }) => {
+test('students and preview see Pending until quizzes post, and Excused without private reasons', async ({ page }) => {
   await enter(page, 'instructor');
   await page.evaluate(async () => {
     const b = (await import('/assets/materials/demo.js')).createDemo();
@@ -76,11 +76,11 @@ test('students and preview see Present, Absent, Excused without reasons or edit 
   });
   await enter(page, 'student');
   const states = page.locator('.student-attendance-grid tbody tr td:nth-child(3)');
-  await expect(states).toHaveText(['Excused', 'Present', 'Absent', 'Absent', 'Absent', 'Absent']);
+  await expect(states).toHaveText(['Excused', 'Pending', 'Pending', 'Pending', 'Pending', 'Absent']);
   await expect(page.locator('#materials-root')).not.toContainText('Staff-only reason');
   await expect(page.locator('.attendance-action, .attendance-excuse-form')).toHaveCount(0);
   await enter(page, 'instructor'); await page.locator('[data-view-select]').selectOption('ab1234');
   await expect(page.locator('[data-preview-banner]')).toBeVisible();
-  await expect(states).toHaveText(['Excused', 'Present', 'Absent', 'Absent', 'Absent', 'Absent']);
+  await expect(states).toHaveText(['Excused', 'Pending', 'Pending', 'Pending', 'Pending', 'Absent']);
   await expect(page.locator('.attendance-action')).toHaveCount(0);
 });

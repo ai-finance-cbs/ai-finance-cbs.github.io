@@ -38,7 +38,10 @@ export function canvasStudentStatus(submission, mapping = {}, now = Date.now()) 
   if (!submission?.assignment_visible) return 'Status unavailable';
   if (submission.posted_visible) return canvasStatus(submission,mapping,now);
   // Unposted status ignores every grading flag, including manually set late/missing flags.
-  if (submission.submitted_at || ['submitted','pending_review','graded'].includes(submission.workflow_state))
+  const types=mapping.submission_types || [],receipt=!!submission.submitted_at || ['submitted','pending_review'].includes(submission.workflow_state);
+  if (types.length && types.every(type=>['on_paper','none','external_tool'].includes(type))
+    && (!types.includes('external_tool') || !receipt)) return 'Not posted';
+  if (receipt)
     return submission.submitted_at && submission.cached_due_at && Date.parse(submission.submitted_at)>Date.parse(submission.cached_due_at) ? 'Late' : 'Done';
   if (mapping.kind==='optional') return 'Optional';
   if (!submission.cached_due_at) return 'No due date';
@@ -57,7 +60,7 @@ export function canvasStudentProjection(data, enrollment, now = Date.now()) {
       const a=data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id));
       const s=enrollment && data.submissions.find(s=>String(s.user_id)===String(enrollment.user_id) && String(s.assignment_id)===String(m.canvas_assignment_id));
       const visible=!!(a?.published && s?.assignment_visible), posted=!!(available && visible && s.posted_visible);
-      return {site_key:m.site_key,kind:m.kind,week:m.week,title:m.title || null,status:available && visible ? canvasStudentStatus(s,m,now) : 'Status unavailable',
+      return {site_key:m.site_key,kind:m.kind,week:m.week,title:m.title || null,status:available && visible ? canvasStudentStatus(s,{...m,submission_types:a.submission_types},now) : 'Status unavailable',
         due_at:available && visible ? s.cached_due_at : null,
         url:visible ? `${CANVAS_HOST}/courses/${data.course.course_id}/assignments/${a.id}` : null,
         posted_visible:posted,score:posted ? s.score : null,grade:posted ? s.grade : null,
