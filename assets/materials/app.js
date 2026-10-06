@@ -244,7 +244,6 @@ async function refresh() {
           renderScheduleAdmin(data);
           renderGroupSettings(data);
           renderFileAdmin(data.files);
-          root.append(el('p', `Storage: ${(overview.storage_bytes / 1024 / 1024).toFixed(1)} MB used / 1 GB`, { 'data-storage-usage': '' }));
           renderTermAdmin(overview);
           renderAnnouncementAdmin(announcements);
           renderAllowlist(admin.allowlist); renderAssignmentAdmin(assignments);
@@ -253,6 +252,7 @@ async function refresh() {
           testSection.append(el('p', 'These accounts have fixed test access. This list is read-only.'));
           const list = el('ul'); for (const t of tests) list.append(el('li', `${t.email} · ${ROLE_LABELS[t.role]}${t.uni ? ` · ${t.uni}` : ''}`));
           testSection.append(list);
+          groupSettings(overview);
         }
       }
       outlineChanged();
@@ -305,6 +305,33 @@ async function runAction(control, status, task, success, rerender = false) {
   try { await task(); if (rerender) { await refresh(); const current = root.querySelector('[data-admin-status]'); if (current) current.textContent = success; } else status.textContent = success; }
   catch (error) { status.textContent = error.message || 'The change could not be saved. Try again.'; }
   finally { control.disabled = false; }
+}
+// Settings: the collapsible sections sit inside a few labelled cards, Canvas-style.
+const SETTINGS_GROUPS = [
+  ['schedule', 'Schedule', 'Class dates and times, and when work is due.', ['session-times', 'submission-settings']],
+  ['assignments', 'Assignments', 'What students see on each assignment page, and who can open it.', ['assignment-editor']],
+  ['groups', 'Groups', 'When students can join or leave project groups.', ['group-settings']],
+  ['files', 'Files and storage', 'Lecture files for each week, and the space they use.', ['lecture-pdfs']],
+  ['people', 'People and access', 'Who can sign in, with which role, and linked CBS accounts.', ['access-lists', 'student-accounts', 'test-accounts']],
+  ['announcements', 'Announcements', 'Messages shown to the class.', ['announcements-editor']],
+  ['term', 'Term', 'Close this term and open the next. Export the records first.', ['term-rollover']],
+];
+function groupSettings(overview) {
+  const status = root.querySelector('[data-admin-status]');
+  for (const [key, title, text, ids] of SETTINGS_GROUPS) {
+    const card = el('section', null, { class: `settings-card settings-${key}`, id: `settings-${key}` });
+    card.append(el('h2', title), el('p', text, { class: 'settings-desc' }));
+    for (const id of ids) { const part = root.querySelector(`#${id}`); if (part) card.append(part); }
+    if (key === 'files' && overview) {
+      const used = overview.storage_bytes / 1024 / 1024, limit = (overview.storage_limit || 1073741824) / 1024 / 1024;
+      const meter = el('div', null, { class: 'storage-meter', 'data-storage-usage': '' });
+      const bar = el('div', null, { class: 'storage-bar' }); const fill = el('span'); fill.style.width = `${Math.min(100, used / limit * 100)}%`; bar.append(fill);
+      meter.append(bar, el('span', `Storage: ${used.toFixed(1)} MB used / 1 GB`));
+      card.append(meter);
+    }
+    if (card.querySelector('details, .storage-meter')) root.append(card);
+  }
+  if (status) root.prepend(status);
 }
 function section(title, id) {
   const collapsible = root.dataset.page === 'settings';
