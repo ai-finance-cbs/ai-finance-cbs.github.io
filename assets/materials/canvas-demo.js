@@ -29,9 +29,18 @@ export function extendCanvas({readAll,saveAll,access}) {
   const write=(d,term,value)=>{d.canvas={...d.canvas,[term]:value};saveAll(d);};
   return {
     async canvasData(term) {const d=requireStaff(term);return initial(d,term);},
-    async saveCanvasCourse(term,course) {
+    async saveCanvasCourse(term,course,confirmReset=false) {
       const d=requireStaff(term,true),v=initial(d,term),id=canvasId(course);
-      if (v.course?.generation && String(v.course.course_id)!==id) throw new Error('This term already has a Canvas snapshot. Use a new term for a different course.');
+      const now=new Date().toISOString();
+      if(v.runs.some(r=>r.status==='running' && Date.parse(r.started_at)>=Date.now()-600000)) throw new Error('Wait for the current sync to finish.');
+      for(const r of v.runs)if(r.status==='running')Object.assign(r,{status:'failed',finished_at:now,error:'Sync lease expired; previous snapshot retained.'});
+      if(v.course && String(v.course.course_id)!==id) {
+        if(confirmReset!==true) throw new Error('Confirm the Canvas course change before clearing copied data. Reload Settings if the course changed in another tab.');
+        const counts={};
+        for(const key of ['submissions','group_members','mappings','assignments','enrollments','groups']){counts[key==='mappings'?'assignment_map':key]=v[key].length;v[key]=[];}
+        v.course.generation=null;v.course.last_synced_at=null;
+        v.runs.unshift({id:crypto.randomUUID(),course_id:id,status:'reset',started_at:now,finished_at:now,counts,error:null});
+      }
       v.course={...v.course,term_id:term,course_id:id};write(d,term,v);
     },
     async saveCanvasMapping(term,values) {

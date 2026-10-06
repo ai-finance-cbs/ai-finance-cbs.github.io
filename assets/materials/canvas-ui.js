@@ -1,4 +1,4 @@
-import {CANVAS_HOST,canvasItems,canvasStatus,canvasPresent,canvasPosted,suggestedAssignment} from './canvas-core.js';
+import {CANVAS_HOST,canvasId,canvasItems,canvasStatus,canvasPresent,canvasPosted,suggestedAssignment} from './canvas-core.js';
 const el=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);return n;};
 const button=(text,fn)=>{const b=el('button',text,{type:'button',class:'prep-text-action'});b.addEventListener('click',fn);return b;};
 const time=value=>value?new Date(value).toLocaleString('en-US',{timeZone:'America/New_York'}):'—';
@@ -17,7 +17,12 @@ export async function renderCanvasSettings({root,backend,term,items,readOnly}) {
     const save=button('Save course',()=>{});save.type='submit';save.disabled=readOnly;
     const sync=button('Sync now',()=>run(()=>backend.syncCanvas(term),'Sync complete.'));sync.disabled=readOnly||!data.course;
     form.append(label,save,sync);content.append(form);
-    form.addEventListener('submit',e=>{e.preventDefault();void run(()=>backend.saveCanvasCourse(term,input.value),'Course saved.');});
+    form.addEventListener('submit',e=>{
+      e.preventDefault();if(readOnly)return;
+      let id;try{id=canvasId(input.value);}catch(error){status.textContent=error.message;return;}
+      if(data.course && String(data.course.course_id)!==id) confirmCourse(id,data.course.course_id);
+      else void run(()=>backend.saveCanvasCourse(term,id),'Course saved.');
+    });
     const table=el('table',null,{class:'class-grid canvas-mapping'}),head=el('tr');for(const title of ['Site item','Canvas assignment',''])head.append(el('th',title,{scope:'col'}));
     const thead=el('thead'),body=el('tbody');thead.append(head);table.append(thead,body);
     for (const item of canvasItems(items)) {
@@ -38,12 +43,32 @@ export async function renderCanvasSettings({root,backend,term,items,readOnly}) {
     for(const e of unmatched)content.append(el('p',`${e.name} · ${e.login_id || 'No login ID'} · ${e.match_status}`));
     content.append(el('p','Canvas enrollment matching does not grant site access. Fix the roster or verified account link in Settings.'));
   }
+  function confirmCourse(id,previous) {
+    const dialog=el('dialog',null,{class:'attendance-confirm','aria-label':'Change Canvas course'});
+    const actions=el('div',null,{class:'attendance-confirm-actions'}),error=el('p','',{class:'attendance-dialog-error',role:'alert'});
+    let pending=false;
+    const close=()=>{if(pending)return;dialog.close();dialog.remove();content.querySelector('[aria-label="Canvas course ID"]')?.focus();};
+    const confirm=button('Change course',async()=>{
+      if(pending)return;
+      pending=true;error.textContent='';confirm.disabled=true;cancel.disabled=true;
+      const ok=await run(()=>backend.saveCanvasCourse(term,id,true),'Course changed. Copied Canvas data and mappings cleared.');
+      pending=false;
+      if(ok)close();else{error.textContent=status.textContent;confirm.disabled=false;cancel.disabled=false;}
+    });
+    const cancel=button('Cancel',close);
+    confirm.className=cancel.className='materials-button';
+    actions.append(confirm,cancel);
+    dialog.append(el('h3','Change Canvas course?'),el('p',`${previous} → ${id}`),
+      el('p','This clears the copied Canvas data for this term. Mappings are cleared too.'),error,actions);
+    dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
+    document.body.append(dialog);dialog.showModal();cancel.focus();
+  }
   async function run(task,message) {
-    if(readOnly)return;
+    if(readOnly)return false;
     content.querySelectorAll('button,input,select').forEach(n=>n.disabled=true);status.textContent='Working…';
-    try {await task();await draw();status.textContent=message;}
-    catch(e){status.textContent=e.message;content.querySelectorAll('button,input,select').forEach(n=>n.disabled=false);}
-    document.dispatchEvent(new Event('course:content-changed'));
+    try {await task();await draw();status.textContent=message;return true;}
+    catch(e){status.textContent=e.message;content.querySelectorAll('button,input,select').forEach(n=>n.disabled=false);return false;}
+    finally{document.dispatchEvent(new Event('course:content-changed'));}
   }
   try{await draw();}catch(e){status.textContent=e.message;}
 }

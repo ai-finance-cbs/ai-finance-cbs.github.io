@@ -18,6 +18,31 @@ for(const role of ['grader','student','auditor','unlisted','preview'])test(`demo
   if(role==='preview')await b.setPreview('ab1234');else await b.pickRole(role);
   if(role==='grader')assert.ok((await b.canvasData('spring-2027')).submissions.length);else await assert.rejects(b.canvasData('spring-2027'),/Staff/);
   await assert.rejects(b.syncCanvas('spring-2027'),/Staff|Instructor/);
-  await assert.rejects(b.saveCanvasCourse('spring-2027',240315),/Staff|Instructor/);
+  await assert.rejects(b.saveCanvasCourse('spring-2027',240316,true),/Staff|Instructor/);
   await assert.rejects(b.saveCanvasMapping('spring-2027',{site_key:'M1',kind:'milestone',week:1,canvas_assignment_id:'100'}),/Staff|Instructor/);
+});
+
+test('demo course reset clears copied data and mappings, preserves history, and does not change student records',async()=>{
+  await b.syncCanvas('spring-2027');const before=await b.canvasData('spring-2027'),legacy=await b.classData();
+  await b.saveCanvasCourse('spring-2027',240315);assert.deepEqual(await b.canvasData('spring-2027'),before);
+  await assert.rejects(b.saveCanvasCourse('spring-2027',240316),/Confirm the Canvas/);
+  assert.deepEqual(await b.canvasData('spring-2027'),before);
+  await b.saveCanvasCourse('spring-2027',240316,true);const reset=await createDemo().canvasData('spring-2027');
+  assert.equal(reset.course.course_id,'240316');assert.equal(reset.course.generation,null);assert.equal(reset.course.last_synced_at,null);
+  for(const key of ['assignments','submissions','enrollments','groups','group_members','mappings'])assert.deepEqual(reset[key],[]);
+  assert.equal(reset.runs[0].status,'reset');assert.equal(reset.runs[0].counts.submissions,before.submissions.length);
+  assert.equal(reset.runs.length,before.runs.length+1);assert.deepEqual(await b.classData(),legacy);
+  await b.openTerm('Spring 2028');await assert.rejects(b.saveCanvasCourse('spring-2027',240317,true),/active term/);
+  await b.saveCanvasCourse('spring-2028',240315);await b.saveCanvasCourse('spring-2028',240317,true);
+  assert.deepEqual(await b.canvasData('spring-2027'),reset);
+});
+
+test('demo reset blocks a live lease and expires an abandoned lease',async()=>{
+  await b.syncCanvas('spring-2027');const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));
+  d.canvas['spring-2027'].runs.unshift({id:'live',status:'running',started_at:new Date().toISOString()});sessionStorage.setItem(key,JSON.stringify(d));
+  const before=await b.canvasData('spring-2027');await assert.rejects(b.saveCanvasCourse('spring-2027',240316,true),/current sync/);
+  assert.deepEqual(await b.canvasData('spring-2027'),before);
+  d.canvas['spring-2027'].runs[0].started_at=new Date(Date.now()-660000).toISOString();sessionStorage.setItem(key,JSON.stringify(d));
+  await b.saveCanvasCourse('spring-2027',240316,true);const reset=await b.canvasData('spring-2027');
+  assert.equal(reset.runs[0].status,'reset');assert.equal(reset.runs[1].status,'failed');
 });

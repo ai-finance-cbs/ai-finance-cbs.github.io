@@ -35,7 +35,7 @@ for(const role of ['grader','a','auditor','outside','anon','preview']) test(`${r
   }
   if(role==='grader')assert.equal((await h.rpc('canvas_staff_data',TERM)).submissions.length,78);
   else await deny(()=>h.rpc('canvas_staff_data',TERM));
-  await deny(()=>h.rpc('save_canvas_course',TERM,123));
+  await deny(()=>h.rpc('save_canvas_course',TERM,123,true));
   await deny(()=>h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1));
   await deny(()=>h.rpc('request_canvas_sync',TERM));
   await deny(()=>h.rpc('begin_canvas_sync',TERM));
@@ -49,7 +49,7 @@ test('instructor mappings validate IDs, unique destinations, kind/week pairs, an
   for(const args of [['M2',100,'milestone',2],['M2',999,'milestone',2],['Q6',102,'quiz',5],['FP',102,'final',null],['Other',102,'optional',null],['Q7',102,'quiz',7]])await deny(()=>h.rpc('save_canvas_mapping',TERM,...args));
   assert.equal((await h.rpc('canvas_staff_data',TERM)).mappings.length,2);
   await h.rpc('save_canvas_mapping',TERM,'M1',null,'milestone',1);assert.equal((await h.rpc('canvas_staff_data',TERM)).mappings.length,1);
-  await deny(()=>h.rpc('save_canvas_course',TERM,240316),/snapshot/);
+  await deny(()=>h.rpc('save_canvas_course',TERM,0),/valid Canvas course ID/);
   await deny(()=>h.rows("insert into canvas_courses(term_id,course_id) values('spring-2027',1)"));
   const audits=await h.rows("select * from audit_log where table_name='canvas_assignment_map'");assert.equal(audits.length,3);
 });
@@ -104,4 +104,55 @@ test('each generation clears stale roster links and rejects ambiguous Canvas log
     const actual=d.enrollments.find(row=>String(row.user_id)===e.user_id);
     assert.equal(actual.uni,null);assert.equal(actual.match_status,'ambiguous');
   }
+});
+
+test('course reset clears only the active term mirror and mappings, retains history, and audits every deletion',async()=>{
+  await publish(await start());await h.as('teacher');await h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1);
+  await h.rpc('open_term','Spring 2028');const current='spring-2028',archived=await h.rpc('canvas_staff_data',TERM);
+  await h.rpc('save_canvas_course',current,240315);const run=await h.rpc('request_canvas_sync',current);await publish(run);
+  await h.as('teacher');await h.rpc('save_canvas_mapping',current,'M1',100,'milestone',1);
+  const legacy=await h.rpc('class_data',current);
+  await deny(()=>h.rpc('save_canvas_course',TERM,240316,true),/active term/);
+  await h.rpc('save_canvas_course',current,240316,true);const reset=await h.rpc('canvas_staff_data',current);
+  assert.equal(reset.course.course_id,240316);assert.equal(reset.course.generation,null);assert.equal(reset.course.last_synced_at,null);
+  for(const key of ['assignments','submissions','enrollments','groups','group_members','mappings'])assert.deepEqual(reset[key],[]);
+  assert.deepEqual(await h.rpc('canvas_staff_data',TERM),archived);assert.deepEqual(await h.rpc('class_data',current),legacy);
+  assert.equal(reset.runs.length,2);assert.equal(reset.runs[0].status,'reset');assert.ok(reset.runs[0].finished_at);
+  assert.deepEqual(reset.runs[0].counts,{submissions:78,group_members:2,assignment_map:1,assignments:13,enrollments:6,groups:1});
+  for(const [name,count] of Object.entries(reset.runs[0].counts)) {
+    const audits=await h.rows("select * from audit_log where table_name=$1 and operation='DELETE' and old_row->>'term_id'=$2",['canvas_'+name,current]);
+    assert.equal(audits.length,count);assert.ok(audits.every(a=>a.actor_email==='oh@gsb.columbia.edu'));
+  }
+  const courses=await h.rows("select * from audit_log where table_name='canvas_courses' and operation='UPDATE' and new_row->>'term_id'=$1",[current]);
+  assert.ok(courses.some(a=>a.old_row.course_id===240315 && a.new_row.course_id===240316 && a.new_row.generation===null));
+  assert.equal((await h.rows("select * from audit_log where table_name='canvas_sync_runs' and new_row->>'status'='reset'")).length,1);
+  // A fresh sync uses the new course and starts without old mappings.
+  const next=await h.rpc('request_canvas_sync',current);assert.equal(next.course_id,240316);await publish(next);
+  await h.as('teacher');assert.equal((await h.rpc('canvas_staff_data',current)).assignments.length,13);
+  assert.deepEqual((await h.rpc('canvas_staff_data',current)).mappings,[]);
+});
+
+test('same-course saves retain copied data; live leases block resets and expired workers cannot publish after reset',async()=>{
+  await publish(await start());const before=await staff();await h.rpc('save_canvas_course',TERM,240315);
+  const unchanged=await staff();assert.equal(unchanged.course.generation,before.course.generation);
+  assert.deepEqual(unchanged.submissions,before.submissions);assert.deepEqual(unchanged.runs,before.runs);
+  for(const confirm of [undefined,false,null])await deny(()=>h.rpc('save_canvas_course',TERM,240316,...(confirm===undefined?[]:[confirm])),/Confirm the Canvas/);
+  assert.deepEqual((await staff()).submissions,before.submissions);
+  const running=await h.rpc('request_canvas_sync',TERM);
+  await deny(()=>h.rpc('save_canvas_course',TERM,240316,true),/current sync/);
+  assert.equal((await staff()).course.course_id,240315);assert.equal((await staff()).submissions.length,78);
+  await h.as('owner');await h.rows("update canvas_sync_runs set started_at=clock_timestamp()-interval '11 minutes' where id=$1",[running.id]);
+  await h.as('teacher');await h.rpc('save_canvas_course',TERM,240316,true);
+  assert.equal((await staff()).runs.find(r=>r.id===running.id).status,'failed');
+  await deny(()=>publish(running),/lease/);assert.deepEqual((await staff()).submissions,[]);
+});
+
+test('a failed reset rolls back copied data, mappings, course metadata, and audits together',async()=>{
+  await publish(await start());await h.as('teacher');await h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1);
+  const before=await staff(),audits=await h.rows('select count(*)::int n from audit_log');
+  await h.as('owner');await h.db.exec(`create function pg_temp.reject_canvas_reset() returns trigger language plpgsql as $$
+    begin if new.status='reset' then raise exception 'Injected reset failure'; end if; return new; end $$;
+    create trigger test_reset_failure before insert on canvas_sync_runs for each row execute function pg_temp.reject_canvas_reset();`);
+  await h.as('teacher');await deny(()=>h.rpc('save_canvas_course',TERM,240316,true),/Injected reset failure/);
+  assert.deepEqual(await staff(),before);assert.deepEqual(await h.rows('select count(*)::int n from audit_log'),audits);
 });

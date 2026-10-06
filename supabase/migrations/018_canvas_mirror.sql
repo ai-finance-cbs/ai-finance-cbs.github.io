@@ -11,7 +11,7 @@ create table public.canvas_sync_runs (
   id uuid primary key default gen_random_uuid(),
   term_id text not null references public.canvas_courses(term_id),
   course_id bigint not null,
-  status text not null check(status in ('running','succeeded','failed','auth_failed')),
+  status text not null check(status in ('running','succeeded','failed','auth_failed','reset')),
   started_at timestamptz not null default clock_timestamp(), finished_at timestamptz,
   counts jsonb not null default '{}', error text check(length(error)<=500),
   actor_id uuid, actor_email text
@@ -89,14 +89,28 @@ begin
   perform 1 from public.terms where id=t and status='active' for share;
   if not found then raise exception 'Canvas changes require the active term.'; end if;
 end $$;
-create function public.save_canvas_course(p_term text,p_course bigint) returns void
+create function public.save_canvas_course(p_term text,p_course bigint,p_confirm_reset boolean default false) returns void
 language plpgsql security definer set search_path='' as $$
+declare previous_course bigint; t text; deleted bigint; cleared jsonb:='{}';
 begin
   perform private.require_instructor(); perform private.assert_writable(); perform private.canvas_lock(p_term);
   if p_course is null or p_course not between 1 and 9007199254740991 then raise exception 'Enter a valid Canvas course ID.'; end if;
+  update public.canvas_sync_runs set status='failed',finished_at=clock_timestamp(),error='Sync lease expired; previous snapshot retained.'
+    where term_id=p_term and status='running' and started_at<clock_timestamp()-interval '10 minutes';
   if exists(select 1 from public.canvas_sync_runs where term_id=p_term and status='running') then raise exception 'Wait for the current sync to finish.'; end if;
-  if exists(select 1 from public.canvas_courses where term_id=p_term and course_id<>p_course and generation is not null) then
-    raise exception 'This term already has a Canvas snapshot. Use a new term for a different course.';
+  select course_id into previous_course from public.canvas_courses where term_id=p_term;
+  if previous_course is not null and previous_course<>p_course then
+    if p_confirm_reset is distinct from true then raise exception 'Confirm the Canvas course change before clearing copied data. Reload Settings if the course changed in another tab.'; end if;
+    -- Delete children before parents. Audit triggers retain the old copied records.
+    foreach t in array array['canvas_submissions','canvas_group_members','canvas_assignment_map','canvas_assignments','canvas_enrollments','canvas_groups'] loop
+      execute format('delete from public.%I where term_id=$1',t) using p_term;
+      get diagnostics deleted=row_count;
+      cleared:=cleared||jsonb_build_object(replace(t,'canvas_',''),deleted);
+    end loop;
+    update public.canvas_courses set course_id=p_course,generation=null,last_synced_at=null,updated_at=clock_timestamp() where term_id=p_term;
+    insert into public.canvas_sync_runs(term_id,course_id,status,finished_at,counts,actor_id,actor_email)
+      values(p_term,p_course,'reset',clock_timestamp(),cleared,auth.uid(),private.current_email());
+    return;
   end if;
   insert into public.canvas_courses(term_id,course_id) values(p_term,p_course)
     on conflict(term_id) do update set course_id=excluded.course_id,updated_at=clock_timestamp();
@@ -253,8 +267,8 @@ begin
 end $$;
 
 revoke all on function private.canvas_lock(text),private.canvas_begin(text,uuid,text) from public,anon,authenticated;
-revoke all on function public.save_canvas_course(text,bigint),public.save_canvas_mapping(text,text,bigint,text,integer),public.request_canvas_sync(text),public.canvas_staff_data(text) from public,anon,authenticated;
-grant execute on function public.save_canvas_course(text,bigint),public.save_canvas_mapping(text,text,bigint,text,integer),public.request_canvas_sync(text),public.canvas_staff_data(text) to authenticated;
+revoke all on function public.save_canvas_course(text,bigint,boolean),public.save_canvas_mapping(text,text,bigint,text,integer),public.request_canvas_sync(text),public.canvas_staff_data(text) from public,anon,authenticated;
+grant execute on function public.save_canvas_course(text,bigint,boolean),public.save_canvas_mapping(text,text,bigint,text,integer),public.request_canvas_sync(text),public.canvas_staff_data(text) to authenticated;
 revoke all on function public.begin_canvas_sync(text),public.publish_canvas_sync(uuid,jsonb),public.fail_canvas_sync(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.begin_canvas_sync(text),public.publish_canvas_sync(uuid,jsonb),public.fail_canvas_sync(uuid,text,text) to service_role;
 commit;
