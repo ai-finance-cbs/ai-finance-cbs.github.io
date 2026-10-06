@@ -438,7 +438,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       await rpc('get_access');
     }
     for (const t of tables) {
-      if (who === 'anon') {
+      if (who === 'anon' || t === 'canvas_sync_runs') {
         await assert.rejects(rows('select * from ' + t), /permission denied/);
       } else {
         const visible = await rows('select ' + (['submissions','pending_uploads'].includes(t) ? 'id' : '*') + ' from ' + t);

@@ -1,5 +1,14 @@
 import { CanvasError,canvasClient,collectSnapshot } from './client.js';
 const rpc=async(client,name,args={})=>{const r=await client.rpc(name,args);if(r.error)throw new Error(r.error.message);return r.data;};
+export async function sameSecret(provided,expected) {
+  const encoder=new TextEncoder();
+  const digests=await Promise.all([provided,expected].map(value=>crypto.subtle.digest('SHA-256',encoder.encode(value))));
+  const [left,right]=digests.map(digest=>new Uint8Array(digest));
+  // Fixed-size digests keep the comparison independent of secret length and matching prefix.
+  let difference=0;
+  for(let i=0;i<32;i++)difference|=left[i]^right[i];
+  return difference===0;
+}
 export function createHandler(createClient,env,dependencies={}) {
   return async request=>{
     const origin=request.headers.get('origin');
@@ -19,7 +28,8 @@ export function createHandler(createClient,env,dependencies={}) {
       admin=createClient(env('SUPABASE_URL'),env('SUPABASE_SERVICE_ROLE_KEY'),options);
       const cron=request.headers.get('x-cron-secret');
       if (cron) {
-        if (!env('CRON_SECRET') || cron!==env('CRON_SECRET')) return respond(401,{error:'Invalid scheduler credentials.'});
+        const expected=env('CRON_SECRET');
+        if (!expected || !await sameSecret(cron,expected)) return respond(401,{error:'Invalid scheduler credentials.'});
         run=await rpc(admin,'begin_canvas_sync',{p_term:body.term_id||null});
       } else {
         const authorization=request.headers.get('authorization')||'';

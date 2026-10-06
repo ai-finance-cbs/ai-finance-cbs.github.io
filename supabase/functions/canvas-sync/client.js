@@ -76,7 +76,7 @@ export function normalizeSnapshot(raw) {
   for (const e of raw.enrollments) {
     const user_id=id(e.user_id ?? e.user?.id), login_id=text(e.user?.login_id), existing=users.get(user_id);
     if (existing && existing.login_id!==login_id) throw new CanvasError('Canvas enrollment identities disagree.');
-    const row=existing || {user_id,login_id,sis_user_id:text(e.user?.sis_user_id),name:text(e.user?.name)||'Student',enrollment_states:[],section_ids:[]};
+    const row=existing || {user_id,login_id,name:text(e.user?.name)||'Student',enrollment_states:[],section_ids:[]};
     row.enrollment_states=[...new Set([...row.enrollment_states,String(e.enrollment_state)])];
     if (e.course_section_id) row.section_ids=[...new Set([...row.section_ids,id(e.course_section_id)])];
     users.set(user_id,row);

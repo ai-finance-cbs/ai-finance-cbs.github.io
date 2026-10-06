@@ -30,21 +30,21 @@ create table public.canvas_assignment_map (
     or (kind='participation' and site_key='PA' and week is null))
 );
 create table public.canvas_enrollments (
-  term_id text not null references public.canvas_courses(term_id), generation uuid not null,
-  user_id bigint not null, login_id text, sis_user_id text, name text not null,
+  term_id text not null references public.canvas_courses(term_id),
+  user_id bigint not null, login_id text, name text not null,
   enrollment_states text[] not null, section_ids bigint[] not null,
   uni text, match_status text not null check(match_status in ('matched','unmatched','ambiguous')),
   primary key(term_id,user_id)
 );
 create table public.canvas_assignments (
-  term_id text not null references public.canvas_courses(term_id), generation uuid not null,
+  term_id text not null references public.canvas_courses(term_id),
   id bigint not null, name text not null, due_at timestamptz, published boolean not null,
   points_possible numeric, group_category_id bigint, submission_types text[] not null,
   only_visible_to_overrides boolean not null,
   primary key(term_id,id)
 );
 create table public.canvas_submissions (
-  term_id text not null references public.canvas_courses(term_id), generation uuid not null,
+  term_id text not null references public.canvas_courses(term_id),
   assignment_id bigint not null, user_id bigint not null,
   workflow_state text not null check(workflow_state in ('unsubmitted','submitted','graded','pending_review')),
   late boolean not null, missing boolean not null, excused boolean not null,
@@ -58,12 +58,12 @@ create table public.canvas_submissions (
   foreign key(term_id,user_id) references public.canvas_enrollments(term_id,user_id)
 );
 create table public.canvas_groups (
-  term_id text not null references public.canvas_courses(term_id), generation uuid not null,
+  term_id text not null references public.canvas_courses(term_id),
   id bigint not null, category_id bigint not null, category_name text not null, name text not null,
   primary key(term_id,id)
 );
 create table public.canvas_group_members (
-  term_id text not null references public.canvas_courses(term_id), generation uuid not null,
+  term_id text not null references public.canvas_courses(term_id),
   group_id bigint not null, user_id bigint not null, name text not null,
   primary key(term_id,group_id,user_id),
   foreign key(term_id,group_id) references public.canvas_groups(term_id,id)
@@ -74,11 +74,14 @@ do $$ declare t text; begin
   foreach t in array array['canvas_courses','canvas_assignment_map','canvas_enrollments','canvas_assignments','canvas_submissions','canvas_groups','canvas_group_members','canvas_sync_runs'] loop
     execute format('alter table public.%I enable row level security',t);
     execute format('revoke all on public.%I from public,anon,authenticated',t);
-    execute format('grant select on public.%I to authenticated',t);
+    -- Run actors stay private; staff receive the redacted RPC projection.
+    if t<>'canvas_sync_runs' then execute format('grant select on public.%I to authenticated',t); end if;
     execute format('grant select,insert,update,delete on public.%I to service_role',t);
     execute format('create policy canvas_staff_read on public.%I for select to authenticated using(private.current_role() in (''instructor'',''grader'') and private.preview_uni() is null and private.can_read_term(term_id))',t);
     execute format('create trigger preview_guard before insert or update or delete on public.%I for each row execute function private.block_preview_write()',t);
-    execute format('create trigger change_audit after insert or update or delete on public.%I for each row execute function private.audit_class_change()',t);
+    if t in ('canvas_courses','canvas_assignment_map','canvas_sync_runs') then
+      execute format('create trigger change_audit after insert or update or delete on public.%I for each row execute function private.audit_class_change()',t);
+    end if;
   end loop;
 end $$;
 
@@ -101,7 +104,7 @@ begin
   select course_id into previous_course from public.canvas_courses where term_id=p_term;
   if previous_course is not null and previous_course<>p_course then
     if p_confirm_reset is distinct from true then raise exception 'Confirm the Canvas course change before clearing copied data. Reload Settings if the course changed in another tab.'; end if;
-    -- Delete children before parents. Audit triggers retain the old copied records.
+    -- Delete children before parents. Audit only configuration and reset counts, not copied student data.
     foreach t in array array['canvas_submissions','canvas_group_members','canvas_assignment_map','canvas_assignments','canvas_enrollments','canvas_groups'] loop
       execute format('delete from public.%I where term_id=$1',t) using p_term;
       get diagnostics deleted=row_count;
@@ -113,7 +116,8 @@ begin
     return;
   end if;
   insert into public.canvas_courses(term_id,course_id) values(p_term,p_course)
-    on conflict(term_id) do update set course_id=excluded.course_id,updated_at=clock_timestamp();
+    on conflict(term_id) do update set course_id=excluded.course_id,updated_at=clock_timestamp()
+    where canvas_courses.course_id is distinct from excluded.course_id;
 end $$;
 create function public.save_canvas_mapping(p_term text,p_key text,p_assignment bigint,p_kind text,p_week integer) returns void
 language plpgsql security definer set search_path='' as $$
@@ -123,9 +127,11 @@ begin
     delete from public.canvas_assignment_map where term_id=p_term and site_key=p_key; return;
   end if;
   if not exists(select 1 from public.canvas_assignments a join public.canvas_courses c using(term_id)
-    where a.term_id=p_term and a.id=p_assignment and a.generation=c.generation) then raise exception 'Choose an assignment from the latest Canvas sync.'; end if;
+    where a.term_id=p_term and a.id=p_assignment and c.generation is not null) then raise exception 'Choose an assignment from the latest Canvas sync.'; end if;
   insert into public.canvas_assignment_map(term_id,site_key,canvas_assignment_id,kind,week) values(p_term,p_key,p_assignment,p_kind,p_week)
-    on conflict(term_id,site_key) do update set canvas_assignment_id=excluded.canvas_assignment_id,kind=excluded.kind,week=excluded.week;
+    on conflict(term_id,site_key) do update set canvas_assignment_id=excluded.canvas_assignment_id,kind=excluded.kind,week=excluded.week
+    where (canvas_assignment_map.canvas_assignment_id,canvas_assignment_map.kind,canvas_assignment_map.week)
+      is distinct from (excluded.canvas_assignment_id,excluded.kind,excluded.week);
 end $$;
 
 -- REST requests cannot hold a session advisory lock across HTTP fetches. The advisory
@@ -183,30 +189,44 @@ begin
     if jsonb_typeof(p_snapshot->k) is distinct from 'array' or jsonb_array_length(p_snapshot->k)>50000 then raise exception 'Incomplete Canvas snapshot: %',k; end if;
     sync_counts:=sync_counts||jsonb_build_object(k,jsonb_array_length(p_snapshot->k));
   end loop;
-  insert into public.canvas_enrollments(term_id,generation,user_id,login_id,sis_user_id,name,enrollment_states,section_ids,match_status)
-    select r.term_id,p_run,x.user_id,x.login_id,x.sis_user_id,x.name,x.enrollment_states,x.section_ids,'unmatched'
-    from jsonb_to_recordset(p_snapshot->'enrollments') as x(user_id bigint, login_id text, sis_user_id text, name text, enrollment_states text[], section_ids bigint[])
-    on conflict(term_id,user_id) do update set generation=excluded.generation,
-      login_id=excluded.login_id,
-      sis_user_id=excluded.sis_user_id,
-      name=excluded.name,
-      enrollment_states=excluded.enrollment_states,
-      section_ids=excluded.section_ids,uni=null,match_status='unmatched';
-  insert into public.canvas_assignments(term_id,generation,id,name,due_at,published,points_possible,group_category_id,submission_types,only_visible_to_overrides)
-    select r.term_id,p_run,x.id,x.name,x.due_at,x.published,x.points_possible,x.group_category_id,x.submission_types,x.only_visible_to_overrides
+  -- Compute matches from this incoming snapshot, not the previous mirror.
+  -- One upsert per row also avoids clearing and restoring unchanged identity links.
+  with incoming as (
+    select x.*,lower(nullif(trim(x.login_id),'')) login
+    from jsonb_to_recordset(p_snapshot->'enrollments') as x(user_id bigint, login_id text, name text, enrollment_states text[], section_ids bigint[])
+  ), matched as (
+    select x.*,count(*) over(partition by login) matches,
+      exists(select 1 from private.term_roster(r.term_id) s where s.uni=x.login) on_roster
+    from incoming x
+  )
+  insert into public.canvas_enrollments as current(term_id,user_id,login_id,name,enrollment_states,section_ids,uni,match_status)
+    select r.term_id,x.user_id,x.login_id,x.name,x.enrollment_states,x.section_ids,
+      case when x.matches=1 and x.on_roster then x.login else null end,
+      case when x.login is null then 'unmatched' when x.matches>1 then 'ambiguous'
+        when x.on_roster then 'matched' else 'unmatched' end
+    from matched x
+    on conflict(term_id,user_id) do update set
+      login_id=excluded.login_id,name=excluded.name,enrollment_states=excluded.enrollment_states,
+      section_ids=excluded.section_ids,uni=excluded.uni,match_status=excluded.match_status
+    where (current.login_id,current.name,current.enrollment_states,current.section_ids,current.uni,current.match_status)
+      is distinct from (excluded.login_id,excluded.name,excluded.enrollment_states,excluded.section_ids,excluded.uni,excluded.match_status);
+  insert into public.canvas_assignments as current(term_id,id,name,due_at,published,points_possible,group_category_id,submission_types,only_visible_to_overrides)
+    select r.term_id,x.id,x.name,x.due_at,x.published,x.points_possible,x.group_category_id,x.submission_types,x.only_visible_to_overrides
     from jsonb_to_recordset(p_snapshot->'assignments') as x(id bigint, name text, due_at timestamptz, published boolean, points_possible numeric, group_category_id bigint, submission_types text[], only_visible_to_overrides boolean)
-    on conflict(term_id,id) do update set generation=excluded.generation,
+    on conflict(term_id,id) do update set
       name=excluded.name,
       due_at=excluded.due_at,
       published=excluded.published,
       points_possible=excluded.points_possible,
       group_category_id=excluded.group_category_id,
       submission_types=excluded.submission_types,
-      only_visible_to_overrides=excluded.only_visible_to_overrides;
-  insert into public.canvas_submissions(term_id,generation,assignment_id,user_id,workflow_state,late,missing,excused,late_policy_status,submitted_at,seconds_late,score,grade,posted_at,cached_due_at,assignment_visible)
-    select r.term_id,p_run,x.assignment_id,x.user_id,x.workflow_state,x.late,x.missing,x.excused,x.late_policy_status,x.submitted_at,x.seconds_late,x.score,x.grade,x.posted_at,x.cached_due_at,x.assignment_visible
+      only_visible_to_overrides=excluded.only_visible_to_overrides
+    where (current.name,current.due_at,current.published,current.points_possible,current.group_category_id,current.submission_types,current.only_visible_to_overrides)
+      is distinct from (excluded.name,excluded.due_at,excluded.published,excluded.points_possible,excluded.group_category_id,excluded.submission_types,excluded.only_visible_to_overrides);
+  insert into public.canvas_submissions as current(term_id,assignment_id,user_id,workflow_state,late,missing,excused,late_policy_status,submitted_at,seconds_late,score,grade,posted_at,cached_due_at,assignment_visible)
+    select r.term_id,x.assignment_id,x.user_id,x.workflow_state,x.late,x.missing,x.excused,x.late_policy_status,x.submitted_at,x.seconds_late,x.score,x.grade,x.posted_at,x.cached_due_at,x.assignment_visible
     from jsonb_to_recordset(p_snapshot->'submissions') as x(assignment_id bigint, user_id bigint, workflow_state text, late boolean, missing boolean, excused boolean, late_policy_status text, submitted_at timestamptz, seconds_late integer, score numeric, grade text, posted_at timestamptz, cached_due_at timestamptz, assignment_visible boolean)
-    on conflict(term_id,assignment_id,user_id) do update set generation=excluded.generation,
+    on conflict(term_id,assignment_id,user_id) do update set
       workflow_state=excluded.workflow_state,
       late=excluded.late,
       missing=excluded.missing,
@@ -218,31 +238,41 @@ begin
       grade=excluded.grade,
       posted_at=excluded.posted_at,
       cached_due_at=excluded.cached_due_at,
-      assignment_visible=excluded.assignment_visible;
-  insert into public.canvas_groups(term_id,generation,id,category_id,category_name,name)
-    select r.term_id,p_run,x.id,x.category_id,x.category_name,x.name
+      assignment_visible=excluded.assignment_visible
+    where (current.workflow_state,current.late,current.missing,current.excused,current.late_policy_status,current.submitted_at,current.seconds_late,current.score,current.grade,current.posted_at,current.cached_due_at,current.assignment_visible)
+      is distinct from (excluded.workflow_state,excluded.late,excluded.missing,excluded.excused,excluded.late_policy_status,excluded.submitted_at,excluded.seconds_late,excluded.score,excluded.grade,excluded.posted_at,excluded.cached_due_at,excluded.assignment_visible);
+  insert into public.canvas_groups as current(term_id,id,category_id,category_name,name)
+    select r.term_id,x.id,x.category_id,x.category_name,x.name
     from jsonb_to_recordset(p_snapshot->'groups') as x(id bigint, category_id bigint, category_name text, name text)
-    on conflict(term_id,id) do update set generation=excluded.generation,
+    on conflict(term_id,id) do update set
       category_id=excluded.category_id,
       category_name=excluded.category_name,
-      name=excluded.name;
-  insert into public.canvas_group_members(term_id,generation,group_id,user_id,name)
-    select r.term_id,p_run,x.group_id,x.user_id,x.name
+      name=excluded.name
+    where (current.category_id,current.category_name,current.name)
+      is distinct from (excluded.category_id,excluded.category_name,excluded.name);
+  insert into public.canvas_group_members as current(term_id,group_id,user_id,name)
+    select r.term_id,x.group_id,x.user_id,x.name
     from jsonb_to_recordset(p_snapshot->'group_members') as x(group_id bigint, user_id bigint, name text)
-    on conflict(term_id,group_id,user_id) do update set generation=excluded.generation,
-      name=excluded.name;
-  delete from public.canvas_submissions where term_id=r.term_id and generation<>p_run;
-  delete from public.canvas_group_members where term_id=r.term_id and generation<>p_run;
-  delete from public.canvas_groups where term_id=r.term_id and generation<>p_run;
-  delete from public.canvas_assignments where term_id=r.term_id and generation<>p_run;
-  delete from public.canvas_enrollments where term_id=r.term_id and generation<>p_run;
-  -- Matching never creates roster rows or verifies a browser's claimed identity.
-  update public.canvas_enrollments e set
-    uni=case when x.matches=1 and exists(select 1 from private.term_roster(r.term_id) s where s.uni=lower(trim(e.login_id))) then lower(trim(e.login_id)) else null end,
-    match_status=case when x.matches>1 then 'ambiguous'
-      when exists(select 1 from private.term_roster(r.term_id) s where s.uni=lower(trim(e.login_id))) then 'matched' else 'unmatched' end
-    from (select lower(trim(login_id)) login,count(*) matches from public.canvas_enrollments where term_id=r.term_id group by lower(trim(login_id))) x
-    where e.term_id=r.term_id and lower(trim(e.login_id))=x.login;
+    on conflict(term_id,group_id,user_id) do update set
+      name=excluded.name
+    where (current.name)
+      is distinct from (excluded.name);
+  -- Remove absent keys only after validating and upserting all incoming collections.
+  delete from public.canvas_submissions as current where term_id=r.term_id and not exists (
+    select 1 from jsonb_to_recordset(p_snapshot->'submissions') as x(assignment_id bigint, user_id bigint)
+    where x.assignment_id=current.assignment_id and x.user_id=current.user_id);
+  delete from public.canvas_group_members as current where term_id=r.term_id and not exists (
+    select 1 from jsonb_to_recordset(p_snapshot->'group_members') as x(group_id bigint, user_id bigint)
+    where x.group_id=current.group_id and x.user_id=current.user_id);
+  delete from public.canvas_groups as current where term_id=r.term_id and not exists (
+    select 1 from jsonb_to_recordset(p_snapshot->'groups') as x(id bigint)
+    where x.id=current.id);
+  delete from public.canvas_assignments as current where term_id=r.term_id and not exists (
+    select 1 from jsonb_to_recordset(p_snapshot->'assignments') as x(id bigint)
+    where x.id=current.id);
+  delete from public.canvas_enrollments as current where term_id=r.term_id and not exists (
+    select 1 from jsonb_to_recordset(p_snapshot->'enrollments') as x(user_id bigint)
+    where x.user_id=current.user_id);
   update public.canvas_courses set generation=p_run,last_synced_at=clock_timestamp() where term_id=r.term_id;
   update public.canvas_sync_runs set status='succeeded',finished_at=clock_timestamp(),counts=sync_counts,error=null where id=p_run;
   return sync_counts;
@@ -258,11 +288,11 @@ begin
   select * into c from public.canvas_courses where term_id=p_term;
   return jsonb_build_object('term_id',p_term,'course',case when c.term_id is null then null else to_jsonb(c) end,
     'mappings',(select coalesce(jsonb_agg(m order by site_key),'[]') from public.canvas_assignment_map m where term_id=p_term),
-    'enrollments',(select coalesce(jsonb_agg(e order by name,user_id),'[]') from public.canvas_enrollments e where term_id=p_term and generation=c.generation),
-    'assignments',(select coalesce(jsonb_agg(a order by name,id),'[]') from public.canvas_assignments a where term_id=p_term and generation=c.generation),
-    'submissions',(select coalesce(jsonb_agg(s order by assignment_id,user_id),'[]') from public.canvas_submissions s where term_id=p_term and generation=c.generation),
-    'groups',(select coalesce(jsonb_agg(g order by category_id,name),'[]') from public.canvas_groups g where term_id=p_term and generation=c.generation),
-    'group_members',(select coalesce(jsonb_agg(m order by group_id,user_id),'[]') from public.canvas_group_members m where term_id=p_term and generation=c.generation),
+    'enrollments',(select coalesce(jsonb_agg(e order by name,user_id),'[]') from public.canvas_enrollments e where term_id=p_term),
+    'assignments',(select coalesce(jsonb_agg(a order by name,id),'[]') from public.canvas_assignments a where term_id=p_term),
+    'submissions',(select coalesce(jsonb_agg(s order by assignment_id,user_id),'[]') from public.canvas_submissions s where term_id=p_term),
+    'groups',(select coalesce(jsonb_agg(g order by category_id,name),'[]') from public.canvas_groups g where term_id=p_term),
+    'group_members',(select coalesce(jsonb_agg(m order by group_id,user_id),'[]') from public.canvas_group_members m where term_id=p_term),
     'runs',(select coalesce(jsonb_agg(x order by started_at desc),'[]') from (select id,status,started_at,finished_at,counts,error from public.canvas_sync_runs where term_id=p_term order by started_at desc limit 10) x));
 end $$;
 

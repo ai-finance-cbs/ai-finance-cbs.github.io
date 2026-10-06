@@ -7,6 +7,7 @@ let h;
 before(async()=>{h=await phaseDatabase();}); after(async()=>h?.db.close());
 beforeEach(async()=>{await h.as('owner');await h.db.exec('begin');});
 afterEach(async()=>{await h.db.exec('rollback; reset role');});
+const snapshotTables=['enrollments','assignments','submissions','groups','group_members'].map(t=>'canvas_'+t);
 const tables=['courses','assignment_map','enrollments','assignments','submissions','groups','group_members','sync_runs'];
 async function deny(fn,pattern=/permission denied|Staff|Instructor|preview|active term|constraint|assignment|running|lease|snapshot|access changed/i) {
   await h.db.exec('savepoint denied');try {await assert.rejects(fn,pattern);}finally{await h.db.exec('rollback to denied; release savepoint denied');}
@@ -27,7 +28,7 @@ for(const role of ['grader','a','auditor','outside','anon','preview']) test(`${r
   const run=await start();await publish(run);
   if(role==='preview'){await h.as('teacher');await h.rpc('set_student_preview','aa1001',TERM);}else await h.as(role);
   for(const table of tables) {
-    if(role==='anon') await deny(()=>h.rows(`select * from canvas_${table}`));
+    if(role==='anon' || table==='sync_runs') await deny(()=>h.rows(`select * from canvas_${table}`),/permission denied/);
     else assert.equal((await h.rows(`select * from canvas_${table}`)).length>0,role==='grader' && table!=='assignment_map');
     await deny(()=>h.rows(`insert into canvas_${table} default values`));
     await deny(()=>h.rows(`delete from canvas_${table}`));
@@ -82,14 +83,20 @@ test('rollover and preview during fetch cannot publish, mappings stay term-local
   await h.as('owner');const columns=await h.rows("select column_name from information_schema.columns where table_name like 'canvas_%'");
   assert.ok(!columns.some(c=>/token|secret|comment|body|notes/.test(c.column_name)));
 });
-test('RPC grants, RLS, fixed search paths, preview and audit triggers cover all Canvas tables',async()=>{
+test('RPC grants, RLS, fixed search paths, preview guards, and limited audit triggers protect Canvas tables',async()=>{
   await h.as('owner');
   const rows=await h.rows("select relname,relrowsecurity from pg_class where relname = any($1::text[])",[tables.map(t=>'canvas_'+t)]);
   assert.equal(rows.length,8);assert.ok(rows.every(r=>r.relrowsecurity));
   const funcs=await h.rows("select proname,prosecdef,proconfig from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and proname like '%canvas%'");
   assert.ok(funcs.every(f=>f.prosecdef && f.proconfig.includes('search_path=""')));
   const triggers=await h.rows("select event_object_table,trigger_name from information_schema.triggers where event_object_table like 'canvas_%'");
-  for(const name of tables.map(t=>'canvas_'+t))for(const trigger of ['preview_guard','change_audit'])assert.ok(triggers.some(t=>t.event_object_table===name&&t.trigger_name===trigger));
+  for(const name of tables.map(t=>'canvas_'+t)) {
+    assert.ok(triggers.some(t=>t.event_object_table===name&&t.trigger_name==='preview_guard'));
+    assert.equal(triggers.some(t=>t.event_object_table===name&&t.trigger_name==='change_audit'),['canvas_courses','canvas_assignment_map','canvas_sync_runs'].includes(name));
+  }
+  const columns=await h.rows("select table_name,column_name from information_schema.columns where table_name like 'canvas_%'");
+  assert.ok(!columns.some(c=>c.column_name==='sis_user_id'));
+  assert.ok(!columns.some(c=>snapshotTables.includes(c.table_name) && c.column_name==='generation'));
 });
 
 test('each generation clears stale roster links and rejects ambiguous Canvas logins',async()=>{
@@ -106,7 +113,7 @@ test('each generation clears stale roster links and rejects ambiguous Canvas log
   }
 });
 
-test('course reset clears only the active term mirror and mappings, retains history, and audits every deletion',async()=>{
+test('course reset clears only the active term mirror, retains run history, and audits configuration without snapshot PII',async()=>{
   await publish(await start());await h.as('teacher');await h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1);
   await h.rpc('open_term','Spring 2028');const current='spring-2028',archived=await h.rpc('canvas_staff_data',TERM);
   await h.rpc('save_canvas_course',current,240315);const run=await h.rpc('request_canvas_sync',current);await publish(run);
@@ -121,7 +128,7 @@ test('course reset clears only the active term mirror and mappings, retains hist
   assert.deepEqual(reset.runs[0].counts,{submissions:78,group_members:2,assignment_map:1,assignments:13,enrollments:6,groups:1});
   for(const [name,count] of Object.entries(reset.runs[0].counts)) {
     const audits=await h.rows("select * from audit_log where table_name=$1 and operation='DELETE' and old_row->>'term_id'=$2",['canvas_'+name,current]);
-    assert.equal(audits.length,count);assert.ok(audits.every(a=>a.actor_email==='oh@gsb.columbia.edu'));
+    assert.equal(audits.length,name==='assignment_map'?count:0);assert.ok(audits.every(a=>a.actor_email==='oh@gsb.columbia.edu'));
   }
   const courses=await h.rows("select * from audit_log where table_name='canvas_courses' and operation='UPDATE' and new_row->>'term_id'=$1",[current]);
   assert.ok(courses.some(a=>a.old_row.course_id===240315 && a.new_row.course_id===240316 && a.new_row.generation===null));
@@ -155,4 +162,58 @@ test('a failed reset rolls back copied data, mappings, course metadata, and audi
     create trigger test_reset_failure before insert on canvas_sync_runs for each row execute function pg_temp.reject_canvas_reset();`);
   await h.as('teacher');await deny(()=>h.rpc('save_canvas_course',TERM,240316,true),/Injected reset failure/);
   assert.deepEqual(await staff(),before);assert.deepEqual(await h.rows('select count(*)::int n from audit_log'),audits);
+});
+
+test('identical syncs cause zero snapshot row changes and no snapshot audit copies; only changed rows update',async()=>{
+  await h.db.exec(`create temp table snapshot_events(table_name text,operation text);
+    create function pg_temp.measure_snapshot_write() returns trigger language plpgsql security definer set search_path='' as $$
+    begin insert into pg_temp.snapshot_events values(tg_table_name,tg_op); return null; end $$;`);
+  for(const name of snapshotTables)await h.db.exec(`create trigger measure_write after insert or update or delete on ${name} for each row execute function pg_temp.measure_snapshot_write()`);
+  const first=await start();await publish(first);await h.as('owner');
+  assert.equal((await h.rows('select count(*)::int n from snapshot_events'))[0].n,100);
+  await h.db.exec('truncate pg_temp.snapshot_events');
+  const second=await start();await publish(second);const d=await staff();
+  assert.notEqual(second.id,first.id);assert.equal(d.course.generation,second.id);
+  await h.as('owner');assert.deepEqual(await h.rows('select * from snapshot_events'),[]);
+  assert.deepEqual(await h.rows('select * from audit_log where table_name=any($1::text[])',[snapshotTables]),[]);
+  for(const key of ['enrollments','assignments','submissions','groups','group_members'])assert.ok(d[key].every(row=>!Object.hasOwn(row,'generation') && !Object.hasOwn(row,'sis_user_id')));
+
+  const changed=normalizeSnapshot(canvasFixture());changed.enrollments[0].name='Updated name';changed.assignments[0].due_at=null;
+  changed.submissions[0].score=1;changed.groups[0].category_name='Updated group set';changed.group_members[0].name='Updated name';
+  await publish(await start(),changed);await h.as('owner');
+  const events=await h.rows('select table_name,operation from snapshot_events order by table_name');
+  assert.deepEqual(events,snapshotTables.toSorted().map(table_name=>({table_name,operation:'UPDATE'})));
+  assert.deepEqual(await h.rows('select * from audit_log where table_name=any($1::text[])',[snapshotTables]),[]);
+  await h.as('teacher');await h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1);
+  const audits=await h.rows('select count(*)::int n from audit_log');
+  await h.rpc('save_canvas_course',TERM,240315);await h.rpc('save_canvas_mapping',TERM,'M1',100,'milestone',1);
+  assert.deepEqual(await h.rows('select count(*)::int n from audit_log'),audits);
+});
+
+test('missing snapshot keys are removed atomically and enrollment matches use only the new login IDs',async()=>{
+  const first=normalizeSnapshot(canvasFixture());first.enrollments[4].login_id='aa1001';
+  await publish(await start(),first);assert.equal((await staff()).enrollments.find(e=>e.user_id===1).match_status,'ambiguous');
+  const next=normalizeSnapshot(canvasFixture());next.enrollments=next.enrollments.slice(0,4);next.assignments=next.assignments.slice(0,12);
+  next.submissions=next.submissions.filter(s=>Number(s.user_id)<=4 && Number(s.assignment_id)<112);
+  next.groups=[];next.group_members=[];await publish(await start(),next);const d=await staff();
+  assert.equal(d.enrollments.length,4);assert.equal(d.assignments.length,12);assert.equal(d.submissions.length,48);
+  assert.deepEqual(d.groups,[]);assert.deepEqual(d.group_members,[]);
+  assert.equal(d.enrollments.find(e=>e.user_id===1).match_status,'matched');
+  // A roster change must still reconcile an otherwise identical Canvas snapshot.
+  await h.as('owner');await h.rows("delete from roster where uni='aa1001'");
+  await publish(await start(),next);assert.equal((await staff()).enrollments.find(e=>e.user_id===1).match_status,'unmatched');
+});
+
+for(const role of ['teacher','grader','a','auditor','outside','anon','preview'])test(`${role} gets permission denied on every service-only Canvas RPC and raw sync run columns`,async()=>{
+  const run=await start();await publish(run);
+  if(role==='preview'){await h.as('teacher');await h.rpc('set_student_preview','aa1001',TERM);}else await h.as(role);
+  for(const [fn,args] of [['begin_canvas_sync',[TERM]],['publish_canvas_sync',[run.id,'{}']],['fail_canvas_sync',[run.id,'failed','forged']]]) {
+    await deny(()=>h.rpc(fn,...args),/permission denied/);
+  }
+  for(const columns of ['*','actor_id','actor_email','id,status'])await deny(()=>h.rows(`select ${columns} from canvas_sync_runs`),/permission denied/);
+  if(['teacher','grader'].includes(role)) {
+    const d=await h.rpc('canvas_staff_data',TERM);assert.equal(d.runs.length,1);
+    assert.ok(d.runs.every(r=>!Object.hasOwn(r,'actor_id') && !Object.hasOwn(r,'actor_email')));
+    assert.ok(!JSON.stringify(d).includes('oh@gsb.columbia.edu'));
+  }
 });

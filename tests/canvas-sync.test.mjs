@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {canvasFixture} from './fixtures/canvas.mjs';
 import {HOST,canvasClient,allowedURL,nextPage,normalizeSnapshot,effectiveAssignment,collectSnapshot} from '../supabase/functions/canvas-sync/client.js';
-import {createHandler} from '../supabase/functions/canvas-sync/handler.js';
+import {createHandler,sameSecret} from '../supabase/functions/canvas-sync/handler.js';
 import {canvasStatus,canvasPresent,canvasPosted,mappingValues,canvasItems,suggestedAssignment} from '../assets/materials/canvas-core.js';
 const json=(body,status=200,headers={})=>new Response(JSON.stringify(body),{status,headers});
 function fixtureFetch(log=[]) {
@@ -56,8 +56,8 @@ test('effective dates respect student/group/section precedence, unlimited dates,
   const f=canvasFixture();f.submissions[0].cached_due_date=null;const s=normalizeSnapshot(f).submissions[0];assert.equal(s.cached_due_at,null);
 });
 test('normalizer drops private fields, refuses malformed/duplicate records, and combines multiple enrollments',()=>{
-  const f=canvasFixture();f.submissions[0].submission_comments=[{comment:'private'}];f.enrollments.push({...f.enrollments[0],course_section_id:20});
-  const d=normalizeSnapshot(f);assert.deepEqual(d.enrollments[0].section_ids,['10','20']);assert.ok(!JSON.stringify(d).includes('private'));
+  const f=canvasFixture();f.submissions[0].submission_comments=[{comment:'private'}];f.enrollments[0].user.sis_user_id='private-sis-id';f.enrollments.push({...f.enrollments[0],course_section_id:20});
+  const d=normalizeSnapshot(f);assert.deepEqual(d.enrollments[0].section_ids,['10','20']);assert.ok(!JSON.stringify(d).includes('private'));assert.ok(d.enrollments.every(e=>!Object.hasOwn(e,'sis_user_id')));
   f.submissions.push(f.submissions[0]);assert.throws(()=>normalizeSnapshot(f),/duplicate/);f.submissions.pop();
   f.submissions[0].missing=null;assert.throws(()=>normalizeSnapshot(f),/flags/);
 });
@@ -82,9 +82,9 @@ test('mapping validates kind/week, allows Q6 independent of old items, and only 
   assert.equal(suggestedAssignment({title:'Milestone #1'},[{id:1,name:'Milestone 1'}]).id,1);
   assert.equal(suggestedAssignment({title:'Milestone #1'},[{id:1,name:'Milestone 1'},{id:2,name:'Milestone #1'}]),null);
 });
-function handlerSetup({role='instructor',preview=false,valid=true,fetch=fixtureFetch(),publishError=false}={}) {
+function handlerSetup({role='instructor',preview=false,valid=true,fetch=fixtureFetch(),publishError=false,cronSecret='fixture-cron'}={}) {
   const calls=[],run={id:'run-1',term_id:'spring-2027',course_id:240315};
-  const env=name=>({SUPABASE_URL:'local',SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service',CRON_SECRET:'fixture-cron',CANVAS_TOKEN:'fixture-token'})[name];
+  const env=name=>({SUPABASE_URL:'local',SUPABASE_ANON_KEY:'anon',SUPABASE_SERVICE_ROLE_KEY:'service',CRON_SECRET:cronSecret,CANVAS_TOKEN:'fixture-token'})[name];
   const createClient=(_,key)=>({auth:{getUser:async()=>({data:valid?{user:{id:'teacher'}}:null,error:valid?null:{message:'invalid'}})},rpc:async(name,args)=>{
     calls.push({key,name,args});
     if(name==='get_access')return {data:{role,view_as:preview?{}:null,term_id:'spring-2027'}};
@@ -114,4 +114,16 @@ test('auth failures and mid-fetch failures retain snapshots and record redacted 
     assert.ok(!calls.some(c=>c.name==='publish_canvas_sync'));assert.equal(calls.at(-1).args.p_status,status);
   }
   const {handler,calls}=handlerSetup({publishError:true});assert.equal((await handler(request({'x-cron-secret':'fixture-cron'}))).status,502);assert.equal(calls.at(-1).name,'fail_canvas_sync');
+});
+
+test('cron secret digest comparison handles equality, different lengths, and first or last byte mismatches',async()=>{
+  for(const value of ['fixture-cron','', 'Unicode-교수-🔒', 'a'.repeat(2048)])assert.equal(await sameSecret(value,value),true);
+  for(const value of ['Fixture-cron','fixture-crom','fixture-cronx','fixture-cro','', 'fixture-cron\u0000'])assert.equal(await sameSecret(value,'fixture-cron'),false);
+  for(const secret of ['',null,undefined]) {
+    const {handler,calls}=handlerSetup({cronSecret:secret===undefined?null:secret});
+    assert.equal((await handler(request({'x-cron-secret':'fixture-cron'}))).status,401);assert.deepEqual(calls,[]);
+  }
+  for(const provided of ['Fixture-cron','fixture-crom','fixture-cronx']) {
+    const {handler,calls}=handlerSetup();assert.equal((await handler(request({'x-cron-secret':provided}))).status,401);assert.deepEqual(calls,[]);
+  }
 });
