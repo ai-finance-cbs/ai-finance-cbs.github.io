@@ -52,9 +52,9 @@ export function createDemo() {
     ...extendAssignments({ read, save, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
-    // Keep archive reads and grading. All new work and group changes belong in CourseWorks.
+    // Keep archive reads. New submissions, grades, and group changes belong in CourseWorks.
     ...Object.fromEntries(['beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission',
-      'createSet','updateSet','chooseGroup','setGroupNote','addGroups'].map(name=>[name,async()=>{throw new Error('Use CourseWorks. Local submissions and groups are read-only archives.');}])),
+      'createSet','updateSet','chooseGroup','setGroupNote','addGroups','saveGrades','gradeGroup','releaseItem','replaceRoster'].map(name=>[name,async()=>{throw new Error('Use CourseWorks. Local records are read-only archives.');}])),
     demo: true,
     async sessions() { requireRole(); return read().sessions; },
     async announcements() { requireRole(); return (read().announcements || []).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)); },
@@ -82,7 +82,6 @@ export function createDemo() {
     async adminData() { requireRole(true); const d = read(); return { roster: d.roster, allowlist: d.allowlist }; },
     async studentAccounts() { requireRole(true); return read().student_accounts; },
     async linkStudent(email, uni) { requireRole(true); const d=read(); if(uni && !d.roster.some(r=>r.uni===uni)) throw new Error('Student not found.'); if(!/^[^@]+@gsb[.]columbia[.]edu$/.test(email)) throw new Error('Enter a CBS email.'); d.student_accounts=d.student_accounts.filter(a=>a.email!==email); if(uni)d.student_accounts.push({email,uni}); save(d); },
-    async replaceRoster(rows) { requireRole(true); const d = read(); d.roster = rows; save(d); },
     async saveAllowlist(entry) { requireRole(true); if (entry.email === OWNER || !['instructor','grader','auditor'].includes(entry.role)) throw new Error('Invalid role change.'); const d = read(); d.allowlist = d.allowlist.filter(r => r.email !== entry.email); d.allowlist.push(entry); save(d); },
     async removeAllowlist(email) { requireRole(true); if (email === OWNER) throw new Error('The instructor cannot be removed.'); const d = read(); d.allowlist = d.allowlist.filter(r => r.email !== email); save(d); },
     async saveAssignment(row) { requireRole(true); const d = read(); d.assignments = d.assignments.map(a => a.id === row.id ? row : a); save(d); },

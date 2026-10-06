@@ -6,7 +6,7 @@ const el=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!=null
 const button=(text,action)=>{const n=el('button',text,{type:'button',class:'materials-button'});n.onclick=action;return n;};
 let profileKeys=null;
 
-export function installStudentProfiles({root,data,access,backend,refresh,openGrade,onOpen=()=>{}}) {
+export function installStudentProfiles({root,data,access,backend,openGrade,onOpen=()=>{}}) {
   if(profileKeys)document.removeEventListener('keydown',profileKeys);
   if (access.view_as || !['instructor','grader'].includes(access.role)) return;
   let workspace=root.querySelector('.gradebook-workspace');
@@ -23,12 +23,8 @@ export function installStudentProfiles({root,data,access,backend,refresh,openGra
   function showGrade(item,student) {
     delete panel.dataset.profileUni;panel.setAttribute('aria-labelledby','grade-panel-title');
     if(openGrade)openGrade(item,student);
-    else renderGradePanel({panel,data,item,student,backend,role:access.role,readOnly:!canWrite(access),close:()=>open(student.uni),
-      save:async task=>{
-        if(!canWrite(access))throw new Error('Archived terms and preview are read-only.');
-        await task();await refresh();
-        [...root.querySelectorAll('[data-student-profile]')].find(n=>n.dataset.studentProfile===student.uni)?.click();
-      },
+    else renderGradePanel({panel,data,item,student,backend,role:access.role,readOnly:true,close:()=>open(student.uni),
+      save:async()=>{throw new Error('Use CourseWorks. Local grades are read-only archives.');},
     });
     panel.append(button('Back to student card',()=>open(student.uni)));
     const heading=panel.querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true});
@@ -53,7 +49,7 @@ export function installStudentProfiles({root,data,access,backend,refresh,openGra
     const groups=data.members.filter(m=>m.uni===uni).map(m=>`${data.sets.find(s=>s.id===m.set_id)?.title}: Group ${data.groups.find(g=>g.id===m.group_id)?.number}`);
     const grades=data.grades.filter(g=>g.uni===uni);
     const totals=el('div',null,{class:'meta totals'});
-    totals.append('Total ',el('strong',gradeTotal(data.items.filter(i=>i.released),grades).total,{'data-profile-visible-total':''}),' visible · ',el('span',`${gradeTotal(data.items,grades).total} incl. hidden`,{'data-profile-all-total':''}));
+    totals.append('Archived site total ',el('strong',gradeTotal(data.items.filter(i=>i.released),grades).total,{'data-profile-visible-total':''}),' visible · ',el('span',`${gradeTotal(data.items,grades).total} incl. hidden`,{'data-profile-all-total':''}));
     identity.append(el('div',groups.join(' · ') || 'No group',{class:'meta'}),totals);main.append(photo,identity);
     const attendance=el('ul',null,{class:'stamps profile-attendance','aria-label':'Attendance'});
     for(let week=1;week<=6;week++) {
@@ -70,11 +66,11 @@ export function installStudentProfiles({root,data,access,backend,refresh,openGra
         'aria-label':`Open ${code} grade panel: ${item.released?'Visible':'Hidden'}, ${grade?.score ?? 'Ungraded'} of ${item.max_points}${submission?`, ${submissionStatus(submission)}`:''}`,title:item.title});
       chip.onclick=()=>showGrade(item,student);chips.append(chip);
     }
-    foot.append(chips);card.append(band,main,attendance,el('div',null,{class:'barcode','aria-hidden':'true'}),foot);
+    foot.append(el('p','Archived site work',{class:'upcoming-meta'}),chips);card.append(band,main,attendance,el('div',null,{class:'barcode','aria-hidden':'true'}),foot);
     for (const a of data.attendance.filter(a => a.uni === uni && a.status === 'excused' && a.excuse_reason))
       panel.append(el('p', `Week ${a.week} excused: ${a.excuse_reason}`, { class: 'profile-excuse-reason' }));
     // Keep the full record available without crowding the ID-card summary.
-    const record=el('details',null,{class:'profile-record'});record.append(el('summary','Submissions and scores'),el('h3','Submissions'));
+    const record=el('details',null,{class:'profile-record'});record.append(el('summary','Archived submissions and scores'),el('h3','Submissions'));
     for(const item of data.items.filter(i=>['file','link'].includes(i.kind))) {
       const submission=gradingSubmission(data,item,uni),row=el('section',null,{class:'profile-item','data-profile-submission':gradeCode(item)});
       row.append(el('h4',`${gradeCode(item)} · ${item.title}`),el('p',submissionStatus(submission)));

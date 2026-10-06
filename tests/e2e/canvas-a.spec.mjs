@@ -17,19 +17,18 @@ test('Canvas Settings uses explicit mappings, suggestions, sync status, and unma
   await row.getByRole('button',{name:'Sync now',exact:true}).click();await expect(row.getByRole('status')).toHaveText('Sync complete.');
   await page.reload();await ready(page);await page.locator('#canvas-settings summary').click();await expect(page.getByLabel('Canvas assignment for Q6',{exact:true})).toHaveValue(unused);
 });
-test('Canvas mode is read-only, opens details, and preserves the legacy grade draft when switching modes',async({page})=>{
-  await enter(page,'gradebook');const legacy=page.locator('[data-legacy-gradebook]');
-  const grade=legacy.locator('input[data-grade]').first();await grade.fill('7');
-  await page.getByLabel('Gradebook mode').selectOption('canvas');const canvas=page.locator('[data-canvas-gradebook]');
-  await expect(canvas.locator('.canvas-grid')).toBeVisible();await expect(legacy).toBeHidden();
+test('Canvas is the only current mode and opens read-only details',async({page})=>{
+  await enter(page,'gradebook');await expect(page.locator('[data-legacy-gradebook]')).toHaveCount(0);
+  const canvas=page.locator('[data-canvas-gradebook]');
+  await expect(canvas.locator('.canvas-grid')).toBeVisible();
   await expect(canvas.locator('input')).toHaveCount(0);await canvas.getByRole('button',{name:'Demo Student M1: Done',exact:true}).click();
   const popup=page.getByRole('dialog',{name:'Canvas submission details'});await expect(popup).toContainText('Score: 8');
   await expect(popup).toContainText('Posted:');await expect(popup.getByRole('link',{name:'Open in CourseWorks →'})).toHaveAttribute('href',/courseworks2.columbia.edu\/courses\/240315\/assignments\//);
   await page.keyboard.press('Escape');await expect(popup).toBeHidden();
-  await page.getByLabel('Gradebook mode').selectOption('legacy');await expect(grade).toHaveValue('7');
+  await expect(page.getByLabel('Gradebook mode')).toHaveCount(0);
 });
 test('grader can read Canvas comparison but cannot configure or sync',async({page})=>{
-  await enter(page,'gradebook','grader');await page.getByLabel('Gradebook mode').selectOption('canvas');await expect(page.locator('.canvas-grid')).toBeVisible();
+  await enter(page,'gradebook','grader');await expect(page.locator('.canvas-grid')).toBeVisible();
   expect(await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();try{await b.syncCanvas('spring-2027');return 'allowed';}catch(e){return e.message;}})).toContain('Instructor');
   await page.goto('/materials/settings/');await ready(page);await expect(page.locator('#canvas-settings')).toHaveCount(0);
 });
@@ -59,7 +58,7 @@ test('header term selection isolates Canvas settings and makes archived settings
   await expect(page.getByLabel('Canvas course ID')).toBeDisabled();await expect(page.getByRole('button',{name:'Sync now',exact:true})).toBeDisabled();
 });
 for(const width of [1440,390,320])test(`Canvas grid and pop-up stay in the right pane at ${width}px`,async({page})=>{
-  await page.setViewportSize({width,height:1000});await enter(page,'gradebook');await page.getByLabel('Gradebook mode').selectOption('canvas');
+  await page.setViewportSize({width,height:1000});await enter(page,'gradebook');
   await expect(page.locator('.topbar')).toBeVisible();
   if(width>819)await expect(page.locator('.site-sidebar')).toBeVisible();
   const grid=await page.locator('.canvas-grid').boundingBox();expect(grid.x).toBeGreaterThanOrEqual(width>819?240:0);
@@ -96,8 +95,8 @@ test('changing the Canvas course requires confirmation, clears the mirror, and s
   expect(reset.runs[0].status).toBe('reset');
   await page.reload();await ready(page);await page.locator('#canvas-settings summary').click();await expect(page.getByLabel('Canvas course ID')).toHaveValue('240316');
   await expect(page.getByLabel('Canvas assignment for M1',{exact:true})).toHaveValue('');
-  await enter(page,'gradebook');await expect(page.locator('[data-legacy-gradebook] input[data-grade]').first()).toBeVisible();
-  await page.getByLabel('Gradebook mode').selectOption('canvas');await expect(page.locator('[data-canvas-gradebook]')).toContainText('No Canvas snapshot.');
+  await enter(page,'gradebook');await expect(page.locator('[data-legacy-gradebook]')).toHaveCount(0);
+  await expect(page.locator('[data-canvas-gradebook]')).toContainText('No Canvas snapshot.');
 });
 
 test('a live sync blocks course reset with an error and permits a deliberate retry after completion',async({page})=>{

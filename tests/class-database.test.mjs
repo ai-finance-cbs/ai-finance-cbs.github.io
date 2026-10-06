@@ -44,7 +44,7 @@ before(async () => {
     ]);
     await seedGoogleIdentity(db, id(role), email);
   }
-  for (const file of migrationFiles.filter(file=>!file.startsWith('019_'))) {
+  for (const file of migrationFiles.filter(file=>file<'019_')) {
     if (file === '003_class_tools.sql')
       await db.exec(
         "insert into allowlist values('legacyteacher@columbia.edu','instructor_ta'),('legacyauditor@columbia.edu','observer'); insert into assignments values(6,'Legacy','Week 6',25,'Existing content','Existing work','Criteria',true)",

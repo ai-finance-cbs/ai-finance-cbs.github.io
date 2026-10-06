@@ -1,3 +1,4 @@
+import {demoQuizPresent,demoQuizPosted} from './canvas-attendance-demo.js';
 import { safeSubmission } from './submission-core.js';
 import { refreshDemoLocks, demoSubmissionLocked, studentSubmissionItems } from './submission-demo.js';
 import { GRADE_ITEMS, checkGroupChange, canWrite, scoreValue } from './class-core.js';
@@ -81,7 +82,7 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         .filter((r) => admin || r.uni === a.uni)
         .map((r) => {
           if (admin) return r;
-          const released = d.items.some(i => i.quiz_week === r.source_quiz && i.released);
+          const released = demoQuizPosted(d,d.term_id,a.uni,r.source_quiz);
           return {
             uni: r.uni,
             week: r.week,
@@ -154,17 +155,18 @@ export function extendDemo({ read, save, user, saveUser, access }) {
           throw new Error('Only excuse or remove excuse is allowed.');
         if (!roster(d).some(r => r.uni === entry.uni)) throw new Error(`Unknown UNI: ${entry.uni}.`);
         const old = d.attendance.find(a => a.uni === entry.uni && a.week === week);
-        const quiz = d.items.find(i => i.quiz_week === week && d.grades.some(g => g.item_id === i.id && g.uni === entry.uni));
+        const mapped=d.canvas?.[d.term_id]?.mappings.some(m=>m.kind==='quiz' && m.week===week);
+        const quiz = mapped ? demoQuizPresent(d,d.term_id,entry.uni,week) : d.items.find(i => i.quiz_week === week && d.grades.some(g => g.item_id === i.id && g.uni === entry.uni));
         let row;
         if (entry.status === 'excused') {
           const reason = typeof entry.excuse_reason === 'string' ? entry.excuse_reason.trim() : '';
           if (!reason || [...reason].length > 300) throw new Error('An excuse reason of 1–300 characters is required.');
-          if (quiz || old?.status === 'present') throw new Error('Present attendance cannot be excused. Correct quiz scores in the Gradebook.');
+          if (quiz || old?.status === 'present') throw new Error('Present attendance cannot be excused. Correct quiz scores in CourseWorks.');
           row = { uni: entry.uni, week, status: 'excused', source_quiz: null, manual_override: true,
             excuse_reason: reason, excused_at: new Date().toISOString(), excused_by: access().email };
         } else {
           if (old?.status !== 'excused') continue;
-          if (quiz) row = { uni: entry.uni, week, status: 'present', source_quiz: week, manual_override: false,
+          if (quiz) row = { canvas_derived:mapped, uni: entry.uni, week, status: 'present', source_quiz: week, manual_override: false,
             excuse_reason: null, excused_at: null, excused_by: null };
         }
         d.attendance = d.attendance.filter(a => a !== old);

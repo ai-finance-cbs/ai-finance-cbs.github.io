@@ -41,8 +41,12 @@ export function courseWorksLink(row, staff=false) {
   return el('a',staff ? 'Open in CourseWorks →' : 'Submit on CourseWorks →',
     {href:row.url,target:'_blank',rel:'noopener noreferrer',class:'courseworks-link'});
 }
-export function canvasDue(row, tag='p') {
-  return row?.due_at ? dueLine(row.due_at,tag) : el(tag,row?.status==='Status unavailable' || !row ? 'Due date unavailable.' : 'No due date', {class:'due-line'});
+export function statusPill(status='Status unavailable') {
+  const tone={Done:'submitted',Late:'late',Missing:'missing',Excused:'neutral'}[status] || 'neutral';
+  return el('span',status==='Done'?'Submitted ✓':status,{class:`canvas-status-pill status-${tone}`,'data-canvas-status':status});
+}
+export function canvasDue(row, tag='p', compact=false) {
+  return row?.due_at ? dueLine(row.due_at,tag,compact) : el(tag,row?.status==='Status unavailable' || !row ? 'Due date unavailable.' : 'No due date', {class:'due-line'});
 }
 export function canvasSubmissionBlock({data,canvas,access,path},code,controlsOnly=false) {
   const item=data.submission_items.find(i=>i.code===code) || {code};
@@ -51,29 +55,40 @@ export function canvasSubmissionBlock({data,canvas,access,path},code,controlsOnl
     id:controlsOnly?`assignment-status-${code}`:code==='FP'?'final-prototype':`milestone-${week}`});
   if (!controlsOnly) {
     section.append(el('h2','Milestone'));
-    const title=el('h3',null,{class:'milestone-title'});title.append(el('span',itemName(item,data.assignments)),canvasDue(row,'span'));
-    section.append(title,el('a','Instructions →',{class:'assignment-instructions-link',href:path(`assignments/${assignmentSlug(code)}`)}));
+    const title=el('h3',null,{class:'milestone-title'});title.append(el('span',itemName(item,data.assignments)),' · ',canvasDue(row,'span',true));
+    section.append(title);
   }
-  if (access.role==='student') section.append(el('p',row?.status || 'Status unavailable',
-    {class:'canvas-status','data-milestone-state':'','data-submission-status':'',role:'status'}));
-  section.append(courseWorksLink(row,access.role!=='student'),canvasHealth(canvas));
+  if (access.role==='student') {
+    const line=el('p',null,{class:'canvas-status','data-milestone-state':'','data-submission-status':'',role:'status'});
+    line.append(statusPill(row?.status));section.append(line);
+  }
+  const links=el('p',null,{class:'canvas-assignment-links'});
+  if(!controlsOnly)links.append(el('a','Instructions →',{class:'assignment-instructions-link',href:path(`assignments/${assignmentSlug(code)}`)}),' · ');
+  links.append(courseWorksLink(row,access.role!=='student'));section.append(links,canvasHealth(canvas));
   return section;
 }
 export function renderCanvasGrades({root,canvas,data}) {
   root.append(canvasHealth(canvas));
-  const list=el('div',null,{id:'my-grades',class:'student-grades canvas-grades'});
-  for (const row of canvas.items) {
-    const item=data.submission_items.find(i=>i.code===row.site_key) || {code:row.site_key,title:row.title || (row.kind==='quiz'?`In-class quiz ${row.week}`:row.kind==='participation'?'Participation and attendance':`Optional task ${row.site_key.slice(1)}`)};
-    const section=el('section',null,{class:'student-grade','data-grade-code':row.site_key});
-    section.append(el('h2',itemName(item,data.assignments)));
-    if(row.kind==='optional')section.append(el('span','Optional task',{class:'optional-task-label'}));
-    section.append(el('p',!canvas.available ? 'Status unavailable' : row.posted_visible ?
-      (row.score ?? row.grade ?? 'Not posted') + (row.score!=null && row.points_possible!=null ? ` / ${row.points_possible}` : '') : 'Not posted', {class:'grade-score'}));
-    if(row.url)section.append(el('a','Open in CourseWorks →',{href:row.url,target:'_blank',rel:'noopener noreferrer'}));
-    list.append(section);
+  const table=el('table',null,{id:'my-grades',class:'canvas-student-grades'}),head=el('thead'),labels=el('tr');
+  for(const label of ['Item','Status','Score'])labels.append(el('th',label,{scope:'col'}));
+  head.append(labels);table.append(head);
+  for(const [label,kinds] of [['Milestones',['milestone','final']],['Quizzes',['quiz']],['Participation',['participation']],['Optional tasks',['optional']]]) {
+    const rows=canvas.items.filter(row=>kinds.includes(row.kind));if(!rows.length)continue;
+    const body=el('tbody'),group=el('tr',null,{class:'canvas-grade-group'}),heading=el('th',null,{colspan:'3',scope:'colgroup'});
+    heading.append(el('h2',label));group.append(heading);body.append(group);
+    for (const row of rows) {
+      const item=data.submission_items.find(i=>i.code===row.site_key) || {code:row.site_key,title:row.title || (row.kind==='quiz'?`In-class quiz ${row.week}`:row.kind==='participation'?'Participation and attendance':`Optional task ${row.site_key.slice(1)}`)};
+      const tr=el('tr',null,{'data-grade-code':row.site_key}),title=el('th',null,{scope:'row'}),status=el('td');
+      title.append(row.url ? el('a',itemName(item,data.assignments),{href:row.url,target:'_blank',rel:'noopener noreferrer'}) : document.createTextNode(itemName(item,data.assignments)));
+      status.append(statusPill(canvas.available?row.status:'Status unavailable'));
+      tr.append(title,status,el('td',!canvas.available ? 'Status unavailable' : row.posted_visible ?
+        (row.score ?? row.grade ?? 'Not posted') + (row.score!=null && row.points_possible!=null ? ` / ${row.points_possible}` : '') : 'Not posted', {class:'grade-score'}));
+      body.append(tr);
+    }
+    table.append(body);
   }
-  if (!canvas.items.length) list.append(el('p',canvas.available?'No mapped grades yet.':'Status unavailable'));
-  root.append(list);
+  if (!canvas.items.length) root.append(el('p',canvas.available?'No mapped grades yet.':'Status unavailable'));
+  else root.append(table);
 }
 export function renderCanvasGroups({root,canvas,access}) {
   root.append(canvasHealth(canvas));

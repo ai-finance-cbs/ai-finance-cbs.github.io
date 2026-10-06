@@ -19,7 +19,7 @@ beforeEach(()=>{
   globalThis.window={location:new URL('http://127.0.0.1:4173/materials/?demo=1')};
   globalThis.FileReader=class {readAsDataURL(file){file.arrayBuffer().then(bytes=>{this.result=`data:${file.type};base64,${Buffer.from(bytes).toString('base64')}`;this.onload();});}};
 });
-test('demo archived access, roster replacement and file release keep term boundaries',async()=>{
+test('demo archived access, roster write denial and file release keep term boundaries',async()=>{
   const d=createDemo();await d.pickRole('instructor');await d.setSessionTimes(1,'2027-03-15T13:00:00Z','2027-03-15T16:00:00Z');
   await d.uploadFile(pdf(),{week:0,title:'Hidden',released:false,auditor_visible:true,release_at:'2099-01-01'});
   await d.pickRole('student');assert.equal((await d.files()).length,0);
@@ -28,7 +28,7 @@ test('demo archived access, roster replacement and file release keep term bounda
   const state=JSON.parse(sessionStorage.getItem(KEY));state.terms[0].status='archived-readable';state.terms.push({id:'spring-2028',title:'Spring 2028',status:'active'});
   state.roster.push({term_id:'spring-2028',uni:'zz9999',name:'New Student'});
   state.items.push({...state.items[0],id:17,term_id:'spring-2028'});sessionStorage.setItem(KEY,JSON.stringify(state));
-  await d.pickRole('instructor');await d.replaceRoster([{uni:'zz9999',name:'New Student updated'}]);
+  await d.pickRole('instructor');await assert.rejects(d.replaceRoster([{uni:'zz9999',name:'New Student updated'}]),/CourseWorks/);
   await d.pickRole('student');assert.equal((await d.getAccess()).read_only,true);
   assert.equal((await d.classData()).term_id,'spring-2027');assert.equal((await d.classData()).grades.length,1);
   await assert.rejects(d.beginSubmission(1,pdf()),/read-only/);await assert.rejects(d.classData('spring-2028'),/Class access/);

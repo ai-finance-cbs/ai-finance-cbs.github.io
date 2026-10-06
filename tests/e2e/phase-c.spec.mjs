@@ -23,26 +23,12 @@ async function uploadGroup(page) {
   await seed(page);
   await page.evaluate(()=>window.seedArchivedWork([{item_id:3,group_id:'demo-group-1',file_name:'late.pdf',on_time_path:'archive/on-time.pdf'}]));
 }
-test('group panel grades snapshot members, retains on-time work, flags overrides and membership changes',async({page})=>{
-  await uploadGroup(page);await enter(page,'instructor','gradebook');
-  await page.locator('[data-grade-cell="ab1234:3"]').click();
-  const panel=page.locator('.grade-panel');await expect(panel).toBeVisible();await expect(panel).toContainText('Late');
-  await expect(panel.getByRole('button',{name:'Download last on-time file'})).toBeVisible();
+test('archived group panel retains on-time work and blocks score edits',async({page})=>{
+  await uploadGroup(page);await page.evaluate(async()=>{await (await import('/assets/materials/demo.js')).createDemo().openTerm('Spring 2028');});
+  await enter(page,'instructor','gradebook');await page.getByLabel('Term',{exact:true}).selectOption('spring-2027');await ready(page);
+  await page.locator('[data-grade-cell="ab1234:3"]').click();const panel=page.locator('.grade-panel');
+  await expect(panel).toContainText('Late');await expect(panel.getByLabel('Score',{exact:true})).toBeDisabled();
   const download=page.waitForEvent('download');await panel.getByRole('button',{name:'Download last on-time file'}).click();await download;
-  await panel.getByLabel('Score',{exact:true}).fill('7');await panel.getByLabel('Comment',{exact:true}).fill('Group feedback');await panel.getByRole('button',{name:'Grade group',exact:true}).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Group grade saved');
-  for(const uni of ['ab1234','cd5678'])await expect(page.getByLabel(`${uni} Milestone #3`,{exact:true})).toHaveValue('7');
-  await page.getByLabel('ab1234 Milestone #3',{exact:true}).fill('9');await page.getByRole('button',{name:'Save scores',exact:true}).click();
-  await expect(page.locator('[data-grade-cell="ab1234:3"] .override-mark')).toBeVisible();
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();window.moveArchivedMember('ab1234','demo-group-2');});await page.reload();await ready(page);
-  await page.locator('[data-grade-cell="ab1234:3"]').click();await expect(panel).toContainText('Now Group 2');
-  await expect(panel).toContainText('Second Student');await expect(panel.getByLabel('Comment',{exact:true})).toHaveValue('Group feedback');
-});
-test('grader panel accepts a score without submission and has no release controls',async({page})=>{
-  await seed(page);await enter(page,'grader','gradebook');await expect(page.locator('button.grade-visibility')).toHaveCount(0);
-  await page.locator('[data-grade-cell="ab1234:4"]').click();const panel=page.locator('.grade-panel');await expect(panel).toContainText('Not submitted');
-  await panel.getByLabel('Score',{exact:true}).fill('0');await panel.getByLabel('Comment',{exact:true}).fill('No work received');await panel.getByRole('button',{name:'Save student grade'}).click();
-  await expect(page.getByLabel('ab1234 Milestone #4',{exact:true})).toHaveValue('0');
 });
 test('Settings manages New York times, linked modes, blocked submitted changes, file category and storage',async({page})=>{
   await uploadGroup(page);await enter(page,'instructor','settings');
@@ -79,19 +65,6 @@ test('term controls export before close and leave purging manual; staff can filt
   await expect(page.getByLabel('ab1234 Milestone #1',{exact:true})).toBeDisabled();
   await expect(page.getByRole('button',{name:'M1 visibility: Visible',exact:true})).toBeDisabled();
   await page.goto('/materials/attendance/');await ready(page);await expect(page.getByRole('button',{name:/Mark all present/})).toHaveCount(0);
-});
-for(const width of [1440,1280])test(`Phase C screenshots and gradebook fits 17 columns at ${width}px`,async({page})=>{
-  await page.setViewportSize({width,height:1000});await uploadGroup(page);await enter(page,'instructor','gradebook');mkdirSync('evidence/phase-c',{recursive:true});
-  const fits=async()=>{expect(await page.locator('.gradebook-grid').evaluate(t=>t.scrollWidth<=t.parentElement.clientWidth)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);};
-  const shot=async name=>{await page.evaluate(async()=>{document.activeElement?.blur();window.scrollTo({top:0,left:0,behavior:'instant'});await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);await page.screenshot({path:`evidence/phase-c/${name}-${width}.png`,fullPage:true});};
-  await fits();await expect(page.locator('.site-sidebar')).toBeVisible();await shot('gradebook-instructor');
-  await page.locator('[data-grade-cell="ab1234:3"]').click();await fits();await shot('gradebook-group-panel');
-  await page.goto('/materials/settings/');await ready(page);await page.locator('#session-times > summary').click();await page.locator('#submission-settings > summary').click();await page.locator('#lecture-pdfs > summary').click();await shot('settings');
-  await page.goto('/materials/attendance/');await ready(page);await shot('attendance-staff');
-  await enter(page,'student','submit');await shot('submit-student');await page.goto('/materials/grades/');await ready(page);await shot('grades-student');
-  await expect(page.locator('[data-grade-total]')).toHaveCount(0);await expect(page.locator('.tool-help,.subline')).toHaveCount(0);
-  await page.evaluate(()=>{const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.items.push({term_id:'spring-2027',id:17,code:'Q6',title:'Layout capacity check',max_points:3,kind:'none',mode:'individual',released:false});sessionStorage.setItem(key,JSON.stringify(d));});
-  await enter(page,'instructor','gradebook');await expect(page.locator('.gradebook-grid thead th')).toHaveCount(19);await fits();
 });
 test('all class tools fit phones and show no subtitle/help beneath the title',async({page})=>{
   await page.setViewportSize({width:390,height:900});

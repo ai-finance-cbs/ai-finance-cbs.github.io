@@ -1,3 +1,4 @@
+import {canvasHealth} from './canvas-student-ui.js';
 import { installStudentProfiles } from './profile-ui.js';
 import { renderGradePanel } from './grade-panel.js';
 import { gradingSubmission, groupOverride, newYorkInput, newYorkTime } from './staff-core.js';
@@ -110,7 +111,7 @@ function attendanceDialog({ student, week, state, record, editable, save }) {
   dialog.append(el('h3', `${student} · Week ${week}`));
   const actions = el('div', null, { class: 'attendance-confirm-actions' });
   if (state === 'present') {
-    dialog.append(el('p', `Present${record?.source_quiz ? ` (Quiz ${record.source_quiz} score recorded)` : ''}. To change this, edit the quiz score in the Gradebook.`));
+    dialog.append(el('p', `Present${record?.source_quiz ? ` (Quiz ${record.source_quiz} score recorded)` : ''}. To change this, edit the quiz score in CourseWorks.`));
     actions.append(button('Close', close));
   } else if (!editable) {
     dialog.append(el('p', state === 'excused' ? `Excused${record?.excuse_reason ? `: ${record.excuse_reason}` : ''}.` : 'Absent: no quiz score for this week.'));
@@ -220,6 +221,8 @@ export function renderClassPage(ctx) {
     return s;
   };
   if (page === 'attendance') {
+    const unavailable=ctx.canvas && !ctx.canvas.available;
+    if(ctx.canvas)root.append(canvasHealth(ctx.canvas));
     if (grading) {
       const { t, body, head } = table(['Student', ...data.sessions.map((s) => `Week ${s.week}`)]);
       const classUnis = new Set(data.roster.map(r => r.uni));
@@ -235,7 +238,7 @@ export function renderClassPage(ctx) {
         // Absent is only counted once the class has happened; before that a blank cell means nothing yet.
         const held = s.date && s.date <= new Date().toISOString().slice(0, 10);
         for (const [value, n] of [['present', present], ['absent', held ? data.roster.length - present - excused : '—'], ['excused', excused]])
-          cell.append(el('span', `${value[0].toUpperCase()}${value.slice(1)} ${n}`, { class: `total-${value}` }));
+          cell.append(el('span', `${value[0].toUpperCase()}${value.slice(1)} ${unavailable?'—':n}`, { class: `total-${value}` }));
         totals.append(cell);
       }
       body.append(totals);
@@ -246,17 +249,18 @@ export function renderClassPage(ctx) {
           const a = data.attendance.find((a) => a.uni === r.uni && a.week === s.week),
             td = el('td');
           td.setAttribute('aria-label', `${r.uni} Week ${s.week} attendance`);
-          const state = a?.status || 'absent';
+          const state = unavailable ? 'Status unavailable' : a?.status || 'absent';
           const mark = el('button', state === 'present' ? '✓' : state === 'excused' ? 'EX' : '–', {
             type: 'button', class: `attendance-mark mark-${state}`, 'aria-label': `${r.name || r.uni} Week ${s.week}: ${state}`,
             ...(state === 'excused' && a.excuse_reason ? { title: a.excuse_reason } : {}),
           });
+          mark.disabled=!!unavailable;
           mark.addEventListener('click', () => attendanceDialog({
             student: r.name || r.uni, week: s.week, state, record: a, editable: admin && canWrite(access),
             save: entry => run(() => backend.saveAttendance(s.week, [{ uni: r.uni, ...entry }]), entry.status ? 'Absence excused.' : 'Excuse removed.'),
           }));
           td.append(mark);
-          if (a?.source_quiz) {
+          if (a?.source_quiz && !unavailable) {
             const source = el('span', `Q${a.source_quiz}${a.manual_override ? '*' : ''}`, { class: 'quiz-marker', title: statusNote(a) });
             source.append(el('span', ` ${statusNote(a)}`, { class: 'sr-only' }));
             td.append(source);
@@ -265,7 +269,7 @@ export function renderClassPage(ctx) {
         }
         body.append(tr);
       }
-      const bar = el('p', 'Attendance comes from quiz scores. Click a cell for details; only the instructor can excuse an absence.', { class: 'attendance-legend' });
+      const bar = el('p', 'Attendance comes from Canvas quiz scores. Click a cell for details; only the instructor can excuse an absence.', { class: 'attendance-legend' });
       root.append(bar, studentFilter(t, 'attendance'), wrapTable(t));
     } else {
       const { t, body } = table(['Session', 'Date', 'Status', 'Source']);
@@ -276,8 +280,8 @@ export function renderClassPage(ctx) {
         tr.append(
           el('th', `Week ${s.week}`, { scope: 'row' }),
           el('td', s.date || 'Date TBA'),
-          el('td', { present: 'Present', absent: 'Absent', excused: 'Excused' }[a?.status] || 'Absent'),
-          el('td', a ? statusNote(a) : ''),
+          el('td', unavailable ? 'Status unavailable' : { present: 'Present', absent: 'Absent', excused: 'Excused' }[a?.status] || 'Absent'),
+          el('td', a && !unavailable ? statusNote(a) : ''),
         );
         body.append(tr);
       }
@@ -419,6 +423,15 @@ export function renderClassPage(ctx) {
           td.dataset.gradeCell = `${r.uni}:${item.id}`;
           td.dataset.releaseState = item.released ? 'visible' : 'hidden';
           td.addEventListener('click', () => openPanel(item, r));
+          if (!canWrite(access)) {
+            // Disabled inputs swallow clicks. Keep archived submission details reachable by mouse and keyboard.
+            n.style.pointerEvents = 'none';
+            td.tabIndex = 0; td.setAttribute('role', 'button');
+            td.setAttribute('aria-label', `View archived ${item.title} for ${r.name || r.uni}`);
+            td.addEventListener('keydown', e => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(item, r); }
+            });
+          }
           n.addEventListener('keydown', e => { if (e.key === 'F2') { e.preventDefault(); openPanel(item, r); panel.querySelector('input')?.focus(); } });
           const submission = gradingSubmission(data, item, r.uni);
           if (submission) td.append(el('span', submission.late ? 'L' : 'S', { class: 'submission-mark', title: submission.late ? 'Late' : 'Submitted', 'aria-label': submission.late ? 'Late' : 'Submitted' }));

@@ -1,3 +1,4 @@
+// Historical 017 behavior. Canvas cutover permissions and attendance are covered by canvas-staff-database.
 import { test, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -5,7 +6,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { phaseDatabase, TERM } from './helpers/phase-a.mjs';
 import { bootstrapSQL, migrationFiles } from './helpers/database.mjs';
 let h;
-before(async () => { h = await phaseDatabase(); });
+before(async () => { h = await phaseDatabase(undefined,'019_canvas_student_views.sql'); });
 after(async () => h?.db.close());
 beforeEach(async () => { await h.as('owner'); await h.db.exec('begin'); });
 afterEach(async () => { await h.db.exec('rollback; reset role'); });

@@ -1,3 +1,4 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import { test, expect } from '@playwright/test';
 const openCell = async (page, cell) => { await cell.locator('.attendance-mark').click(); return page.getByRole('dialog'); };
 const ready = async (page) =>
@@ -7,6 +8,7 @@ const enter = async (page, role, path) => {
   await ready(page);
 };
 test.beforeEach(async ({ page }) => {
+  await installArchiveFixture(page);
   await page.addInitScript(() =>
     Object.defineProperty(window, 'COURSE_MATERIALS', {
       get: () => ({ base: '', url: '', key: '' }),
@@ -44,49 +46,14 @@ test('grader menu and direct page gates expose only materials, grades, and atten
   await expect(page.getByLabel('ab1234 Week 1 attendance')).toBeVisible();
   await expect(page.locator('input[type=date]')).toHaveCount(0);
 });
-test('grader enters quiz scores by column and CSV; attendance is read-only and follows corrections', async ({
-  page,
-}) => {
-  await enter(page, 'grader', 'gradebook');
-  await page.getByLabel('Gradebook item').selectOption('7');
-  await page.getByLabel('ab1234 In-class quiz 1', { exact: true }).fill('0');
-  await page.getByLabel('ab1234 In-class quiz 1', { exact: true }).press('Enter');
-  await expect(page.getByLabel('cd5678 In-class quiz 1', { exact: true })).toBeFocused();
-  await page.getByRole('button', { name: 'Save scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
-  await page.getByLabel('Gradebook item').selectOption('8');
-  await page.locator('#grade-import > summary').click();
-  await page.getByLabel('Grade CSV', { exact: true }).setInputFiles({
-    name: 'quiz.csv',
-    mimeType: 'text/csv',
-    buffer: Buffer.from('uni,score\nab1234,2\ncd5678,0'),
-  });
-  await page.getByRole('button', { name: 'Preview grade import' }).click();
-  await expect(page.locator('#materials-root')).toContainText('2 scores ready to import');
-  await page.getByRole('button', { name: 'Import scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Scores imported');
-  await page.goto('/materials/attendance/');
-  await ready(page);
-  await expect(page.getByLabel('ab1234 Week 1 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('✓');
-  await expect(page.getByLabel('cd5678 Week 2 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('✓');
-  await expect(page.locator('#materials-root')).toContainText('from Quiz 2');
-  await expect(page.locator('.attendance-grid select, .attendance-action, .attendance-edit-toggle, #attendance-import')).toHaveCount(0);
-  await page.goto('/materials/gradebook/');
-  await ready(page);
-  await page.getByLabel('ab1234 In-class quiz 2', { exact: true }).fill('');
-  await page.getByRole('button', { name: 'Save scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
-  await page.goto('/materials/attendance/');
-  await ready(page);
-  await expect(page.getByLabel('ab1234 Week 2 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('–');
-});
+
 test('student sees posted Canvas grades and teammate names without joining controls',async({page})=>{
   await enter(page,'student','grades');await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('8 / 10');
   await expect(page.locator('[data-grade-code=M2] .grade-score')).toHaveText('Not posted');
   await page.goto('/materials/groups/');await ready(page);await expect(page.locator('#materials-root')).toContainText('Second Student');
   await expect(page.locator('#materials-root')).not.toContainText('cd5678');await expect(page.locator('#materials-root button')).toHaveCount(0);
 });
-test('instructor can excuse attendance, read Canvas groups, and release legacy scores', async ({
+test('instructor can excuse attendance, read Canvas groups, without local release controls', async ({
   page,
 }) => {
   await enter(page, 'instructor', 'attendance');
@@ -100,12 +67,8 @@ test('instructor can excuse attendance, read Canvas groups, and release legacy s
   await expect(page.locator('#materials-root button,#materials-root input,#materials-root select')).toHaveCount(0);
   await page.goto('/materials/gradebook/');
   await ready(page);
-  await page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true }).click();
-  await page.getByRole('group', { name: 'Release confirmation' }).getByRole('button', { name: 'Show scores', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Q1 visibility: Visible', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  const dl = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export gradebook CSV', exact: true }).click();
-  expect((await dl).suggestedFilename()).toBe('gradebook.csv');
+  await expect(page.locator('.canvas-grid')).toBeVisible();
+  await expect(page.locator('button.grade-visibility')).toHaveCount(0);
 });
 test('view-as matches student content and denies writes even when calling the backend directly', async ({
   page,
@@ -177,42 +140,4 @@ test('auditor gets shared Assignments but cannot open student or staff tools', a
     await expect(page.locator('#materials-root input')).toHaveCount(0);
     await expect(page.locator('#materials-root')).toContainText(/instructors|does not have access/);
   }
-});
-
-test('students and preview see plain attendance until the matching quiz is released', async ({
-  page,
-}) => {
-  await enter(page, 'grader', 'gradebook');
-  await page.getByLabel('ab1234 In-class quiz 1', { exact: true }).fill('0');
-  await page.getByRole('button', { name: 'Save scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Scores saved');
-  await page.goto('/materials/attendance/');
-  await ready(page);
-  await expect(page.locator('#materials-root')).toContainText('from Quiz 1');
-  await enter(page, 'student', 'attendance');
-  const firstWeek = page.locator('.class-grid tbody tr').first();
-  await expect(firstWeek).toContainText('Present');
-  await expect(firstWeek.locator('td').last()).toHaveText('');
-  await expect(page.locator('#my-grades')).toHaveCount(0);
-  const hidden = await page.evaluate(async () => {
-    const { createDemo } = await import('/assets/materials/demo.js');
-    return (await createDemo().classData()).attendance;
-  });
-  expect(hidden).toEqual([
-    { uni: 'ab1234', week: 1, status: 'present', source_quiz: null, manual_override: null },
-  ]);
-  await enter(page, 'instructor', 'roster');
-  await page.getByRole('button', { name: 'View as Demo Student', exact: true }).click();
-  await expect(page.locator('[data-preview-banner]')).toBeVisible();
-  await expect(page.locator('.class-grid tbody tr').first().locator('td').last()).toHaveText('');
-  await page.locator('[data-preview-exit]').click();
-  await page.goto('/materials/gradebook/');
-  await ready(page);
-  await page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true }).click();
-  await page.getByRole('group', { name: 'Release confirmation' }).getByRole('button', { name: 'Show scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toContainText('Release status saved');
-  await enter(page, 'student', 'attendance');
-  await expect(page.locator('.class-grid tbody tr').first()).toContainText('from Quiz 1');
-  await page.goto('/materials/grades/'); await ready(page);
-  await expect(page.locator('[data-grade-code=Q1] .grade-score')).toHaveText('Not posted');
 });

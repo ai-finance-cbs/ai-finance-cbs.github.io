@@ -1,6 +1,6 @@
 import { renderAssignments } from './assignment-ui.js';
 import { loadCanvas, renderCanvasGrades, renderCanvasGroups } from './canvas-student-ui.js';
-import { renderCanvasSettings, renderCanvasMode } from './canvas-ui.js';
+import { renderCanvasSettings, renderCanvasMode, renderCanvasRoster } from './canvas-ui.js';
 import { ASSIGNMENT_CODES } from './assignment-core.js';
 import { renderSpeakers, leavePreparation } from './prep-ui.js';
 import { renderPreparationOutline } from './prep-outline-ui.js';
@@ -10,8 +10,8 @@ import { announcementText } from './upcoming-core.js';
 import { renderWeek } from './week-ui.js';
 import { currentWeek, weekSlug, inClassFile } from './week-core.js';
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
-import { renderClassPage, renderRosterTable, table, wrapTable } from './class-ui.js';
-import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, parseRoster, safeReturnPath, validatePdf } from './core.js';
+import { renderClassPage, table, wrapTable } from './class-ui.js';
+import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
@@ -231,6 +231,7 @@ async function renderMaterials(version) {
       const page = root.dataset.page;
       const chooseTerm = ['instructor','grader'].includes(state.access.role) && TERM_PAGES.includes(page);
       const term = chooseTerm ? state.selectedTerm || state.access.term_id : state.access.term_id;
+      const attendanceCanvas=page==='attendance' && term===state.access.term_id ? await loadCanvas(state.backend,state.access,term) : null;
       const data = await state.backend.classData(term);
       if (version !== state.version) return;
       const pageAccess = { ...state.access, read_only: state.access.read_only || term !== state.access.term_id };
@@ -247,15 +248,14 @@ async function renderMaterials(version) {
         const canvas=await loadCanvas(state.backend,pageAccess,term);
         if(version !== state.version)return;
         (page==='grades'?renderCanvasGrades:renderCanvasGroups)({root,data,canvas,access:pageAccess});
-      } else if (page === 'gradebook') renderCanvasMode({root,backend:state.backend,term,
+      } else if (page === 'gradebook') await renderCanvasMode({root,backend:state.backend,term,active:!pageAccess.read_only,profiles:{data,access:pageAccess,backend:state.backend,refresh},
         renderLegacy:legacy=>renderClassPage({root:legacy,page,data,backend:state.backend,access:pageAccess,refresh,startPreview,currentRoot:()=>root.querySelector('[data-legacy-gradebook]')})});
-      else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: pageAccess, refresh, startPreview });
+      else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, canvas:attendanceCanvas, backend: state.backend, access: pageAccess, refresh, startPreview });
       else {
         root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
         if (page === 'roster') {
-          const admin = await state.backend.adminData(); if (version !== state.version) return;
-          renderRosterTable({ root, data, startPreview, access:pageAccess, backend:state.backend, refresh });
-          if (!pageAccess.read_only) renderRoster(admin.roster);
+          const canvas=await state.backend.canvasData(term);if(version!==state.version)return;
+          renderCanvasRoster({root,data:canvas,profiles:{data,access:pageAccess,backend:state.backend,refresh},startPreview});
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
         } else if (page === 'settings') {
@@ -350,31 +350,6 @@ function section(title, id) {
   root.append(s); return s;
 }
 function newForm(id) { return el('form', null, { class: 'admin-form', id }); }
-function renderRoster(roster) {
-  const s = el('details', null, { class: 'tool-disclosure', id: 'class-roster' });
-  s.append(el('summary', 'Replace roster from Canvas CSV')); root.append(s);
-  s.append(el('p', `${roster.length} ${roster.length === 1 ? 'student' : 'students'} on the class list. Upload a Canvas People CSV to replace the roster.`));
-  const form = newForm('roster-form'); const upload = field(form, 'Canvas roster CSV', 'csv', '', 'file'); upload.accept = '.csv,text/csv'; upload.required = true;
-  const previewButton = button('Preview roster'); previewButton.type = 'submit'; const status = formStatus(form); const preview = el('div'); form.append(previewButton, preview);
-  form.addEventListener('submit', e => {
-    e.preventDefault(); runAction(previewButton, status, async () => {
-      preview.replaceChildren();
-      const file = upload.files[0]; if (!file || file.size > 1_000_000) throw new Error('Choose a CSV smaller than 1 MB.');
-      const result = parseRoster(await file.text());
-      preview.append(el('p', `${result.rows.length} valid students. ${result.issues.length} rows need attention.`));
-      const wrap = el('div', null, { class: 'roster-preview' }); const table = el('table'); const head = el('tr'); head.append(el('th', 'Student'), el('th', 'UNI')); const thead = el('thead'); thead.append(head); const body = el('tbody');
-      for (const row of result.rows) { const tr = el('tr'); tr.append(el('td', row.name || '—'), el('td', row.uni)); body.append(tr); }
-      table.append(thead, body); wrap.append(table); preview.append(wrap);
-      for (const issue of result.issues) preview.append(el('p', `Row ${issue.row}: ${issue.name || '(no name)'} · ${issue.reason}`));
-      if (result.errors.length) { preview.append(el('p', result.errors.join(' '))); return; }
-      const acknowledge = el('input', null, { type: 'checkbox', id: 'roster-confirm' }); const label = el('label', `Replace all ${roster.length} current roster entries with these ${result.rows.length} students${result.issues.length ? ' and skip the flagged rows' : ''}.`, { for: 'roster-confirm', class: 'check-label' }); label.prepend(acknowledge); preview.append(label);
-      const save = button('Replace roster', () => runAction(save, status, () => state.backend.replaceRoster(result.rows), `Roster replaced: ${result.rows.length} students.`, true)); save.disabled = true;
-      acknowledge.addEventListener('change', () => save.disabled = !acknowledge.checked); preview.append(save);
-      upload.addEventListener('change', () => preview.replaceChildren(), { once: true });
-    }, 'Preview ready. Review every flagged row before replacing the roster.');
-  });
-  s.append(form);
-}
 function renderAnnouncementAdmin(rows) {
   const s = section('Announcements', 'announcements-editor');
   const editor = row => {

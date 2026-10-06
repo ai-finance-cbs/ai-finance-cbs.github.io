@@ -1266,7 +1266,7 @@ body.standalone-tool .content { max-width:none; }
 .prep-add-card { align-self:flex-start; }
 .prep-drop-target { outline:1px dashed #888; outline-offset:2px; }
 
-/* Canvas comparison remains inside the existing right pane. */
+/* Canvas staff tools remain inside the existing right pane. */
 .canvas-settings, .canvas-mode, [data-canvas-gradebook] { font-family:Inter,Arial,sans-serif; }
 .canvas-settings form { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin:16px 0; }
 .canvas-settings input { width:140px; }
@@ -1276,7 +1276,7 @@ body.standalone-tool .content { max-width:none; }
 .canvas-mode { display:block; margin-bottom:16px; }
 .canvas-grid { min-width:0; font-family:Inter,Arial,sans-serif; }
 .class-grid-wrap:has(> .canvas-grid) { width:max-content; max-width:100%; }
-.canvas-grid th, .canvas-grid td { padding:6px 10px; white-space:nowrap; }
+.canvas-grid th, .canvas-grid td { padding:3px 10px; white-space:nowrap; }
 .canvas-grid th:first-child { position:sticky; left:0; background:#fff; z-index:1; }
 .canvas-popup { position:fixed; right:16px; bottom:16px; width:min(440px,calc(100vw - 288px)); max-height:calc(100vh - 176px); overflow:auto; z-index:20; background:#fff; border:1px solid #d8d8d8; padding:20px; box-sizing:border-box; }
 .canvas-popup h3 { font:600 17px/1.4 Inter,Arial,sans-serif; }
@@ -1284,19 +1284,34 @@ body.standalone-tool .content { max-width:none; }
 @media(max-width:819px) { .canvas-popup { width:calc(100vw - 32px); } .canvas-mapping select { max-width:230px; } }
 
 /* Canvas student views use the same quiet rules as the teaching content. */
-.canvas-sync-note { font-size: 11px; color: #777; margin: 8px 0 16px; }
+.class-tools #materials-root .canvas-sync-note { font:11px/1.5 Inter,Arial,sans-serif; color:#777; margin:8px 0 16px; }
 .canvas-status { font-size: 12px; font-weight: 600; margin: 8px 0; }
 .canvas-assignment .courseworks-link { display: inline-block; font-size: 12px; }
 .canvas-group-set { border-top: 1px solid #ececec; margin-top: 20px; padding-top: 12px; }
 .canvas-group { border-top: 1px solid #ececec; padding: 10px 0; }
 .canvas-group ul { margin: 4px 0; padding-left: 18px; }
-.canvas-grades .student-grade { grid-template-columns: minmax(0,1fr) auto auto; }
-.canvas-grades .grade-score { white-space: nowrap; min-width: 80px; }
-.canvas-grades .student-grade > a { grid-column: 2; grid-row: 1; font-size: 12px; }
-.canvas-grades .optional-task-label { grid-column: 1; grid-row: 2; }
-.canvas-assignment .milestone-title .due-line { border-left: 0; padding-left: 0; }
-@media (max-width: 600px) {
-  .canvas-grades .student-grade { grid-template-columns: minmax(0,1fr) auto; }
-  .canvas-grades .grade-score { grid-column: 2; }
-  .canvas-grades .student-grade > a { grid-column: 1 / -1; grid-row: 3; }
+/* Semantic colors belong only to the shared status pill. */
+.canvas-status-pill { display:inline-block; border-radius:999px; padding:3px 8px; font:500 11px/1.35 Inter,Arial,sans-serif; background:#f2f2f2; color:#555; }
+.canvas-status-pill.status-submitted { background:#e9f5ed; color:#235b3b; }
+.canvas-status-pill.status-late { background:#fff5df; color:#885b12; }
+.canvas-status-pill.status-missing { background:#faedf2; color:#852f4a; }
+.class-tools #materials-root .canvas-assignment .milestone-title, .class-tools #materials-root #due-before-class .canvas-assignment > .milestone-title { display:block; font-size:13px; line-height:1.6; }
+.class-tools #materials-root .canvas-assignment .milestone-title .due-line { display:inline; font:inherit; border:0; padding:0; color:inherit; }
+.canvas-assignment-links { display:flex; align-items:baseline; flex-wrap:wrap; gap:0 8px; font-size:12px; margin:8px 0; }
+.canvas-assignment-links .assignment-instructions-link { margin:0; }
+.class-tools #materials-root .canvas-assignment .canvas-sync-note { margin:4px 0 0; font-size:11px; color:#777; }
+.canvas-student-grades { width:100%; border-collapse:collapse; table-layout:fixed; font:13px/1.5 Inter,Arial,sans-serif; }
+.canvas-student-grades th,.canvas-student-grades td { text-align:left; padding:9px 8px; border-bottom:1px solid #ececec; overflow-wrap:anywhere; vertical-align:middle; }
+.canvas-student-grades th:first-child { width:52%; padding-left:0; }
+.class-tools .canvas-student-grades th,.class-tools .canvas-student-grades td { font:inherit; }
+.canvas-student-grades thead th { color:#777; font-size:11px; font-weight:500; }
+.canvas-student-grades thead th:last-child,.canvas-student-grades .grade-score { text-align:right; padding-right:0; }
+.canvas-student-grades .canvas-grade-group th { padding:24px 0 6px; }
+.class-tools #materials-root .canvas-student-grades h2 { margin:0; font:600 13px/1.5 Inter,Arial,sans-serif; }
+.canvas-roster small { display:block; color:#777; font-weight:400; }
+@media(max-width:600px) {
+  .canvas-student-grades { font-size:12px; }
+  .canvas-student-grades th,.canvas-student-grades td { padding:8px 4px; }
+  .canvas-student-grades th:first-child { width:44%; }
+  .canvas-student-grades .canvas-status-pill { font-size:10px; padding:3px 6px; }
 }

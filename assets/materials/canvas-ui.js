@@ -1,3 +1,5 @@
+import {installStudentProfiles} from './profile-ui.js';
+import {statusPill,canvasHealth} from './canvas-student-ui.js';
 import {CANVAS_HOST,canvasAvailable,canvasId,canvasItems,canvasStatus,canvasPresent,canvasPosted,suggestedAssignment} from './canvas-core.js';
 const el=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);return n;};
 const button=(text,fn)=>{const b=el('button',text,{type:'button',class:'prep-text-action'});b.addEventListener('click',fn);return b;};
@@ -72,18 +74,11 @@ export async function renderCanvasSettings({root,backend,term,items,readOnly}) {
   }
   try{await draw();}catch(e){status.textContent=e.message;}
 }
-export function renderCanvasMode({root,backend,term,renderLegacy}) {
-  const label=el('label','View ',{class:'canvas-mode'}),select=el('select',null,{'aria-label':'Gradebook mode'});
-  select.append(el('option','Grade entry',{value:'legacy'}),el('option','Canvas status',{value:'canvas'}));label.append(select);
-  const legacy=el('div',null,{'data-legacy-gradebook':''}),canvas=el('div',null,{'data-canvas-gradebook':''});canvas.hidden=true;
-  root.append(label,legacy,canvas);renderLegacy(legacy);
-  select.addEventListener('change',async()=>{
-    legacy.hidden=select.value!=='legacy';canvas.hidden=!legacy.hidden;
-    if(canvas.hidden)return;
+export async function renderCanvasGradebook({root:canvas,backend,term,profiles}) {
     canvas.replaceChildren(el('p','Loading Canvas…',{role:'status'}));
     try {
       const data=await backend.canvasData(term);if(!canvas.isConnected)return;
-      canvas.replaceChildren(el('p',health(data),{'data-canvas-health':''}),el('p','Read-only Canvas status. Grade entry remains available during the transition.'));
+      canvas.replaceChildren(canvasHealth({available:canvasAvailable(data),last_synced_at:data.course?.last_synced_at}));
       if(!data.course?.generation){canvas.append(el('p','No Canvas snapshot. Configure and sync Canvas in Settings.'));return;}
       const table=el('table',null,{class:'class-grid canvas-grid'}),head=el('tr');head.append(el('th','Student',{scope:'col'}));
       for(const m of data.mappings)head.append(el('th',m.site_key,{scope:'col',title:data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id))?.name||m.site_key}));
@@ -93,23 +88,56 @@ export function renderCanvasMode({root,backend,term,renderLegacy}) {
       let previous;
       const close=()=>{panel.hidden=true;previous?.focus();};panel.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
       for(const u of data.enrollments) {
-        const tr=el('tr'),name=el('th',u.name,{scope:'row'});name.append(el('small',u.uni||u.login_id||'Unmatched'));tr.append(name);
+        const tr=el('tr'),name=el('th',null,{scope:'row'});
+        name.append(u.uni && profiles?.data.roster.some(r=>r.uni===u.uni) ? el('button',u.name,{type:'button',class:'student-name student-profile-link','data-student-profile':u.uni}) : document.createTextNode(u.name));name.append(el('small',u.uni||u.login_id||'Unmatched'));tr.append(name);
         for(const m of data.mappings) {
           const s=data.submissions.find(s=>String(s.user_id)===String(u.user_id)&&String(s.assignment_id)===String(m.canvas_assignment_id)),td=el('td');
           const cell=button((canvasAvailable(data)?canvasStatus(s,m):'Status unavailable'),()=>{
+            const card=canvas.querySelector('.grade-panel');if(card)card.hidden=true;canvas.querySelector('.gradebook-workspace')?.classList.remove('panel-open');
             previous=cell;panel.replaceChildren();panel.hidden=false;
             const closeButton=button('Close details',close),a=data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id));
             panel.append(closeButton,el('h3',`${u.name} · ${a?.name||m.site_key}`));
-            for(const [key,value] of [['Status',(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable')],['Submitted',time(s?.submitted_at)],['Due',time(s?.cached_due_at)],['Seconds late',s?.seconds_late??'—'],['Score',s?.score??'—'],['Posted',canvasPosted(s)?time(s.posted_at):'Not posted'],['Roster match',u.match_status]])panel.append(el('p',`${key}: ${value}`));
-            if(m.kind==='quiz')panel.append(el('p',`Attendance eligibility: ${canvasPresent(s)?'Present':'No qualifying score'}`));
+            panel.append(statusPill(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable'));
+            for(const [key,value] of [['Submitted',time(s?.submitted_at)],['Due',time(s?.cached_due_at)],['Seconds late',s?.seconds_late??'—'],['Score',s?.score??'—'],['Posted',canvasPosted(s)?time(s.posted_at):'Not posted'],['Roster match',u.match_status]])panel.append(el('p',`${key}: ${value}`));
+            if(m.kind==='quiz')panel.append(el('p',`Attendance eligibility: ${!canvasAvailable(data)?'Status unavailable':canvasPresent(s)?'Present':'No qualifying score'}`));
             panel.append(el('a','Open in CourseWorks →',{href:`${CANVAS_HOST}/courses/${data.course.course_id}/assignments/${m.canvas_assignment_id}/submissions/${u.user_id}`,target:'_blank',rel:'noopener noreferrer'}));
             closeButton.focus();
           });cell.setAttribute('aria-label',`${u.name} ${m.site_key}: ${(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable')}`);td.append(cell);tr.append(td);
         }
         tbody.append(tr);
       }
+      if(profiles)installStudentProfiles({...profiles,root:canvas,onOpen:()=>{panel.hidden=true;}});
       if(!data.mappings.length)canvas.append(el('p','No assignment mappings. Add mappings in Settings.'));
       document.dispatchEvent(new Event('course:content-changed'));
-    } catch(e){canvas.replaceChildren(el('p',e.message,{role:'status'}));}
+    } catch(e){canvas.replaceChildren(canvasHealth({available:false,sync_unknown:true}),el('p','Status unavailable',{role:'status'}));}
+}
+export async function renderCanvasMode({root,backend,term,active,profiles,renderLegacy}) {
+  if(active) {const canvas=el('div',null,{'data-canvas-gradebook':''});root.append(canvas);await renderCanvasGradebook({root:canvas,backend,term,profiles});return;}
+  const label=el('label','Archive view ',{class:'canvas-mode'}),select=el('select',null,{'aria-label':'Gradebook mode'});
+  select.append(el('option','Archived site grades',{value:'legacy'}),el('option','Canvas status',{value:'canvas'}));label.append(select);
+  const legacy=el('div',null,{'data-legacy-gradebook':''}),canvas=el('div',null,{'data-canvas-gradebook':''});canvas.hidden=true;
+  root.append(label,legacy,canvas);renderLegacy(legacy);
+  select.addEventListener('change',async()=>{
+    legacy.hidden=select.value!=='legacy';canvas.hidden=!legacy.hidden;
+    if(!canvas.hidden)await renderCanvasGradebook({root:canvas,backend,term,profiles});
   });
+}
+export function renderCanvasRoster({root,data,profiles,startPreview}) {
+  root.append(canvasHealth({available:canvasAvailable(data),last_synced_at:data.course?.last_synced_at}));
+  const table=el('table',null,{class:'class-grid canvas-roster'}),head=el('thead'),tr=el('tr'),body=el('tbody');
+  for(const title of ['Student','Section','Enrollment','Roster match','Preview'])tr.append(el('th',title,{scope:'col'}));
+  head.append(tr);table.append(head,body);
+  const rows=[...data.enrollments].sort((a,b)=>(a.match_status==='matched')-(b.match_status==='matched') || a.name.localeCompare(b.name));
+  for(const r of rows) {
+    const row=el('tr',null,{'data-canvas-enrollment':r.user_id}),name=el('th',null,{scope:'row'}),preview=el('td');
+    name.append(r.uni && profiles?.data.roster.some(p=>p.uni===r.uni) ? el('button',r.name,{type:'button',class:'student-name student-profile-link','data-student-profile':r.uni}) : document.createTextNode(r.name));
+    name.append(el('small',r.uni || r.login_id || 'No UNI'));
+    if(r.match_status==='matched' && r.uni) {
+      const view=button('View as',()=>startPreview(r.uni));view.setAttribute('aria-label',`View as ${r.name}`);preview.append(view);
+    }
+    row.append(name,el('td',r.section_ids?.length?r.section_ids.join(', '):'—'),el('td',r.enrollment_states.join(', ')),el('td',r.match_status),preview);body.append(row);
+  }
+  const wrap=el('div',null,{class:'class-grid-wrap',tabindex:'0','aria-label':'Scrollable Canvas roster'});wrap.append(table);root.append(wrap);
+  if(profiles)installStudentProfiles({...profiles,root});
+  if(!rows.length)root.append(el('p',canvasAvailable(data)?'No Canvas enrollments.':'Status unavailable'));
 }

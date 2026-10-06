@@ -53,11 +53,11 @@ test('all old URLs redirect, retaining assignment anchors, notes, and query para
 
 test('Canvas status replaces local group prompts and locks; Auditor gates remain', async ({page}) => {
   await seed(page,false); await enter(page,'student');
-  await expect(page.locator('#milestone-3')).toContainText('Done');
+  await expect(page.locator('#milestone-3')).toContainText('Submitted ✓');
   await expect(page.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
   await expect(page.getByLabel('Submission file')).toHaveCount(0);
   await enter(page,'student','week-1');
-  await expect(page.locator('[data-submission-status]')).toHaveText('Done');
+  await expect(page.locator('[data-submission-status]')).toHaveText('Submitted ✓');
   await expect(page.locator('#lecture-notes')).toContainText('Posted after class.');
   await enter(page,'auditor');
   await expect(page.locator('.assignment-section')).toHaveCount(0);
@@ -166,7 +166,7 @@ for(const width of [1440,390,320]) test(`section labels and compact CourseWorks 
   const styles=await page.locator('#materials-root > .week-block > h2').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.fontSize,s.fontWeight,s.letterSpacing,s.textTransform,s.color];}));
   expect(styles.every(s=>JSON.stringify(s)===JSON.stringify(styles[0]))).toBe(true);
   expect(styles[0].slice(0,4)).toEqual(['12px','600','0.48px','uppercase']);
-  expect(await page.locator('#milestone-3 h3').evaluate(n=>getComputedStyle(n).fontSize)).toBe('15px');
+  expect(await page.locator('#milestone-3 h3').evaluate(n=>getComputedStyle(n).fontSize)).toBe('13px');
   for(const slug of ['week-3','week-6']) {
     await page.goto(`/materials/${slug}/`);await ready(page);
     await expect(page.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();

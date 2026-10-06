@@ -43,6 +43,23 @@ test('real PostgreSQL serializes Canvas sync and course reset and exposes change
     await b.query('reset role');
     await b.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid('teacher'),email:people.teacher})]);
     await b.query('set role authenticated');
+    await rpc(b,'save_canvas_mapping',TERM,'Q1',101,'quiz',1);
+    const present=async()=>Number((await owner.query("select count(*) n from attendance where uni='aa1001' and week=1 and status='present'")).rows[0].n);
+    assert.equal(await present(),1);
+    const corrected=canvasFixture();corrected.submissions.find(s=>s.assignment_id===101&&s.user_id===1).score=null;
+    const correction=await rpc(a,'begin_canvas_sync',TERM);
+    await a.query('begin');await rpc(a,'publish_canvas_sync',correction.id,JSON.stringify(normalizeSnapshot(corrected)));
+    assert.equal(await present(),1,'Readers keep the prior attendance until publication commits.');
+    await a.query('commit');assert.equal(await present(),0);
+    // Excuses and publication take the same term lock before any student lock.
+    const attendanceWorker=(await a.query('select pg_backend_pid() pid')).rows[0].pid;
+    await b.query('begin');await rpc(b,'save_attendance',1,'[{"uni":"aa1001","status":"excused","excuse_reason":"Approved"}]');
+    const syncAfterExcuse=rpc(a,'begin_canvas_sync',TERM);
+    await wait(attendanceWorker);
+    await b.query('commit');const arrival=await syncAfterExcuse;
+    await rpc(a,'publish_canvas_sync',arrival.id,JSON.stringify(normalizeSnapshot(canvasFixture())));
+    assert.equal(await present(),1);
+    assert.equal((await owner.query("select excuse_reason from attendance where uni='aa1001' and week=1")).rows[0].excuse_reason,null);
     // A sync that wins the lock prevents a concurrent course change.
     await a.query('begin');const live=await rpc(a,'begin_canvas_sync',TERM);
     const reset=rpc(b,'save_canvas_course',TERM,240316,true).then(value=>({value}),error=>({error}));

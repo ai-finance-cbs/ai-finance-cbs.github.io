@@ -1,9 +1,11 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import {test,expect} from '@playwright/test';
 import {mkdirSync} from 'node:fs';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter=async(page,role,slug='assignments/milestone-1')=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
 const pdf={name:'survey.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nSynthetic\n%%EOF')};
 test.beforeEach(async({page})=>{
+  await installArchiveFixture(page);
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.install({time:new Date('2027-01-24T10:00:00Z')});
   await page.clock.setFixedTime(new Date('2027-01-24T10:00:00Z'));
@@ -13,7 +15,7 @@ async function seed(page){
   await enter(page,'instructor');
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
-    await b.saveGrades([{uni:'ab1234',item_id:1,score:null}]);
+    window.seedArchivedGrades([{uni:'ab1234',item_id:1,score:null}]);
     await b.configureItem(1,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-01-27T14:00:00Z'});
     await b.syncCanvas('spring-2027');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.canvas['spring-2027'].submissions.find(s=>s.assignment_id==='100'&&s.user_id==='1').cached_due_at='2027-01-27T14:00:00Z';sessionStorage.setItem(key,JSON.stringify(d));
@@ -24,19 +26,19 @@ async function seed(page){
 test('week milestone uses the full name, trimmed content, instructions link, and a minute-updating deadline',async({page})=>{
   await seed(page);await enter(page,'student','week-1');const box=page.locator('#milestone-1');
   await expect(box.locator('h3')).toContainText('Milestone #1: Pre-Class Survey');
-  await expect(box.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs remaining');
-  await expect(box.locator('.due-line')).toHaveCSS('color','rgb(31, 58, 107)');
-  await expect(box.locator('[data-milestone-state]')).toHaveText('Done');
+  await expect(box.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs');
+  await expect(box.locator('.due-line')).toHaveCSS('color',await box.locator('h3').evaluate(n=>getComputedStyle(n).color));
+  await expect(box.locator('[data-milestone-state]')).toHaveText('Submitted ✓');
   await expect(box).not.toContainText(/Deliverable|Graded on|Individual|Synthetic local example/);
   await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);
   await expect(box.getByRole('link',{name:'Instructions →'})).toHaveAttribute('href','/materials/assignments/milestone-1/');
   await page.screenshot({path:'evidence/phase-h/week-milestone.png',fullPage:true});
   await page.clock.setFixedTime(new Date('2027-01-27T12:55:00Z'));await page.clock.runFor(60000);
-  await expect(box.locator('.due-line')).toContainText('1 hrs 5 min remaining');
+  await expect(box.locator('.due-line')).toContainText('1 hrs 5 min');
   await page.clock.setFixedTime(new Date('2027-01-27T12:56:00Z'));await page.clock.runFor(60000);
-  await expect(box.locator('.due-line')).toContainText('1 hrs 4 min remaining');
+  await expect(box.locator('.due-line')).toContainText('1 hrs 4 min');
   await page.clock.setFixedTime(new Date('2027-01-27T14:00:00Z'));await page.clock.runFor(60000);
-  await expect(box.locator('.due-line')).toContainText('Past due');await expect(box.locator('.due-line')).toHaveCSS('color','rgb(153, 83, 92)');
+  await expect(box.locator('.due-line')).toContainText('Past due');await expect(box.locator('.due-line')).toHaveClass(/past-due/);
 });
 test('student instructions render safe Markdown and summary beside CourseWorks links',async({page})=>{
   await seed(page);await enter(page,'student');
@@ -54,7 +56,7 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
   await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
   await enter(page,'student','grades');await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
   await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
-  await expect(root.locator('.optional-task-label')).toHaveCount(4);
+  await expect(root.locator('[data-grade-code^=O]')).toHaveCount(4);
 });
 test('instructor edits inline, cancels, saves, reloads, and receives unsaved navigation and sign-out warnings',async({page})=>{
   await seed(page);await enter(page,'instructor');

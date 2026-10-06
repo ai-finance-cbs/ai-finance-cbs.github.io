@@ -1,3 +1,4 @@
+import {refreshCanvasAttendance} from './canvas-attendance-demo.js';
 import {canvasId,mappingValues,canvasItems,canvasPresent,canvasPosted,canvasStudentProjection} from './canvas-core.js';
 const empty=term=>({term_id:term,course:null,mappings:[],assignments:[],enrollments:[],submissions:[],groups:[],group_members:[],runs:[]});
 export function extendCanvas({readAll,saveAll,access}) {
@@ -15,10 +16,12 @@ export function extendCanvas({readAll,saveAll,access}) {
     result.course={term_id:term,course_id:'240315',generation:'demo',last_synced_at:now};
     result.assignments=canvasItems(d.items.filter(i=>i.term_id===term)).map((i,n)=>({id:String(100+n),name:i.title,published:true,points_possible:10,due_at:'2027-03-01T14:00:00Z'}));
     result.mappings=canvasItems(d.items.filter(i=>i.term_id===term)).filter(i=>i.site_key!=='Q6').map((i,n)=>({...i,canvas_assignment_id:String(100+n)}));
-    result.enrollments=d.roster.filter(r=>r.term_id===term).map((r,n)=>({...r,user_id:String(n+1),login_id:r.uni,match_status:'matched',enrollment_states:['active']}));
+    result.enrollments=d.roster.filter(r=>r.term_id===term).map((r,n)=>({...r,user_id:String(n+1),login_id:r.uni,section_ids:['10'],match_status:'matched',enrollment_states:['active']}));
     result.enrollments.push({user_id:'99',login_id:'zz9999',name:'Unmatched Canvas student',uni:null,match_status:'unmatched',enrollment_states:['active']});
     result.submissions=result.enrollments.flatMap((u,n)=>result.assignments.map((a,i)=>{
+      const quiz=result.mappings.some(m=>m.canvas_assignment_id===a.id && m.kind==='quiz');
       const s={user_id:u.user_id,assignment_id:a.id,workflow_state:n===2?'unsubmitted':'graded',late:n===1,missing:n===2,excused:false,late_policy_status:null,submitted_at:n===2?null:now,seconds_late:n===1?60:0,score:n===2?null:8,grade:n===2?null:'8',posted_at:i===0?now:null,assignment_visible:true,cached_due_at:a.due_at};
+      if(quiz)Object.assign(s,{workflow_state:'unsubmitted',score:null,grade:null,submitted_at:null,late:false,missing:false});
       return {...s,quiz_present:canvasPresent(s),posted_visible:canvasPosted(s)};
     }));
     result.groups=[{id:'10',category_id:'1',category_name:'Prototype',name:'Demo group'}];
@@ -27,7 +30,7 @@ export function extendCanvas({readAll,saveAll,access}) {
     write(d,term,result);
     return result;
   }
-  const write=(d,term,value)=>{d.canvas={...d.canvas,[term]:value};saveAll(d);};
+  const write=(d,term,value)=>{d.canvas={...d.canvas,[term]:value};refreshCanvasAttendance(d,term,access()?.email);saveAll(d);};
   return {
     async canvasStudentData(term) {
       const a=access(),d=readAll(),t=d.terms.find(t=>t.id===term);
@@ -62,6 +65,7 @@ export function extendCanvas({readAll,saveAll,access}) {
       const d=requireStaff(term,true),v=initial(d,term);
       if (!v.course) throw new Error('Configure the Canvas course first.');
       const now=new Date().toISOString(),id=crypto.randomUUID();
+      v.submissions=v.submissions.map(s=>({...s,quiz_present:canvasPresent(s),posted_visible:canvasPosted(s)}));
       v.course={...v.course,generation:id,last_synced_at:now};
       v.runs.unshift({id,status:'succeeded',started_at:now,finished_at:now,counts:Object.fromEntries(['assignments','enrollments','submissions','groups','group_members'].map(k=>[k,v[k].length])),error:null});write(d,term,v);return {ok:true};
     },

@@ -24,15 +24,15 @@ async function seed(page){
 test('week and assignment views keep instructions and full names with personal due dates and CourseWorks links',async({page})=>{
   await seed(page);await enter(page);const milestone=page.locator('#milestone-1');
   await expect(milestone.locator('h3')).toContainText('Milestone #1: Pre-Class Survey');
-  await expect(milestone.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs remaining');
-  await expect(milestone.locator('[data-submission-status]')).toHaveText('Done');
+  await expect(milestone.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs');
+  await expect(milestone.locator('[data-submission-status]')).toHaveText('Submitted ✓');
   const link=milestone.getByRole('link',{name:'Submit on CourseWorks →'});
   await expect(link).toHaveAttribute('href','https://courseworks2.columbia.edu/courses/240315/assignments/100');await expect(link).toHaveAttribute('target','_blank');
   await expect(milestone.locator('[data-canvas-health]')).toContainText('Last synced:');
   await expect(page.locator('input[type=file],.submission-box')).toHaveCount(0);
   await milestone.getByRole('link',{name:'Instructions →'}).click();await ready(page);
   await expect(page.locator('.prep-markdown')).toContainText('Survey instructions');await expect(page.locator('.page-heading h1')).toHaveText('Milestone #1: Pre-Class Survey');
-  await expect(page.locator('[data-submission-status]')).toHaveText('Done');await expect(page.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
+  await expect(page.locator('[data-submission-status]')).toHaveText('Submitted ✓');await expect(page.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
   await expect(page.getByRole('button',{name:/Choose file|Delete submission|^Submit$/})).toHaveCount(0);
   await page.clock.setFixedTime(new Date('2027-01-27T12:55:00Z'));await page.clock.runFor(60000);await expect(page.locator('.due-line')).toContainText('1 hrs 5 min remaining');
 });
@@ -71,7 +71,7 @@ test('Submit redirects to Assignments, preserves anchors and demo role, and has 
 test('delayed sync is labelled; failures withhold judgments, grades and groups until a success',async({page})=>{
   await seed(page);
   await page.evaluate(()=>{const k='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(k));d.canvas['spring-2027'].course.last_synced_at='2027-01-24T09:29:00Z';sessionStorage.setItem(k,JSON.stringify(d));});
-  await enter(page);await expect(page.locator('[data-canvas-health]')).toContainText('Updates delayed');await expect(page.locator('[data-submission-status]')).toHaveText('Done');
+  await enter(page);await expect(page.locator('[data-canvas-health]')).toContainText('Updates delayed');await expect(page.locator('[data-submission-status]')).toHaveText('Submitted ✓');
   await page.evaluate(()=>{const k='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(k));d.canvas['spring-2027'].runs.forEach(r=>r.started_at='2027-01-24T09:29:00Z');d.canvas['spring-2027'].runs.unshift({status:'failed',started_at:'2027-01-24T09:59:00Z'});sessionStorage.setItem(k,JSON.stringify(d));});
   for(const slug of ['week-1','assignments/milestone-1','grades','groups']){
     await enter(page,'student',slug);await expect(page.locator('[data-canvas-health]')).toContainText('Status unavailable');

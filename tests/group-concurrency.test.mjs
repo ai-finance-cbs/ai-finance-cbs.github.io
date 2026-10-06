@@ -54,7 +54,7 @@ test(
       }
       const [owner, instructor, a, b] = clients;
       await owner.query(bootstrapSQL);
-      for (const file of migrationFiles.filter(file=>!file.startsWith('019_')))
+      for (const file of migrationFiles.filter(file=>file<'019_'))
         await owner.query(
           await readFile(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'),
         );

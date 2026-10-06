@@ -15,15 +15,15 @@ async function seed(page){
   await enter(page,'instructor','gradebook');
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
-    await b.saveGrades([{uni:'ab1234',item_id:1,score:null}]);
+    window.seedArchivedGrades([{uni:'ab1234',item_id:1,score:null}]);
     await b.configureItem(1,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
     await b.configureItem(3,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
     await b.configureItem(6,{kind:'link',mode:'group',group_set_id:'demo-set',due_at:null});
     window.moveArchivedMember('ab1234','demo-group-1');
     window.seedArchivedWork([{item_id:1,file_name:'profile-demo.pdf'},{item_id:3,file_name:'late-demo.pdf'},{item_id:6,group_id:'demo-group-1',link:'https://example.test/prototype'}]);
     await b.pickRole('instructor');
-    await b.saveGrades([{uni:'ab1234',item_id:1,score:8,comment:'Visible feedback'},{uni:'ab1234',item_id:2,score:9,comment:'Private grading feedback'}]);
-    await b.saveGrades([{uni:'ab1234',item_id:7,score:0}]);
+    window.seedArchivedGrades([{uni:'ab1234',item_id:1,score:8,comment:'Visible feedback'},{uni:'ab1234',item_id:2,score:9,comment:'Private grading feedback'}]);
+    await window.seedCanvasScores([{uni:'ab1234',item_id:7,score:0}]);
     await b.saveAttendance(2,[{uni:'ab1234',status:'excused',excuse_reason:'Approved absence'}]);
     // Retain one pre-lockdown absence so the legacy card style is still covered.
     const old = JSON.parse(sessionStorage.getItem('b8403-demo-state-v3'));
@@ -59,7 +59,7 @@ test('student card matches roster, attendance, submissions, scores and totals; n
   await page.keyboard.press('ArrowUp');await expect(card.locator('h2')).toHaveText('Demo Student');await expect(card.getByLabel('Private instructor note')).toHaveValue('Synthetic private student note');
   await page.keyboard.press('Escape');await expect(page.locator('.grade-panel')).toBeHidden();await expect(page.locator('[data-student-profile="ab1234"]')).toBeFocused();
   // Reusing the same panel for grading and profiles must not leave stale keyboard behavior.
-  await page.locator('[data-grade-cell="ab1234:1"]').click();await expect(page.locator('.grade-panel')).toContainText('M1 · Demo Student');await expect(panel(page)).toHaveCount(0);
+  await page.getByRole('button',{name:'Demo Student M1: Done',exact:true}).click();await expect(page.getByRole('dialog',{name:'Canvas submission details'})).toBeVisible();await expect(panel(page)).toBeHidden();
 });
 test('Attendance and Roster open cards; grader card has email but no private note',async({page})=>{
   await seed(page);
@@ -114,7 +114,7 @@ for(const width of [1280,390,320]) test(`design B fits at ${width}px with initia
   await page.screenshot({path:`evidence/phase-g/student-card-${width}.png`,fullPage:true});
 });
 
-test('every work chip opens its grade panel and Attendance/Roster use the same grading controls',async({page})=>{
+test('every archived work chip opens a read-only panel from staff views',async({page})=>{
   await seed(page);
   const codes=await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();return (await b.classData()).items.map(i=>i.code);});
   for(const code of codes){
@@ -125,7 +125,7 @@ test('every work chip opens its grade panel and Attendance/Roster use the same g
   for(const slug of ['attendance','roster']){
     await enter(page,'instructor',slug);await page.locator('[data-student-profile="ab1234"]').click();await panel(page).locator('[data-profile-chip=M2]').click();
     await expect(page.locator('#grade-panel-title')).toHaveText('M2 · Demo Student');
-    await page.getByLabel('Score',{exact:true}).fill('7');await page.getByRole('button',{name:'Save student grade',exact:true}).click();
-    await expect(panel(page).locator('.student-card')).toBeVisible();await expect(panel(page).locator('[data-profile-all-total]')).toHaveText('15 incl. hidden');
+    await expect(page.getByLabel('Score',{exact:true})).toBeDisabled();
+    await expect(page.getByRole('button',{name:'Save student grade',exact:true})).toBeDisabled();
   }
 });

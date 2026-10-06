@@ -118,7 +118,12 @@ export function extendSubmissions({read,save,access,allTerms}) {
       const d=read(),result=store(d,id,'link',{link,started_at:new Date().toISOString()});save(d);return result;
     },
     async submissionUrl(id,version='current') {
-      const a=access(),d=read(),s=d.submissions.find(s=>s.id===id);
+      const a=access();let d,s;
+      // Downloads identify a submission, so find its readable term before checking ownership.
+      for (const term of allTerms()) {
+        if (a?.view_as && term.id!==a.term_id) continue;
+        try {const candidate=read(term.id),row=candidate.submissions.find(row=>row.id===id);if(row){d=candidate;s=row;break;}} catch { /* An unreadable term cannot supply a file. */ }
+      }
       if(!s || a.role==='auditor' || !(['instructor','grader'].includes(a.role) || s.owner_uni===a.uni || d.members.some(m=>m.group_id===s.group_id && m.uni===a.uni)))throw new Error('Submission unavailable.');
       const data=version==='on-time'?s.on_time_data:s.data;if(!data)throw new Error('File unavailable.');
       const url=URL.createObjectURL(await (await fetch(data)).blob());setTimeout(()=>URL.revokeObjectURL(url),300000);return url;

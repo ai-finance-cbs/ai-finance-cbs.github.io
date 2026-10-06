@@ -80,7 +80,7 @@ test('student reads content but cannot read roster, promote self, or upload file
     (await rows("update public.assignments set title='hacked' where id=1 returning *")).length,
     0,
   );
-  await assert.rejects(rows(`select public.replace_roster('[{"uni":"hacked1"}]')`), /Instructor/);
+  await assert.rejects(rows(`select public.replace_roster('[{"uni":"hacked1"}]')`), /Instructor|permission denied/);
 });
 test('auditor sees only shared metadata and cannot bypass the signed-URL function', async () => {
   await as('auditor');
@@ -155,21 +155,14 @@ test('instructor edits data but cannot delete or rename the owner allowlist entr
     0,
   );
 });
-test('roster import is atomic and revokes students immediately', async () => {
+test('retired roster import is denied; verified roster removals still revoke access', async () => {
   await as('instructor');
-  await assert.rejects(rows('select public.replace_roster(null)'), /valid roster/);
-  await assert.rejects(rows("select public.replace_roster('[]')"), /valid roster/);
-  await assert.rejects(
-    rows(`select public.replace_roster('[{"uni":"ab1234"},{"uni":"ab1234"}]')`),
-    /duplicate/,
-  );
-  assert.equal((await rows('select * from public.roster')).length, 2);
-  await rows(`select public.replace_roster('[{"uni":"ef9876","name":"New Student"}]')`);
-  await as('student');
-  assert.equal((await rows('select public.get_access() a'))[0].a.role, 'unlisted');
-  assert.equal((await rows('select * from public.assignments')).length, 0);
-  await as('gsb');
-  assert.equal((await rows('select public.get_access() a'))[0].a.role, 'unlisted');
+  await assert.rejects(rows("select public.replace_roster('[]')"),/permission denied/);
+  assert.equal((await rows('select * from public.roster')).length,2);
+  // Seed the access-control change directly. The old UI no longer manages enrollment.
+  await db.exec('reset role');await rows("delete from public.roster where uni='ab1234'");
+  await as('student');assert.equal((await rows('select public.get_access() a'))[0].a.role,'unlisted');
+  assert.equal((await rows('select * from public.assignments')).length,0);
 });
 test('forged JWT email and mutable user metadata do not grant access', async () => {
   await as('outsider');

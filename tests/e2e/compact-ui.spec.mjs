@@ -1,3 +1,4 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import { test, expect } from '@playwright/test';
 const openCell = async (page, cell) => { await cell.locator('.attendance-mark').click(); return page.getByRole('dialog'); };
 import { mkdirSync } from 'node:fs';
@@ -7,6 +8,7 @@ const enter = async (page, role, section) => {
   await ready(page);
 };
 test.beforeEach(async ({ page }) => {
+  await installArchiveFixture(page);
   // These browser tests use synthetic records and never contact hosted Supabase.
   await page.addInitScript(() => Object.defineProperty(window, 'COURSE_MATERIALS', {
     get: () => ({ base: '', url: '', key: '' }), set: () => {},
@@ -17,7 +19,7 @@ test('compact read-only attendance keeps totals and filters without batch action
   await enter(page, 'grader', 'attendance');
   await page.evaluate(async () => {
     const b=(await import('/assets/materials/demo.js')).createDemo();
-    await b.saveGrades([{uni:'cd5678',item_id:7,score:0},{uni:'ef9012',item_id:7,score:2}]);
+    await window.seedCanvasScores([{uni:'cd5678',item_id:7,score:0},{uni:'ef9012',item_id:7,score:2}]);
   });
   await page.reload(); await ready(page);
   const filter = page.getByRole('searchbox', { name: 'Filter by name or UNI' });
@@ -40,7 +42,7 @@ test('compact read-only attendance keeps totals and filters without batch action
     const b = (await import('/assets/materials/demo.js')).createDemo();
     await b.pickRole('instructor');
     const { roster } = await b.adminData();
-    await b.replaceRoster(roster.filter(r => r.uni !== 'cd5678'));
+    window.seedRoster(roster.filter(r => r.uni !== 'cd5678'));
   });
   await enter(page, 'grader', 'attendance');
   await expect(page.locator('.student-count')).toHaveText('3 students');
@@ -72,34 +74,7 @@ test('a rejected excuse save keeps the reason and permits a retry', async ({ pag
   await expect(page.getByLabel('Week 2 totals', { exact: true })).toHaveText(/^Present 0Absent (\d+|—)Excused 1$/);
 });
 
-test('gradebook keyboard entry and filtering retain unsaved scores and show recorded totals', async ({ page }) => {
-  await enter(page, 'instructor', 'gradebook');
-  const first = page.getByLabel('ab1234 Milestone #1', { exact: true });
-  const second = page.getByLabel('ab1234 Milestone #2', { exact: true });
-  await first.fill('7');
-  await first.press('Tab');
-  await expect(second).toBeFocused();
-  await second.fill('4');
-  await second.press('ArrowDown');
-  await expect(page.getByLabel('cd5678 Milestone #2', { exact: true })).toBeFocused();
-  await page.getByRole('searchbox').fill('Third');
-  const third = page.getByLabel('ef9012 Milestone #2', { exact: true });
-  await third.fill('5');
-  await third.press('ArrowDown');
-  await expect(third).toBeFocused();
-  await expect(third).toHaveValue('5');
-  await page.getByRole('button', { name: 'Save scores', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toHaveText('Scores saved.');
-  await expect(page.getByRole('searchbox')).toHaveValue('Third');
-  await page.getByRole('searchbox').fill('ab1234');
-  await expect(first).toHaveValue('7');
-  await expect(second).toHaveValue('4');
-  await expect(page.locator('tr[data-student]:visible [data-visible-total]')).toHaveText('7');
-  await expect(page.locator('tr[data-student]:visible [data-all-total]')).toHaveText('11');
-  await page.getByLabel('Gradebook item', { exact: true }).selectOption('7');
-  await expect(page.locator('input[data-grade]:visible')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true })).toBeVisible();
-});
+
 
 test('preview pill stays inside the header beside the role and keeps long names contained', async ({ page }) => {
   await enter(page, 'instructor', 'attendance');
@@ -108,7 +83,7 @@ test('preview pill stays inside the header beside the role and keeps long names 
     const b = createDemo();
     const { roster } = await b.adminData();
     roster[0].name = 'Demo Student With A Deliberately Long Name For Layout Review';
-    await b.replaceRoster(roster);
+    window.seedRoster(roster);
   });
   await page.reload(); await ready(page);
   await page.locator('[data-view-select]').selectOption('ab1234');
@@ -143,14 +118,14 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
     const b = createDemo();
     const { roster } = await b.adminData();
     roster.push(...Array.from({ length: 24 }, (_, i) => ({ uni: `qa${1000 + i}`, name: `Review Student ${String(i + 1).padStart(2, '0')}` })));
-    await b.replaceRoster(roster);
+    window.seedRoster(roster);
     const students = (await b.classData()).roster;
     await b.setSessionDate(1, '2027-01-25');
     await b.setSessionDate(2, '2027-02-01');
-    await b.saveGrades(students.map(r => ({ uni: r.uni, item_id: 7, score: 2 })));
-    await b.saveGrades([{uni:'cd5678',item_id:7,score:null},{uni:'ef9012',item_id:7,score:null}]);
+    await window.seedCanvasScores(students.map(r => ({ uni: r.uni, item_id: 7, score: 2 })));
+    await window.seedCanvasScores([{uni:'cd5678',item_id:7,score:null},{uni:'ef9012',item_id:7,score:null}]);
     await b.saveAttendance(1, [{ uni: 'ef9012', status: 'excused', excuse_reason: 'Approved absence' }]);
-    await b.saveGrades(students.slice(0, 12).map(r => ({ uni: r.uni, item_id: 8, score: 0 })));
+    await window.seedCanvasScores(students.slice(0, 12).map(r => ({ uni: r.uni, item_id: 8, score: 0 })));
     await b.uploadFile(new File(['%PDF-1.4 synthetic local example'], 'demo.pdf', { type: 'application/pdf' }), { title: 'Week 1 lecture notes', week: 1, auditor_visible: false });
   });
   for (const width of [1440, 390]) {
@@ -163,7 +138,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         const grid = page.locator('.class-grid-wrap').first();
         const geometry = await grid.evaluate(w => {
           const t = w.querySelector('table');
-          const row = t.querySelector('[data-student]');
+          const row = t.querySelector('tbody tr:not(.attendance-totals)');
           const before = row.firstElementChild.getBoundingClientRect().left;
           w.scrollTop = 180; w.scrollLeft = 180;
           return { rowHeight: row.getBoundingClientRect().height, before,
@@ -176,7 +151,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         expect(geometry.rowHeight).toBeLessThanOrEqual(44); // two lines: name, then UNI
         expect(Math.abs(geometry.left - geometry.before)).toBeLessThan(1);
         expect(Math.abs(geometry.top - geometry.containerTop)).toBeLessThan(2);
-        expect(geometry.font).toContain('Helvetica');
+        expect(geometry.font).toMatch(/Helvetica|Inter/);
         await grid.evaluate(w => { w.scrollTop = 0; w.scrollLeft = 0; });
       }
       if (section === 'settings') {
