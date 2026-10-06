@@ -87,12 +87,14 @@ export function normalizeSnapshot(raw) {
     points_possible:number(a.points_possible),group_category_id:a.group_category_id ? id(a.group_category_id) : null,
     submission_types:a.submission_types || [],only_visible_to_overrides:a.only_visible_to_overrides===true}));
   const submissions=[];
-  for (const s of raw.submissions) {
+  for (let s of raw.submissions) {
     const user_id=id(s.user_id), assignment_id=id(s.assignment_id), user=users.get(user_id);
     // Canvas's Test Student is not a StudentEnrollment. It cannot establish a site identity.
     if (!user) continue;
     const a=raw.assignments.find(a=>String(a.id)===assignment_id);
     if (!a) throw new CanvasError('Canvas assignments changed during sync. Retry the complete sync.');
+    // Canvas sends excused:null (not false) on unsubmitted work; treat null as not excused.
+    if (s.excused==null) s={...s,excused:false};
     if (![s.late,s.missing,s.excused].every(v=>typeof v==='boolean') || !['unsubmitted','submitted','graded','pending_review'].includes(s.workflow_state)) throw new CanvasError('Canvas returned invalid submission flags.');
     const effective=effectiveAssignment(a,user,members);
     submissions.push({user_id,assignment_id,workflow_state:s.workflow_state,late:s.late,missing:s.missing,excused:s.excused,

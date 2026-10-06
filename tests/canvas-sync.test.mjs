@@ -127,3 +127,9 @@ test('cron secret digest comparison handles equality, different lengths, and fir
     const {handler,calls}=handlerSetup();assert.equal((await handler(request({'x-cron-secret':provided}))).status,401);assert.deepEqual(calls,[]);
   }
 });
+
+test('real Canvas sends excused:null on unsubmitted work; it normalizes to not excused', () => {
+  const f=canvasFixture(); f.submissions[0].excused=null;
+  const s=normalizeSnapshot(f).submissions[0]; assert.equal(s.excused,false);
+  f.submissions[0].excused='yes'; assert.throws(()=>normalizeSnapshot(f),/invalid submission flags/);
+});
