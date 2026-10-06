@@ -1227,3 +1227,7 @@ body.standalone-tool .content { max-width:none; }
 @media (max-width:1180px) { .term-switch { font-size:12px; margin-left:8px; } }
 /* Very small phones: no room for the menu; keep the plain term label. */
 @media (max-width:480px) { .brand-heading .term-switch { display:none; } .topbar .brand-term[hidden] { display:inline !important; } }
+/* Speakers: bulleted list under each week. */
+.class-tools #materials-root .speaker-week-list { list-style:disc; padding-left:1.2em; }
+.class-tools #materials-root .speaker-week-list > .speaker-row { display:list-item; }
+.class-tools #materials-root .speaker-week-list > .speaker-row::marker { color:#8a8a8a; }

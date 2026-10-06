@@ -135,8 +135,9 @@ export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
         name.append(row.contact && safePrepLink(url) ? el('a', row.name, { href:url, target:'_blank', rel:'noopener noreferrer' }) : document.createTextNode(row.name));
         heading.append(name);
         if (row.affiliation) heading.append(el('span', row.affiliation, { class:'speaker-affiliation' }));
-        const detail = el('span', null, { class:'speaker-detail', title:[row.topic, row.notes].filter(Boolean).join(' · ') });
-        if (row.topic) detail.append(el('span', row.topic, { class:'speaker-topic' }));
+        const detail = el('span', null, { class:'speaker-detail', title:row.notes || '' });
+        // The week heading already names the topic; show it only when it adds something.
+        if (row.topic && row.topic.trim().toLowerCase() !== (week.title || '').trim().toLowerCase()) detail.append(el('span', row.topic, { class:'speaker-topic' }));
         if (row.notes) detail.append(el('span', row.notes, { class:'speaker-notes' }));
         heading.append(detail);
         const actions = el('div', null, { class:'speaker-actions' });
