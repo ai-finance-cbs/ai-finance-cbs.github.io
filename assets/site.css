@@ -1232,17 +1232,22 @@ body.standalone-tool .content { max-width:none; }
 .class-tools #materials-root .speaker-week-list > .speaker-row { display:list-item; }
 .class-tools #materials-root .speaker-week-list > .speaker-row::marker { color:#8a8a8a; }
 
-/* Settings: one list of rows; each opens with a round plus that turns into a solid minus. */
+/* Every collapsible row in the class tools uses the same toggle: a round plus that turns into a solid minus. */
 #materials-root[data-page="settings"] { max-width:860px; }
 #materials-root[data-page="settings"] > details.admin-section { border:0; border-top:1px solid #ECECEC; margin:0; padding:0; }
-#materials-root[data-page="settings"] > details.admin-section > summary { list-style:none; cursor:pointer; padding:13px 0; font:500 14.5px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; display:flex; justify-content:space-between; align-items:center; }
-#materials-root[data-page="settings"] > details.admin-section > summary::-webkit-details-marker { display:none; }
-#materials-root[data-page="settings"] > details.admin-section > summary::after { content:"+"; width:22px; height:22px; box-sizing:border-box; border:1.5px solid #2F6FB8; border-radius:50%; color:#2F6FB8; display:grid; place-items:center; font:600 15px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; flex-shrink:0; }
-#materials-root[data-page="settings"] > details.admin-section[open] > summary::after { content:"–"; background:#2F6FB8; color:#fff; }
-#materials-root[data-page="settings"] > details.admin-section > summary:hover::after { background:#EEF4FB; }
-#materials-root[data-page="settings"] > details.admin-section[open] > summary:hover::after { background:#24599a; }
 #materials-root[data-page="settings"] > details.admin-section[open] { padding-bottom:16px; }
 #materials-root[data-page="settings"] > :is(details.admin-section, .storage-meter):last-of-type { border-bottom:1px solid #ECECEC; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu) > summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 0; font:500 14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+#materials-root[data-page="settings"] > details.admin-section > summary { padding:13px 0; font-size:14.5px; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu) > summary::-webkit-details-marker { display:none; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu) > summary::marker { content:""; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu) > summary::after { content:"+"; width:22px; height:22px; box-sizing:border-box; border:1.5px solid #2F6FB8; border-radius:50%; color:#2F6FB8; display:grid; place-items:center; font:600 15px/1 "Helvetica Neue",Helvetica,Arial,sans-serif; flex-shrink:0; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu)[open] > summary::after { content:"–"; background:#2F6FB8; color:#fff; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu) > summary:hover::after { background:#EEF4FB; }
+:is(#materials-root, .student-profile, .profile-panel) details:not(.staff-menu)[open] > summary:hover::after { background:#24599a; }
+/* Rows nested inside an open row use a smaller toggle. */
+:is(#materials-root, .student-profile, .profile-panel) details details > summary { padding:8px 0; font-size:13px; font-weight:400; }
+:is(#materials-root, .student-profile, .profile-panel) details details > summary::after { width:18px; height:18px; font-size:13px; border-width:1.25px; }
 .storage-meter { border-top:1px solid #EFEFEF; padding:12px 0 10px; font-size:13px; color:#555; }
 .storage-bar { height:6px; border-radius:99px; background:#EEF1F4; overflow:hidden; margin-bottom:6px; max-width:320px; }
 .storage-bar span { display:block; height:100%; background:#2F6FB8; border-radius:99px; }
