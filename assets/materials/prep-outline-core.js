@@ -65,3 +65,84 @@ export function parsePreparation(body, names) {
 export function serializePreparation(notes, names) {
   return names.filter(name => notes[name] !== '').map(name => `## ${name}\n${marker}\n${notes[name]}\n\n`).join('');
 }
+
+export const LAYOUT_MARKER = '<!-- preparation-layout v1 -->';
+export const CARD_KINDS = ['lecture', 'exercise', 'quiz'];
+const titleKey = name => name.trim().toLowerCase();
+export function cardTitle(value, sections, currentName = null) {
+  const name = typeof value === 'string' ? value.trim() : '';
+  if (!name || [...name].length > 120 || /[\r\n\u2028\u2029]/.test(name))
+    throw new Error('Enter a single-line title of 1–120 characters.');
+  if (['logistics', 'other notes'].includes(titleKey(name))) throw new Error('That title is reserved.');
+  if (/^(lecture|in-class exercise):\s*/i.test(name)) throw new Error('Enter the title without its type prefix.');
+  if (sections.some(s => s.name !== currentName && titleKey(s.name) === titleKey(name)))
+    throw new Error('Each card needs a unique title within the week.');
+  return name;
+}
+
+// Legacy weeks continue using their public outline. A marked week owns its layout.
+export function preparationDocument(body, outline) {
+  if (!/^<!-- preparation-layout v1 -->\r?\n/.test(body)) {
+    const sections = preparationSections(outline);
+    return { layout:false, sections:sections.filter(s => s.name !== OTHER_NOTES),
+      notes:parsePreparation(body, sections.map(s => s.name)) };
+  }
+  const content = body.slice(body.indexOf('\n') + 1), blocks = [];
+  const pattern = /^##[ \t]+(.+?)[ \t]*\r?\n(<!-- preparation-section(?:[^\r\n]*?) -->)\r?\n/gm;
+  for (const match of content.matchAll(pattern)) {
+    blocks.push({ name:match[1], marker:match[2], start:match.index, content:match.index + match[0].length });
+    // Unknown headings within this final block are literal notes, as in legacy weeks.
+    if (titleKey(match[1]) === 'other notes') break;
+  }
+  const sections = [], entries = [], other = [content.slice(0, blocks[0]?.start ?? content.length)];
+  let logistics = '';
+  const seen = new Set();
+  for (const [i, block] of blocks.entries()) {
+    const end = blocks[i + 1]?.start ?? content.length;
+    const value = content.slice(block.content, end).replace(/\r?\n\r?\n$/, '');
+    if (titleKey(block.name) === 'other notes') { other.push(value); continue; }
+    const type = /^<!-- preparation-section kind=(lecture|exercise|quiz|logistics)( appendix)? -->$/.exec(block.marker);
+    const key = titleKey(block.name);
+    let valid = !!type && !seen.has(key);
+    if (key === 'logistics') valid &&= type[1] === 'logistics' && !type[2];
+    else {
+      try { cardTitle(block.name, sections); } catch { valid = false; }
+      valid &&= type?.[1] !== 'logistics';
+    }
+    if (!valid) { other.push(content.slice(block.start, end)); continue; }
+    seen.add(key);
+    if (key === 'logistics') logistics = value;
+    else { sections.push({ name:block.name, kind:type[1], ...(type[2] ? { appendix:true } : {}) }); entries.push([block.name, value]); }
+  }
+  return { layout:true,
+    sections:[{ name:'Logistics', kind:'logistics' }, ...sections.filter(s => !s.appendix), ...sections.filter(s => s.appendix)],
+    notes:Object.fromEntries([['Logistics', logistics], ...entries, [OTHER_NOTES, other.join('')]]) };
+}
+
+export function serializePreparationLayout({ sections, notes }) {
+  const names = [];
+  for (const section of sections.filter(s => s.name !== 'Logistics')) {
+    cardTitle(section.name, names); names.push(section);
+    if (!CARD_KINDS.includes(section.kind)) throw new Error('Choose Lecture, In-Class Exercise, or Quiz.');
+  }
+  const cards = [{ name:'Logistics', kind:'logistics' },
+    ...sections.filter(s => s.name !== 'Logistics' && !s.appendix),
+    ...sections.filter(s => s.name !== 'Logistics' && s.appendix),
+    { name:OTHER_NOTES, kind:'lecture' }];
+  return LAYOUT_MARKER + '\n' + cards.map(s =>
+    `## ${s.name}\n<!-- preparation-section kind=${s.kind}${s.appendix ? ' appendix' : ''} -->\n${notes[s.name] ?? ''}\n\n`).join('');
+}
+
+// Moves stay inside a group unless a new group is explicitly selected.
+export function movePreparationCard(sections, name, appendix, before = null) {
+  const card = sections.find(s => s.name === name);
+  if (!card || name === 'Logistics') throw new Error('Logistics stays first.');
+  if (before === name) return sections;
+  const group = sections.filter(s => s.name !== name && s.name !== 'Logistics' && !!s.appendix === appendix);
+  const index = before == null ? group.length : group.findIndex(s => s.name === before);
+  if (index < 0) throw new Error('Choose a card in the destination group.');
+  const moved = { ...card }; if (appendix) moved.appendix = true; else delete moved.appendix;
+  group.splice(index, 0, moved);
+  const other = sections.filter(s => s.name !== name && s.name !== 'Logistics' && !!s.appendix !== appendix);
+  return [sections.find(s => s.name === 'Logistics'), ...(appendix ? other : group), ...(appendix ? group : other)];
+}

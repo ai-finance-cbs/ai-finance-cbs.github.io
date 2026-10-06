@@ -4,7 +4,7 @@ const ready = page => expect(page.locator('html')).toHaveAttribute('data-materia
 const enter = async (page,week=1) => { await page.goto(`/materials/preparation/week-${week}/?fakeauth=instructor`); await ready(page); };
 const section = (page,name) => page.locator(`[data-prep-section="${name}"]`);
 const noteBody = page => page.evaluate(async () => (await (await import('/assets/materials/demo.js')).createDemo().instructorNote(1)).body);
-const edit = async panel => panel.locator('.prep-section-heading button').click();
+const edit = async panel => panel.locator('.prep-content-edit').click();
 const save = async panel => { await panel.getByRole('button',{name:'Save',exact:true}).click(); await expect(panel.locator('[data-prep-status]')).toContainText('Saved'); };
 test.beforeEach(async ({page}) => {
   await page.addInitScript(() => Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
@@ -18,7 +18,7 @@ test('every week renders its public outline and no reading links and no editor o
     const plan = outline.plan || ['Introduction',...outline.topics.map(t=>t.name),'Quiz (3 questions)',...outline.exercises];
     const appendix = outline.appendix || [];
     const label = n => outline.exercises.includes(n) ? `In-Class Exercise: ${n}` : n === 'Quiz (3 questions)' ? n : `Lecture: ${n}`;
-    const expected = ['Logistics',...plan.map(label),...(appendix.length?['Appendix']:[]),...appendix.map(label)];
+    const expected = ['Logistics',...plan.map(label),'Appendix',...appendix.map(label)];
     expect(await page.locator('.prep-section-heading :is(h2,h3), .preparation-appendix > h2').allTextContents()).toEqual(expected);
     await expect(page.locator('.preparation-goal')).toHaveText(outline.goal);
     expect(await page.locator('.preparation-plan .prep-exercise h2').allTextContents()).toEqual(plan.filter(n=>outline.exercises.includes(n)).map(label));

@@ -78,3 +78,78 @@ test('a section save preserves every other saved section and enforces the whole-
   assert.throws(() => noteValues(1,serializePreparation({...saved,Logistics:'x'.repeat(50000)},names)),/50,000/);
   assert.equal(saved.Logistics,'Keep room note');
 });
+
+const { LAYOUT_MARKER, preparationDocument, serializePreparationLayout, cardTitle, movePreparationCard } = await import('../assets/materials/prep-outline-core.js');
+const outline = { topics:[{name:'Evidence'},{name:'Decisions'}], exercises:['Memo exercise'], appendix:['Memo exercise'] };
+
+test('v1 round-trips order, empty cards, types, appendix, hidden notes, and nested Markdown', () => {
+  const doc = preparationDocument('',outline);
+  doc.notes.Logistics = 'Room A';
+  doc.notes.Evidence = '\n## Nested heading\n\n```md\n## Another heading\n```\n<script>text only</script> 🌐\n\n';
+  doc.notes[OTHER_NOTES] = 'Retired\n## An old heading\nKeep this exactly.\n';
+  doc.sections = movePreparationCard(doc.sections,'Memo exercise',false,'Evidence');
+  doc.sections = movePreparationCard(doc.sections,'Decisions',true);
+  const body = serializePreparationLayout(doc), parsed = preparationDocument(body,{});
+  assert.ok(body.startsWith(LAYOUT_MARKER+'\n'));
+  assert.deepEqual(parsed, {...doc,layout:true,sections:doc.sections.map(s=>s.name==='Logistics'?{...s,kind:'logistics'}:s)});
+  assert.equal(serializePreparationLayout(parsed),body);
+  assert.ok(body.includes('## Introduction\n<!-- preparation-section kind=lecture -->\n\n\n'));
+  assert.ok(body.includes('## Decisions\n<!-- preparation-section kind=lecture appendix -->'));
+  assert.deepEqual(preparationDocument(body,{topics:[{name:'Changed default'}]}),parsed);
+  assert.deepEqual(preparationDocument(body.replaceAll('\n','\r\n'),{}).sections,parsed.sections);
+});
+
+test('no layout line keeps legacy defaults and conversion keeps every saved and hidden note', () => {
+  const body = 'Preamble\n\n## Logistics\nRoom A\n\n## Evidence\nKeep evidence\n\n## Retired\nRetired content\n\n## Evidence\nDuplicate content';
+  const doc = preparationDocument(body,outline), all = preparationSections(outline).map(s=>s.name);
+  assert.equal(doc.layout,false); assert.deepEqual(doc.notes,parsePreparation(body,all));
+  assert.deepEqual(doc.sections,preparationSections(outline).filter(s=>s.name!==OTHER_NOTES));
+  const saved = serializePreparation(doc.notes,all);
+  assert.equal(saved,serializePreparation(parsePreparation(body,all),all));
+  const parsed = preparationDocument(serializePreparationLayout(doc),{});
+  assert.deepEqual(parsed.notes,doc.notes);
+  for (const text of ['Preamble','Retired content','Duplicate content']) assert.ok(parsed.notes[OTHER_NOTES].includes(text));
+  assert.equal(parsed.sections[0].kind,'logistics');
+  assert.equal(parsed.sections.length,doc.sections.length);
+});
+
+test('v1 malformed markers, reserved titles, and duplicate names stay hidden without losing content', () => {
+  const body = LAYOUT_MARKER+'\nPreamble\n\n'+[
+    '## Logistics\n<!-- preparation-section kind=logistics -->\nRoom\n\n',
+    '## Custom card\n<!-- preparation-section kind=quiz -->\nKeep\n\n',
+    '## CUSTOM CARD\n<!-- preparation-section kind=exercise appendix -->\nDuplicate\n\n',
+    '## Unknown type\n<!-- preparation-section kind=seminar -->\nUnrecognized\n\n',
+    '## Not logistics\n<!-- preparation-section kind=logistics -->\nWrong type\n\n',
+    '## Old marker\n<!-- preparation-section -->\nOld notes\n\n',
+    '## Other notes\n<!-- preparation-section kind=lecture -->\nTail\n## Logistics\nLiteral heading',
+  ].join('');
+  const doc = preparationDocument(body,outline);
+  assert.deepEqual(doc.sections.map(s=>s.name),['Logistics','Custom card']);
+  for (const text of ['Preamble','Duplicate','Unrecognized','Wrong type','Old notes','Tail','Literal heading']) assert.ok(doc.notes[OTHER_NOTES].includes(text));
+  assert.deepEqual(preparationDocument(serializePreparationLayout(doc),{}),doc);
+});
+
+test('titles are single-line, bounded, case-insensitively unique, and never store display prefixes', () => {
+  const sections = [{name:'Opening'},{name:'Appendix card',appendix:true}];
+  assert.equal(cardTitle(' Renamed ',sections,'Opening'),'Renamed');
+  assert.equal(cardTitle('opening',sections,'Opening'),'opening');
+  assert.equal(cardTitle('🌐'.repeat(120),sections),'🌐'.repeat(120));
+  for (const value of ['', ' ', 'x'.repeat(121), 'New\ncard', 'New\rcard', 'LOGISTICS', 'other notes', 'OPENING', 'appendix CARD', 'Lecture: Intro', 'In-Class Exercise: Memo'])
+    assert.throws(()=>cardTitle(value,sections));
+  const doc = preparationDocument('',outline);
+  doc.sections.push({name:'__proto__',kind:'lecture'});
+  doc.notes = {...doc.notes,['__proto__']:'Literal prototype name'};
+  assert.equal(preparationDocument(serializePreparationLayout(doc),{}).notes.__proto__,'Literal prototype name');
+});
+
+test('layout moves preserve Logistics and group order; the whole-week body still has a size limit', () => {
+  const doc = preparationDocument('',outline);
+  assert.throws(()=>movePreparationCard(doc.sections,'Logistics',true),/stays first/);
+  assert.throws(()=>movePreparationCard(doc.sections,'Evidence',false,'Missing'),/destination/);
+  const moved = movePreparationCard(doc.sections,'Evidence',true);
+  assert.equal(moved[0].name,'Logistics');
+  assert.deepEqual(moved.filter(s=>s.appendix).map(s=>s.name),['Memo exercise','Evidence']);
+  assert.ok(!doc.sections.find(s=>s.name==='Evidence').appendix);
+  assert.throws(()=>noteValues(1,serializePreparationLayout({...doc,notes:{...doc.notes,Evidence:'x'.repeat(50000)}})),/50,000/);
+  assert.throws(()=>serializePreparationLayout({...doc,sections:[...doc.sections,{name:'Invalid type',kind:'unknown'}]}),/Choose Lecture/);
+});
