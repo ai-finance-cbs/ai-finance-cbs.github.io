@@ -14,7 +14,7 @@ async function seed(page) {
   await enter(page,'instructor','settings');
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
-    for(const id of [2,3,5,6])await b.configureItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
+    for(const id of [2,3,5,6])window.configureArchivedItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
     window.moveArchivedMember('ab1234','demo-group-1');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.grades=[];sessionStorage.setItem(key,JSON.stringify(d));
   });

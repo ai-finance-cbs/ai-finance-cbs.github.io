@@ -120,8 +120,8 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
     roster.push(...Array.from({ length: 24 }, (_, i) => ({ uni: `qa${1000 + i}`, name: `Review Student ${String(i + 1).padStart(2, '0')}` })));
     window.seedRoster(roster);
     const students = (await b.classData()).roster;
-    await b.setSessionDate(1, '2027-01-25');
-    await b.setSessionDate(2, '2027-02-01');
+    await b.setSessionTimes(1, '2027-01-25T14:00:00Z', '2027-01-25T17:00:00Z');
+    await b.setSessionTimes(2, '2027-02-01T14:00:00Z', '2027-02-01T17:00:00Z');
     await window.seedCanvasScores(students.map(r => ({ uni: r.uni, item_id: 7, score: 2 })));
     await window.seedCanvasScores([{uni:'cd5678',item_id:7,score:null},{uni:'ef9012',item_id:7,score:null}]);
     await b.saveAttendance(1, [{ uni: 'ef9012', status: 'excused', excuse_reason: 'Approved absence' }]);
@@ -155,7 +155,7 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         await grid.evaluate(w => { w.scrollTop = 0; w.scrollLeft = 0; });
       }
       if (section === 'settings') {
-        await expect(page.locator('#materials-root > details')).toHaveCount(10);
+        await expect(page.locator('#materials-root > details')).toHaveCount(9);
         await expect(page.locator('#materials-root > details[open]')).toHaveCount(0);
       }
       await page.screenshot({ path: `evidence/compact-ui/${section}-${width}.png`, fullPage: true });

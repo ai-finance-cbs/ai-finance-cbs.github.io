@@ -1,5 +1,4 @@
-// Historical archive workflow: run before migration 019 retires submission and group writes.
-// Retired grade/roster APIs seed historical rows directly; their client wrappers no longer exist.
+// Historical rows are seeded as the database owner; exercise client reads at the latest schema.
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createBackend} from '../assets/materials/supabase.js';
@@ -43,7 +42,7 @@ function query(table) {
   return q;
 }
 before(async()=>{
-  h=await phaseDatabase(undefined,'018_canvas_mirror.sql');await h.as('owner');
+  h=await phaseDatabase();await h.as('owner');
   await h.rows("insert into assignments(term_id,id,title,due,points,description,deliverable,grading,auditor_visible) values($1,1,'Demo','Week 1',10,'Synthetic','Demo','Demo',false)",[TERM]);
   const client={from:query,rpc:async(name,args={})=>{
     const params=Object.values(args).map(v=>typeof v==='object' && v!==null?JSON.stringify(v):v);
@@ -75,15 +74,12 @@ test('review 12: legacy file upload, visibility and release work under narrow co
   const changed=(await backend.files())[0];assert.equal(changed.auditor_visible,false);assert.equal(changed.released,false);
 });
 test('review 12: existing staff tools use the new RPC signatures and term-scoped tables',async()=>{
-  await h.rpc('replace_roster',JSON.stringify([{uni:'aa1001',name:'Alice'},{uni:'bb1002',name:'Bob'}]));assert.equal((await backend.adminData()).roster.length,2);
+  assert.equal((await backend.adminData()).roster.length,4);
   await backend.saveAllowlist({email:'extra@columbia.edu',role:'auditor'});await backend.removeAllowlist('extra@columbia.edu');
   await backend.linkStudent('alias@gsb.columbia.edu','aa1001');assert.ok((await backend.studentAccounts()).some(r=>r.uni==='aa1001'));await backend.linkStudent('alias@gsb.columbia.edu',null);
   assert.ok(Array.isArray(await backend.testAccounts()));assert.equal((await backend.terms())[0].id,TERM);
-  await backend.setSessionDate(1,'2027-03-01');await backend.setSessionTimes(1,'2027-03-01T14:00Z','2027-03-01T17:00Z');assert.equal(new Date((await backend.sessions())[0].date).toISOString().slice(0,10),'2027-03-01');
-  await backend.saveAttendance(1,[{uni:'aa1001',status:'excused',excuse_reason:'Approved absence'}]);await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:1,score:8,comment:'Comment'}]));await h.rpc('release_grade_item',1,true);
-  await backend.createSet({title:'Adapter group',count:2,max_size:4,deadline:null});let d=await backend.classData();const set=d.sets[0],group=d.groups[0];
-  await backend.updateSet(set.id,true,null);await backend.chooseGroup(set.id,group.id,'aa1001');
-  await backend.configureItem(2,{kind:'file',mode:'group',group_set_id:set.id,due_at:null});
+  await backend.setSessionTimes(1,'2027-03-01T14:00Z','2027-03-01T17:00Z');assert.equal(new Date((await backend.sessions())[0].date).toISOString().slice(0,10),'2027-03-01');
+  await backend.saveAttendance(1,[{uni:'aa1001',status:'excused',excuse_reason:'Approved absence'}]);await h.as('owner');await h.rows("insert into grades(term_id,uni,item_id,score,comment) values($1,'aa1001',1,8,'Comment')",[TERM]);await h.rows('update grade_items set released=true where term_id=$1 and id=1',[TERM]);await h.as('teacher');
   await backend.setPreview('aa1001');assert.equal((await backend.classData()).grades[0].comment,'Comment');assert.equal((await backend.files()).length,0);
   await backend.saveAssignment({id:1,title:'Forbidden'}).catch(error=>assert.equal(error.code,'42501'));
   await backend.setPreview('bb1002');assert.equal((await backend.classData()).grades.length,0);await backend.setPreview(null);
@@ -111,7 +107,7 @@ test('Phase D adapter reads and saves only global instructor fields under actual
   const speaker = await backend.saveSpeaker({name:'Adapter guest',affiliation:'',topic:'',week:null,status:'Idea',contact:'',notes:'',term_id:'forged',created_at:'forged'});
   assert.equal(speaker.term_id,undefined); assert.notEqual(speaker.created_at,'forged');
   await backend.saveSpeaker({...speaker,status:'Contacted'}); assert.equal((await backend.speakers())[0].status,'Contacted');
-  await h.rpc('replace_roster',JSON.stringify([{uni:'aa1001',name:'Alice'}]));
+  await h.as('owner');await h.rows("insert into roster(term_id,uni,name) values('spring-2028','aa1001','Alice')");await h.as('teacher');
   await backend.setPreview('aa1001');
   assert.equal((await backend.instructorNote(1)).body,''); assert.deepEqual(await backend.speakers(),[]);
   await assert.rejects(backend.saveInstructorNote(1,'Forbidden'),/read-only/);
@@ -120,18 +116,13 @@ test('Phase D adapter reads and saves only global instructor fields under actual
 });
 
 
-test('Phase G adapter keeps private notes, staff profiles and group settings aligned with SQL', async()=>{
+test('Phase G adapter keeps private notes, staff profiles aligned with SQL', async()=>{
   who='teacher';await h.as('teacher');await backend.getAccess();
   const term=(await backend.classData()).term_id;
   assert.equal((await backend.studentNote(term,'aa1001')).body,'');
   await backend.saveStudentNote(term,'aa1001','Private adapter note');
   assert.equal((await backend.studentNote(term,'aa1001')).body,'Private adapter note');
   assert.equal((await backend.studentProfile(term,'aa1001')).email,'aa1001@columbia.edu');
-  const set=(await backend.classData()).sets[0];
-  await backend.setGroupNote(set.id,'Solo students must join a group.');
-  const count=(await backend.classData()).groups.length;
-  await backend.addGroups(set.id,2);assert.equal((await backend.classData()).groups.length,count+2);
-  assert.equal((await backend.classData()).sets[0].note,'Solo students must join a group.');
   who='grader';await h.as('grader');await backend.getAccess();
   assert.equal((await backend.studentNote(term,'aa1001')).body,'');
   await assert.rejects(backend.saveStudentNote(term,'aa1001','Forbidden'),/Instructor/);

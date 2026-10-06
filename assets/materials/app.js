@@ -5,12 +5,11 @@ import { ASSIGNMENT_CODES } from './assignment-core.js';
 import { renderSpeakers, leavePreparation } from './prep-ui.js';
 import { renderPreparationOutline } from './prep-outline-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
-import { gradeCode } from './class-core.js';
 import { announcementText } from './upcoming-core.js';
 import { renderWeek } from './week-ui.js';
 import { currentWeek, weekSlug, inClassFile } from './week-core.js';
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
-import { renderClassPage, table, wrapTable } from './class-ui.js';
+import { renderClassPage, renderArchivedRecords, renderRosterTable, table, wrapTable } from './class-ui.js';
 import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, normalizeEmail, safeReturnPath, validatePdf } from './core.js';
 
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
@@ -231,13 +230,14 @@ async function renderMaterials(version) {
       const page = root.dataset.page;
       const chooseTerm = ['instructor','grader'].includes(state.access.role) && TERM_PAGES.includes(page);
       const term = chooseTerm ? state.selectedTerm || state.access.term_id : state.access.term_id;
-      const attendanceCanvas=page==='attendance' && term===state.access.term_id ? await loadCanvas(state.backend,state.access,term) : null;
+      const terms = await state.backend.terms();
+      const archived = terms.find(t=>t.id===term)?.status !== 'active';
+      const attendanceCanvas=page==='attendance' && !archived ? await loadCanvas(state.backend,state.access,term) : null;
       const data = await state.backend.classData(term);
       if (version !== state.version) return;
-      const pageAccess = { ...state.access, read_only: state.access.read_only || term !== state.access.term_id };
+      const pageAccess = { ...state.access, read_only: state.access.read_only || archived };
       root.replaceChildren();
       if (chooseTerm && document.body.classList.contains('standalone-tool')) {
-        const terms = await state.backend.terms();
         const label = el('label', 'Term', { class:'term-filter' }), select = el('select',null,{'aria-label':'Term'});
         for (const t of terms) select.append(el('option',`${t.title}${t.status==='active'?'':' · Read-only'}`,{value:t.id}));
         select.value=term; label.append(select); root.append(label);
@@ -248,6 +248,7 @@ async function renderMaterials(version) {
         const canvas=await loadCanvas(state.backend,pageAccess,term);
         if(version !== state.version)return;
         (page==='grades'?renderCanvasGrades:renderCanvasGroups)({root,data,canvas,access:pageAccess});
+        if (archived) renderArchivedRecords({root,page,data});
       } else if (page === 'gradebook') await renderCanvasMode({root,backend:state.backend,term,active:!pageAccess.read_only,profiles:{data,access:pageAccess,backend:state.backend,refresh},
         renderLegacy:legacy=>renderClassPage({root:legacy,page,data,backend:state.backend,access:pageAccess,refresh,startPreview,currentRoot:()=>root.querySelector('[data-legacy-gradebook]')})});
       else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, canvas:attendanceCanvas, backend: state.backend, access: pageAccess, refresh, startPreview });
@@ -256,6 +257,10 @@ async function renderMaterials(version) {
         if (page === 'roster') {
           const canvas=await state.backend.canvasData(term);if(version!==state.version)return;
           renderCanvasRoster({root,data:canvas,profiles:{data,access:pageAccess,backend:state.backend,refresh},startPreview});
+          if (archived) {
+            const archive=el('details');archive.append(el('summary','Archived site roster'));root.append(archive);
+            renderRosterTable({root:archive,data,access:pageAccess,backend:state.backend,refresh,startPreview});
+          }
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
         } else if (page === 'settings') {
@@ -417,27 +422,6 @@ function renderScheduleAdmin(data) {
     form.append(save); const status = formStatus(form);
     form.addEventListener('submit', e => { e.preventDefault(); runAction(save, status, () => state.backend.setSessionTimes(session.week, newYorkTime(start.value), newYorkTime(end.value)), 'Session times saved.'); });
     sessions.append(form);
-  }
-  const items = section('Submission settings', 'submission-settings');
-  for (const item of data.items.filter(i => i.kind !== 'none')) {
-    const details = el('details'); details.append(el('summary', `${gradeCode(item)} · ${item.title}`));
-    const form = newForm(`item-${item.id}`);
-    const due = field(form, 'Due time (New York)', 'due', newYorkInput(item.due_at), 'datetime-local');
-    const modeLabel = el('label', 'Submission mode', { class:'tool-label' }), mode = el('select', null, { 'aria-label': 'Submission mode' });
-    for (const value of ['individual','group']) mode.append(el('option', value === 'group' ? 'Group' : 'Individual', { value }));
-    mode.value = item.mode; modeLabel.append(mode); form.append(modeLabel);
-    const setLabel = el('label', 'Linked group set', { class:'tool-label' }), set = el('select', null, { 'aria-label':'Linked group set' });
-    set.append(el('option','Choose a group set',{value:''}));
-    for (const row of data.sets) set.append(el('option', row.title, {value:row.id}));
-    set.value = item.group_set_id || ''; set.disabled = mode.value !== 'group';
-    mode.addEventListener('change', () => { set.disabled = mode.value !== 'group'; });
-    setLabel.append(set); form.append(setLabel);
-    const save = button(`Save ${gradeCode(item)} settings`); save.type='submit'; form.append(save); const status=formStatus(form);
-    form.addEventListener('submit', e => { e.preventDefault(); runAction(save,status,async()=>{
-      if(mode.value === 'group' && !set.value) throw new Error('Choose a group set for group submissions.');
-      await state.backend.configureItem(item.id,{kind:item.kind,mode:mode.value,group_set_id:mode.value==='group'?set.value:null,due_at:newYorkTime(due.value)});
-    },'Submission settings saved.',true); });
-    details.append(form); items.append(details);
   }
 }
 function renderTermAdmin(overview) {

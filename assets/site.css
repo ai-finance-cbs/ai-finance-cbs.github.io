@@ -822,20 +822,8 @@ body.class-tools .content { max-width:1180px; }
 .class-tools #materials-root .week-block .upcoming-readings li { font-size:15px; }
 .week-files { list-style:none; padding:0; margin:0; }
 .class-tools #materials-root .week-files li { font-size:15px; margin:8px 0; overflow-wrap:anywhere; }
-.submission-box { border:0; padding:0; margin-top:16px; }
-.submission-row { display:flex; align-items:center; gap:10px; min-width:0; }
-.submission-row .materials-button { flex-shrink:0; white-space:nowrap; }
-.selected-file { flex:1; min-width:0; }
-.selected-file-name { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.submission-state { min-width:0; }
-.submission-state .submission-status { display:inline; }
-.submission-progress { margin:4px 0 0; width:100%; font-size:11px; color:#737373; }
-.submission-progress progress { display:block; appearance:none; border:0; width:100%; height:3px; margin:0 0 3px; background:#ececec; }
-.submission-progress progress::-webkit-progress-bar { background:#ececec; }
-.submission-progress progress::-webkit-progress-value { background:#2F6FB8; }
-.submission-progress progress::-moz-progress-bar { background:#2F6FB8; }
-.submission-delete { display:inline; font-size:12px; }
-.submission-delete .text-action { margin-left:8px; }
+.assignment-copy, .grade-comment { overflow-wrap:anywhere; white-space:pre-wrap; }
+.text-action { margin-left:8px; }
 .submission-delete .inline-confirm { display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px; margin-left:8px; }
 .submission-row input[type=url] { flex:1; width:0; min-width:0; padding:5px 8px; font:inherit; border:1px solid #d8d8d8; }
 .class-tools #materials-root .submission-hint { color:#737373; font-size:12px; margin:4px 0 0; }
@@ -878,26 +866,16 @@ body.full-tools .content { max-width:none; }
 .class-tools .gradebook-grid th:first-child { min-width:180px; width:180px; max-width:180px; text-align:left; position:sticky; left:0; }
 .class-tools .gradebook-grid th:last-child { width:88px; }
 .class-tools .gradebook-grid thead th { position:sticky; top:0; }
-.class-tools .gradebook-grid input[type=number] { width:100%; min-width:0; padding:3px 1px; text-align:center; appearance:textfield; }
-.gradebook-grid input::-webkit-inner-spin-button, .gradebook-grid input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
 .grade-visibility { display:block; width:max-content; margin:4px auto 1px; padding:2px 3px; border:1px solid #d8d8d8; border-radius:3px; background:#f4f4f4; color:#737373; font:400 10px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
-button.grade-visibility { cursor:pointer; }
 .grade-visibility[data-release-state=visible] { background:#8C2F39; border-color:#8C2F39; color:#fff; }
-.grade-visibility:disabled { cursor:default; opacity:.65; }
-.gradebook-grid td[data-release-state=hidden], .gradebook-grid td[data-release-state=hidden] input { background:#f7f7f7; color:#777; font-weight:400; font-style:normal; }
-.gradebook-grid td[data-release-state=hidden] input { border-color:#e3e3e3; }
+.gradebook-grid td[data-release-state=hidden] { background:#f7f7f7; color:#777; font-weight:400; font-style:normal; }
 .grade-total-hidden { display:block; color:#777; font-size:10px; font-weight:400; }
 .gradebook-total > span { display:block; line-height:13px; }
-.grade-release-confirm { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; padding:8px 0; border-block:1px solid #ececec; font-size:12px; }
-.grade-release-confirm[hidden] { display:none; }
 .class-tools #materials-root .grade-visibility-note { font-size:12px; color:#666; margin:12px 0; }
 .submission-mark, .override-mark { position:absolute; top:0; left:4px; font-size:9px; z-index:1; color:#737373; pointer-events:none; }
 .override-mark { left:auto; right:3px; }
-.grade-panel .admin-form { display:block; }
-.grade-panel .tool-label { display:block; margin:12px 0; }
 .grade-panel .materials-button { margin-right:8px; }
 .class-tools #materials-root .grade-total { font-weight:600; }
-.class-tools #materials-root[data-page=submit] .week-block h2 { font-size:15px; text-transform:none; letter-spacing:0; color:#1a1a1a; }
 @media (min-width:1280px) { .class-tools .gradebook-grid { min-width:0; } .panel-open .gradebook-grid th:first-child { width:140px; min-width:140px; max-width:140px; } }
 @media (max-width:819px) { .gradebook-workspace.panel-open { grid-template-columns:minmax(0,1fr); } .grade-panel { border-left:0; border-top:1px solid #ececec; padding:16px 0; } }
 .term-filter { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:12px; }
@@ -909,22 +887,6 @@ button.grade-visibility { cursor:pointer; }
 /* ---- 2026-10-01: three reading levels (Required later, Recommended now, Optional); equal-width badges ---- */
 .badge-required { width:86px; }
 .badge-recommended { color:#2F6FB8; border-color:#c6dbf2; background:#f7fafe; }
-
-/* Submit is a single ledger, with the shared upload controls in its final column. */
-.class-tools #materials-root .submit-item { display:grid; grid-template-columns:minmax(210px,1.3fr) 160px 85px minmax(140px,1fr) 235px; align-items:center; gap:16px; padding:10px 0; min-height:52px; }
-.class-tools #materials-root .submit-item h2, .class-tools #materials-root .submit-item p { margin:0; font-size:12px; }
-.class-tools #materials-root .submit-item h2 { font-size:13px; line-height:1.4; }
-.submit-item .submission-mode { font-weight:400; }
-.submit-item .submission-box { margin:0; min-width:0; }
-.submit-item .submission-row { gap:8px; justify-content:flex-end; }
-.submit-item .submission-status { min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.class-tools #materials-root #submit-format-hint { margin:0 0 14px; }
-@media(max-width:1099px) {
-  .class-tools #materials-root .submit-item { grid-template-columns:minmax(0,1fr) auto; gap:8px 14px; }
-  .submit-item h2 { grid-column:1/-1; }
-  .submit-item .submission-state { grid-column:1; }
-  .submit-item .submission-box { grid-column:1/-1; }
-}
 
 /* The instructor workspace uses the same full-width, quiet staff layout. */
 .preparation-nav a { color:#8C2F39; }
@@ -1315,3 +1277,12 @@ body.standalone-tool .content { max-width:none; }
   .canvas-student-grades th:first-child { width:44%; }
   .canvas-student-grades .canvas-status-pill { font-size:10px; padding:3px 6px; }
 }
+
+/* Canvas staff cells use the same status colors as student views. */
+.class-grid.canvas-grid th:not(:first-child), .class-grid.canvas-grid td { min-width:64px; width:64px; padding:3px 2px; text-align:center; }
+.canvas-status-cell, .archive-grade-cell { display:block; width:100%; min-height:28px; padding:0; border:0; background:transparent; color:inherit; font:inherit; text-decoration:none; cursor:pointer; }
+.canvas-status-cell:hover, .canvas-status-cell:focus-visible, .archive-grade-cell:hover, .archive-grade-cell:focus-visible { background:#fafafa; outline:1px solid #ccc; outline-offset:-1px; }
+.canvas-status-pill.status-compact { padding:2px 5px; min-width:22px; box-sizing:border-box; font-size:10px; }
+.canvas-roster .roster-match { font:400 11px/1.4 Inter,Arial,sans-serif; color:#777; }
+.canvas-roster .roster-match-warning { display:inline-block; padding:2px 6px; border-radius:999px; color:#852f4a; background:#faedf2; }
+.canvas-roster .roster-needs-match > th, .canvas-roster .roster-needs-match > td { background:#fdf8fa; }

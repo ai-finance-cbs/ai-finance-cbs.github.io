@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { isColumbiaEmail, normalizeUni, extractUni, resolveRole, parseRoster, fakeAuthAllowed, safeReturnPath, validatePdf } from '../assets/materials/core.js';
+import { isColumbiaEmail, normalizeUni, extractUni, resolveRole, fakeAuthAllowed, safeReturnPath, validatePdf } from '../assets/materials/core.js';
 
 test('email domains are exact, normalized, and reject suffix attacks', () => {
   for (const email of ['ab1234@columbia.edu', 'Oh@GSB.Columbia.edu ', ' demo+alias@columbia.edu']) assert.equal(isColumbiaEmail(email), true);
@@ -14,23 +13,6 @@ test('UNI comes from Columbia email; GSB requires a separate claim', () => {
   assert.equal(extractUni('arbitrary@columbia.edu'), null);
   assert.equal(normalizeUni(' CD5678 '), 'cd5678');
   assert.equal(normalizeUni('123456'), null);
-});
-test('Canvas CSV normalizes UNI and previews missing and duplicate entries', () => {
-  const result = parseRoster(readFileSync(new URL('./fixtures/canvas-roster.csv', import.meta.url), 'utf8'));
-  assert.deepEqual(result.rows, [{ uni: 'ab1234', name: 'Student, Demo' }, { uni: 'cd5678', name: 'Second Student' }]);
-  assert.equal(result.errors.length, 0); assert.equal(result.issues.length, 2);
-  assert.match(result.issues[0].reason, /Missing/); assert.match(result.issues[1].reason, /Duplicate/);
-});
-test('CSV handles BOM, CRLF, quoted newlines and quotes, and alternate headers', () => {
-  const result = parseRoster('\uFEFF sTuDeNt ,SIS_LOGIN_ID\r\n"A, ""B""\nC",AB1234@columbia.edu\r\n');
-  assert.deepEqual(result.rows, [{ uni: 'ab1234', name: 'A, "B"\nC' }]);
-  assert.deepEqual(result.errors, []);
-  assert.equal(parseRoster('Name,SIS User ID\nA,AB1234').rows[0].uni, 'ab1234');
-});
-test('CSV rejects invalid quoting, absent UNI columns, ambiguous headers, and empty imports', () => {
-  for (const csv of ['Student,UNI\n"Unfinished,ab1234', 'Name,UNI\n"Name"X,ab1234', 'Name,ID\nA,123', 'Name,UNI,uni\nA,ab1234,ab1234', 'Student,UNI\n', '']) assert.ok(parseRoster(csv).errors.length, csv);
-  assert.equal(parseRoster('Name,UNI\nA,ab1234,extra').issues.length, 1);
-  assert.ok(parseRoster('x'.repeat(1_000_001)).errors.length);
 });
 test('role resolution checks domain before allowlist, then instructor/auditor before roster', () => {
   const roster = [{ uni: 'ab1234' }]; const list = [{ email: 'oh@gsb.columbia.edu', role: 'instructor' }, { email: 'ab1234@columbia.edu', role: 'auditor' }, { email: 'x@gmail.com', role: 'instructor' }];

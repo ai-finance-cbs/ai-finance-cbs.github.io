@@ -41,9 +41,10 @@ export function courseWorksLink(row, staff=false) {
   return el('a',staff ? 'Open in CourseWorks →' : 'Submit on CourseWorks →',
     {href:row.url,target:'_blank',rel:'noopener noreferrer',class:'courseworks-link'});
 }
-export function statusPill(status='Status unavailable') {
-  const tone={Done:'submitted',Late:'late',Missing:'missing',Excused:'neutral'}[status] || 'neutral';
-  return el('span',status==='Done'?'Submitted ✓':status,{class:`canvas-status-pill status-${tone}`,'data-canvas-status':status});
+export function statusPill(status='Status unavailable', compact=false) {
+  const tone={Done:'submitted',Submitted:'submitted',Late:'late',Missing:'missing',Excused:'neutral'}[status] || 'neutral';
+  const label=compact ? {Done:'✓',Submitted:'✓',Excused:'EX','Not yet due':'–','Status unavailable':'?'}[status] || status : status==='Done'?'Submitted ✓':status;
+  return el('span',label,{class:`canvas-status-pill status-${tone}${compact?' status-compact':''}`,'data-canvas-status':status,title:status});
 }
 export function canvasDue(row, tag='p', compact=false) {
   return row?.due_at ? dueLine(row.due_at,tag,compact) : el(tag,row?.status==='Status unavailable' || !row ? 'Due date unavailable.' : 'No due date', {class:'due-line'});

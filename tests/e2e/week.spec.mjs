@@ -8,16 +8,15 @@ test.beforeEach(async ({page}) => {
   await page.addInitScript(() => Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.setFixedTime(new Date('2027-01-26T13:00:00Z'));
 });
-async function seed(page, joined=true) {
+async function seed(page) {
   await enter(page,'instructor');
-  await page.evaluate(async joined => {
+  await page.evaluate(async () => {
     const b=(await import('/assets/materials/demo.js')).createDemo();
     for(let week=1;week<=6;week++) {
       const day=12+(week-1)*7;
       const start=new Date(Date.UTC(2027,0,day,14)); const end=new Date(Date.UTC(2027,0,day,17));
       await b.setSessionTimes(week,start.toISOString(),end.toISOString());
     }
-    for(const id of [2,3,5,6]) await b.configureItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
     const key='b8403-demo-state-v3', d=JSON.parse(sessionStorage.getItem(key));
     // A fresh set closes at its earliest deadline. Use the fixture before that deadline.
     d.files=[{id:'handout',week:3,title:'Verification exercise',category:'in_class',storage_path:'demo/handout.pdf',released:false,release_at:null,auditor_visible:true},
@@ -27,7 +26,7 @@ async function seed(page, joined=true) {
       {id:'new',title:'Class update',body:'Bring your annotated task map.',created_at:'2027-01-25T15:00:00Z'}];
     sessionStorage.setItem(key,JSON.stringify(d));
     await b.syncCanvas('spring-2027');
-  },joined);
+  });
 }
 
 test('signed-in Home and Materials land on the first unfinished class, then Week 6; signed-out Home stays public', async ({page}) => {

@@ -23,8 +23,7 @@ export function installStudentProfiles({root,data,access,backend,openGrade,onOpe
   function showGrade(item,student) {
     delete panel.dataset.profileUni;panel.setAttribute('aria-labelledby','grade-panel-title');
     if(openGrade)openGrade(item,student);
-    else renderGradePanel({panel,data,item,student,backend,role:access.role,readOnly:true,close:()=>open(student.uni),
-      save:async()=>{throw new Error('Use CourseWorks. Local grades are read-only archives.');},
+    else renderGradePanel({panel,data,item,student,backend,close:()=>open(student.uni),
     });
     panel.append(button('Back to student card',()=>open(student.uni)));
     const heading=panel.querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true});

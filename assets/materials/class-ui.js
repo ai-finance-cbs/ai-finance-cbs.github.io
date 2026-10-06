@@ -1,14 +1,12 @@
 import {canvasHealth} from './canvas-student-ui.js';
+import {itemName} from './assignment-core.js';
 import { installStudentProfiles } from './profile-ui.js';
 import { renderGradePanel } from './grade-panel.js';
-import { gradingSubmission, groupOverride, newYorkInput, newYorkTime } from './staff-core.js';
-import { courseTime } from './week-core.js';
+import { gradingSubmission, groupOverride } from './staff-core.js';
 import {
   canWrite,
   gradeTotal,
   gradeCode,
-  parseGradesCsv,
-  scoreValue,
   toCsv,
 } from './class-core.js';
 let selectedGradeItem = 'all';
@@ -98,12 +96,6 @@ function download(name, rows) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function labeled(parent, label, node) {
-  const l = el('label', label, { class: 'tool-label' });
-  l.append(node);
-  parent.append(l);
-  return node;
-}
 // Canvas-style: clicking a cell opens a small pop-up. Only an excuse can be added or removed by hand.
 function attendanceDialog({ student, week, state, record, editable, save }) {
   const dialog = el('dialog', null, { class: 'attendance-confirm', 'aria-label': `${student} Week ${week} attendance` });
@@ -175,6 +167,29 @@ export function renderRosterTable(ctx) {
   root.append(studentFilter(t, 'roster'), wrapTable(t));
   installStudentProfiles(ctx);
 }
+export function renderArchivedRecords({root, page, data}) {
+  const archive = disclosure(page === 'groups' ? 'Archived site groups' : 'Archived site grades', 'archived-records');
+  root.append(archive);
+  if (page === 'groups') {
+    for (const set of data.sets) {
+      const section = el('section', null, {class:'canvas-group-set'}); section.append(el('h2', set.title));
+      for (const group of data.groups.filter(g => g.set_id === set.id)) {
+        const members = data.members.filter(m => m.group_id === group.id);
+        section.append(el('h3', `Group ${group.number}`), el('p', members.map(m => m.name || data.roster?.find(r => r.uni === m.uni)?.name || 'Student').join(', ') || 'No members'));
+      }
+      archive.append(section);
+    }
+    if (!data.sets.length) archive.append(el('p', 'No archived site groups.'));
+  } else {
+    const {t, body} = table(['Item', 'Score', 'Comment']);
+    for (const item of data.items) {
+      const grade = data.grades.find(g => g.item_id === item.id), row = el('tr');
+      row.append(el('th', itemName(item, data.assignments), {scope:'row'}), el('td', grade?.score ?? 'Not graded'), el('td', grade?.comment || ''));
+      body.append(row);
+    }
+    archive.append(wrapTable(t));
+  }
+}
 export function renderClassPage(ctx) {
   const { root, page, data, backend, access, refresh } = ctx;
   const admin = access.role === 'instructor' && !access.view_as;
@@ -213,12 +228,6 @@ export function renderClassPage(ctx) {
     } finally {
       saving = false;
     }
-  };
-  const section = (title, id) => {
-    const s = el('section', null, { class: 'admin-section', id });
-    s.append(el('h2', title));
-    root.append(s);
-    return s;
   };
   if (page === 'attendance') {
     const unavailable=ctx.canvas && !ctx.canvas.available;
@@ -290,270 +299,70 @@ export function renderClassPage(ctx) {
   }
   if (page === 'gradebook') {
     const legend = disclosure('Legend', 'grade-legend');
-    const legendList = el('ul');
-    for (const item of data.items) {
-      const note = item.optional ? ' · Optional tasks are capped at 15 points total.' : item.quiz_week ? ' · A quiz score marks attendance present.' : '';
-      legendList.append(el('li', `${gradeCode(item)} → ${item.title} → ${item.max_points} points${note}`));
-    }
-    legend.append(el('p', 'Hidden: scores and comments stay private. Visible: students can see their scores and comments.', { 'data-visibility-legend':'' }), el('p', 'Quiz scores mark attendance. Enter / ↓ moves down; Tab moves across; F2 opens the submission panel. Blank scores are ungraded. S = Submitted; L = Late; • = a score differs from the group grade.'), legendList);
+    const list = el('ul');
+    for (const item of data.items) list.append(el('li', `${gradeCode(item)} → ${item.title} → ${item.max_points} points`));
+    legend.append(el('p', 'Archived scores and comments are read-only. Hidden items remain private. S = Submitted; L = Late; • = a score differs from the group grade.'), list);
     root.append(legend);
-    const filter = options(
-      [['all', 'All grading items'], ...data.items.map((i) => [i.id, gradeCode(i)])],
-      selectedGradeItem,
-      'Gradebook item',
-    );
-    filter.title = 'Jump to one grading item or show all columns.';
-    const workspace = el('div', null, { class: 'gradebook-workspace' });
-    const content = el('div', null, { class: 'gradebook-content' });
-    const panel = el('aside', null, { class: 'grade-panel', 'aria-labelledby': 'grade-panel-title' }); panel.hidden = true;
-    workspace.append(content, panel);
-    const changes = new Map();
-    root.append(workspace);
+    const filter = options([['all', 'All grading items'], ...data.items.map(i => [i.id, gradeCode(i)])], selectedGradeItem, 'Gradebook item');
+    const workspace = el('div', null, {class:'gradebook-workspace'});
+    const content = el('div', null, {class:'gradebook-content'});
+    const panel = el('aside', null, {class:'grade-panel', 'aria-labelledby':'grade-panel-title'}); panel.hidden = true;
+    workspace.append(content, panel); root.append(workspace);
     const openPanel = (item, student) => {
-      delete panel.dataset.profileUni;panel.setAttribute('aria-labelledby','grade-panel-title');
-      selectedGradeCell = { item: item.id, uni: student.uni }; workspace.classList.add('panel-open');
-      renderGradePanel({ panel, data, item, student, backend, role: access.role, readOnly: !canWrite(access),
-        save: async (task, message) => { if (changes.size) throw new Error('Save grid changes before grading in the panel.'); if (!await run(task, message)) throw new Error(status.textContent); },
-        close: () => { selectedGradeCell = null; panel.hidden = true; workspace.classList.remove('panel-open'); },
-      });
+      delete panel.dataset.profileUni; panel.setAttribute('aria-labelledby', 'grade-panel-title');
+      selectedGradeCell = {item:item.id, uni:student.uni}; workspace.classList.add('panel-open');
+      renderGradePanel({panel, data, item, student, backend,
+        close: () => { selectedGradeCell = null; panel.hidden = true; workspace.classList.remove('panel-open'); }});
     };
     openProfileGrade = openPanel;
     function draw() {
-      changes.clear();
       content.replaceChildren();
-      const releasePrompt = el('div', null, { class:'grade-release-confirm', role:'group', 'aria-label':'Release confirmation' });
-      releasePrompt.hidden = true;
-      let releaseControl;
-      const dismissRelease = () => {
-        releasePrompt.hidden = true; releasePrompt.replaceChildren();
-        if (releaseControl) { releaseControl.disabled = !canWrite(access); releaseControl.focus({ preventScroll:true }); }
-        releaseControl = null;
-      };
-      const items =
-          filter.value === 'all'
-            ? data.items
-            : data.items.filter((i) => i.id === Number(filter.value)),
-        single = items.length === 1 ? items[0] : null;
-      const { t, body, head } = table([
-        'Student',
-        ...items.map(gradeCode),
-        'Total (visible)',
-      ]);
+      const items = filter.value === 'all' ? data.items : data.items.filter(i => i.id === Number(filter.value));
+      const single = items.length === 1 ? items[0] : null;
+      const {t, body, head} = table(['Student', ...items.map(gradeCode), 'Total (visible)']);
       t.classList.add('gradebook-grid');
-      head.lastElementChild.append(el('span', 'incl. hidden', { class:'grade-total-hidden' }));
-      head.lastElementChild.title = 'First line: the student’s visible total. Second line: all recorded scores, including hidden items. Optional points are capped at 15; totals are capped at 100. Missing scores are not zeros.';
+      head.lastElementChild.append(el('span', 'incl. hidden', {class:'grade-total-hidden'}));
+      head.lastElementChild.title = 'Visible total, then all recorded scores. Optional points are capped at 15; totals at 100. Missing scores are not zeros.';
       items.forEach((item, index) => {
-        const cell = head.children[index + 1];
+        const cell = head.children[index + 1], state = item.released ? 'Visible' : 'Hidden';
         cell.title = item.title;
-        cell.append(el('span', `/${item.max_points}`, { class: 'grade-max' }));
-        const code = gradeCode(item), state = item.released ? 'Visible' : 'Hidden';
-        const control = el(admin ? 'button' : 'span', state, {
+        cell.append(el('span', `/${item.max_points}`, {class:'grade-max'}), el('span', state, {
           class:'grade-visibility', 'data-release-state':state.toLowerCase(), 'data-release-item':item.id,
-          'aria-label':`${code} visibility: ${state}`,
-        });
-        if (admin) {
-          control.type = 'button'; control.disabled = !canWrite(access);
-          control.setAttribute('aria-pressed', String(item.released));
-          control.addEventListener('click', async () => {
-            if (saving) return;
-            if (changes.size) {
-              status.textContent = 'Save scores before changing release status.';
-              return;
-            }
-            dismissRelease();
-            control.disabled = true;
-            if (item.released) {
-              await run(() => backend.releaseItem(item.id, false), 'Release status saved.');
-              control.disabled = !canWrite(access);
-              root.querySelector(`[data-release-item="${item.id}"]`)?.focus({ preventScroll:true });
-              return;
-            }
-            releaseControl = control;
-            const confirm = button('Show scores', async () => {
-              // Scores can change while confirmation is open. Never discard those edits on release.
-              if (changes.size) { status.textContent = 'Save scores before changing release status.'; dismissRelease(); return; }
-              releasePrompt.querySelectorAll('button').forEach(b => b.disabled = true);
-              await run(() => backend.releaseItem(item.id, true), 'Release status saved.');
-              dismissRelease();
-              root.querySelector(`[data-release-item="${item.id}"]`)?.focus({ preventScroll:true });
-            });
-            const cancel = button('Cancel', dismissRelease);
-            releasePrompt.replaceChildren(el('span', `Show ${code} scores and comments to students?`), confirm, cancel);
-            releasePrompt.hidden = false; cancel.focus({ preventScroll:true });
-          });
-        }
-        cell.append(control);
+          'aria-label':`${gradeCode(item)} visibility: ${state}`,
+        }));
       });
-      const cells = [];
-      data.roster.forEach((r, rowIndex) => {
-        const tr = studentRow(r);
-        tr.append(studentCell(r));
-        const cellRow = [];
-        for (const [column, item] of items.entries()) {
-          const td = el('td'),
-            grade = data.grades.find((g) => g.uni === r.uni && g.item_id === item.id),
-            n = input('number', `${r.uni} ${item.title}`, grade?.score ?? '');
-          n.min = '0';
-          n.max = item.max_points;
-          n.step = '.01';
-          n.inputMode = 'decimal';
-          n.dataset.grade = '';
-          n.addEventListener('input', () => {
-            changes.set(`${r.uni}:${item.id}`, {
-              uni: r.uni,
-              item_id: item.id,
-              raw: n.value,
-              max: item.max_points,
-            });
-            status.textContent = `${changes.size} unsaved score changes.`;
-          });
-          n.addEventListener('keydown', (e) => {
-            if (!['Enter', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
-            e.preventDefault();
-            const direction = e.key === 'ArrowUp' ? -1 : 1;
-            let next;
-            for (let row = rowIndex + direction; row >= 0 && row < cells.length; row += direction) {
-              if (!cells[row][column].closest('tr').hidden) { next = cells[row][column]; break; }
-            }
-            if (next) {
-              next.focus();
-              next.select();
-            }
-          });
-          td.dataset.gradeCell = `${r.uni}:${item.id}`;
-          td.dataset.releaseState = item.released ? 'visible' : 'hidden';
-          td.addEventListener('click', () => openPanel(item, r));
-          if (!canWrite(access)) {
-            // Disabled inputs swallow clicks. Keep archived submission details reachable by mouse and keyboard.
-            n.style.pointerEvents = 'none';
-            td.tabIndex = 0; td.setAttribute('role', 'button');
-            td.setAttribute('aria-label', `View archived ${item.title} for ${r.name || r.uni}`);
-            td.addEventListener('keydown', e => {
-              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(item, r); }
-            });
-          }
-          n.addEventListener('keydown', e => { if (e.key === 'F2') { e.preventDefault(); openPanel(item, r); panel.querySelector('input')?.focus(); } });
-          const submission = gradingSubmission(data, item, r.uni);
-          if (submission) td.append(el('span', submission.late ? 'L' : 'S', { class: 'submission-mark', title: submission.late ? 'Late' : 'Submitted', 'aria-label': submission.late ? 'Late' : 'Submitted' }));
-          if (groupOverride(data, item, r.uni, submission)) td.append(el('span', '•', { class: 'override-mark', title: 'Score differs from group grade', 'aria-label': 'Score differs from group grade' }));
-          td.append(n);
-          tr.append(td);
-          cellRow.push(n);
+      for (const student of data.roster) {
+        const tr = studentRow(student); tr.append(studentCell(student));
+        for (const item of items) {
+          const grade = data.grades.find(g => g.uni === student.uni && g.item_id === item.id);
+          const td = el('td', null, {'data-grade-cell':`${student.uni}:${item.id}`, 'data-release-state':item.released ? 'visible' : 'hidden'});
+          const view = button(grade?.score ?? '–', () => openPanel(item, student));
+          view.className = 'archive-grade-cell';
+          view.setAttribute('aria-label', `View archived ${item.title} for ${student.name || student.uni}`);
+          const submission = gradingSubmission(data, item, student.uni);
+          if (submission) td.append(el('span', submission.late ? 'L' : 'S', {class:'submission-mark', title:submission.late ? 'Late' : 'Submitted'}));
+          if (groupOverride(data, item, student.uni, submission)) td.append(el('span', '•', {class:'override-mark', title:'Score differs from group grade'}));
+          td.append(view); tr.append(td);
         }
-        cells.push(cellRow);
-        const grades = data.grades.filter(g => g.uni === r.uni);
+        const grades = data.grades.filter(g => g.uni === student.uni);
         const visible = gradeTotal(data.items.filter(i => i.released), grades), total = gradeTotal(data.items, grades);
-        const totals = el('td', null, { title: `${total.missing} ungraded items; optional points capped at ${total.bonus}.`, class:'gradebook-total' });
-        totals.append(el('span', visible.total, { 'data-visible-total':'', 'aria-label':`Visible total: ${visible.total}` }),
-          el('span', total.total, { class:'grade-total-hidden', 'data-all-total':'', 'aria-label':`Total including hidden: ${total.total}` }));
-        tr.append(totals);
-        body.append(tr);
-      });
-      const toolbar = studentFilter(t, 'gradebook');
-      toolbar.append(filter);
-      content.append(toolbar);
-      const save = button('Save scores', () =>
-        run(async () => {
-          const entries = [...changes.values()].map(({ raw, max, ...e }) => ({
-            ...e,
-            score: scoreValue(raw, max),
-          }));
-          if (!entries.length) throw new Error('No scores changed.');
-          await backend.saveGrades(entries);
-        }, 'Scores saved.'),
-      );
-      toolbar.append(save);
-      toolbar.append(
-        button(single ? `Export ${single.title} CSV` : 'Export gradebook CSV', () => {
-          if (single)
-            download(`item-${single.id}.csv`, [
-              ['UNI', gradeCode(single)],
-              ...data.roster.map((r) => [
-                r.uni,
-                data.grades.find((g) => g.uni === r.uni && g.item_id === single.id)?.score ?? '',
-              ]),
-            ]);
-          else
-            download('gradebook.csv', [
-              ['UNI', 'Name', ...data.items.map(gradeCode), 'Optional capped', 'Total'],
-              ...data.roster.map((r) => {
-                const grades = data.grades.filter((g) => g.uni === r.uni),
-                  total = gradeTotal(data.items, grades);
-                return [
-                  r.uni,
-                  r.name,
-                  ...data.items.map((i) => grades.find((g) => g.item_id === i.id)?.score ?? ''),
-                  total.bonus,
-                  total.total,
-                ];
-              }),
-            ]);
-        }),
-      );
-      content.append(releasePrompt, wrapTable(t));
-      const form = el('form', null, { class: 'admin-form' }),
-        file = input('file', 'Grade CSV');
-      file.accept = '.csv';
-      file.required = true;
-      labeled(
-        form,
-        single ? `CSV with UNI,${gradeCode(single)} (or uni,score)` : 'Gradebook CSV (export the template first)',
-        file,
-      );
-      form.append(
-        el(
-          'p',
-          'Import replaces scores in the supplied columns. Blank cells clear scores. Review the preview before saving.',
-        ),
-      );
-      const preview = el('div'),
-        submit = button('Preview grade import', () => {});
-      submit.type = 'submit';
-      form.append(submit, preview);
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-          const text = await file.files[0].text(),
-            entries = parseGradesCsv(text, single ? [single] : data.items, data.roster);
-          preview.replaceChildren(el('p', `${entries.length} scores ready to import.`));
-          const { t, body } = table(['UNI', 'Item', 'Score']);
-          for (const e of entries) {
-            const tr = el('tr');
-            tr.append(
-              el('td', e.uni),
-              el('td', data.items.find((i) => i.id === e.item_id).title),
-              el('td', e.score ?? 'Clear'),
-            );
-            body.append(tr);
-          }
-          preview.append(
-            wrapTable(t),
-            button('Import scores', () =>
-              run(() => backend.saveGrades(entries), 'Scores imported.'),
-            ),
-          );
-          file.addEventListener('change', () => preview.replaceChildren(), { once: true });
-        } catch (error) {
-          preview.replaceChildren(el('p', error.message));
-        }
-      });
-      const csv = disclosure('Import scores CSV', 'grade-import');
-      csv.append(form);
-      content.append(csv);
-      if (!canWrite(access)) {
-        content.querySelectorAll('input[data-grade], #grade-import input, #grade-import button').forEach(n => n.disabled = true);
-        save.disabled = true;
+        const totals = el('td', null, {class:'gradebook-total', title:`${total.missing} ungraded items; optional points capped at ${total.bonus}.`});
+        totals.append(el('span', visible.total, {'data-visible-total':'', 'aria-label':`Visible total: ${visible.total}`}),
+          el('span', total.total, {class:'grade-total-hidden', 'data-all-total':'', 'aria-label':`Total including hidden: ${total.total}`}));
+        tr.append(totals); body.append(tr);
       }
+      const toolbar = studentFilter(t, 'gradebook'); toolbar.append(filter);
+      toolbar.append(button(single ? `Export ${single.title} CSV` : 'Export gradebook CSV', () => {
+        const rows = single ? [['UNI', gradeCode(single)], ...data.roster.map(r => [r.uni, data.grades.find(g => g.uni === r.uni && g.item_id === single.id)?.score ?? ''])] :
+          [['UNI', 'Name', ...data.items.map(gradeCode), 'Optional capped', 'Total'], ...data.roster.map(r => {
+            const grades = data.grades.filter(g => g.uni === r.uni), total = gradeTotal(data.items, grades);
+            return [r.uni, r.name, ...data.items.map(i => grades.find(g => g.item_id === i.id)?.score ?? ''), total.bonus, total.total];
+          })];
+        download(single ? `item-${single.id}.csv` : 'gradebook.csv', rows);
+      }));
+      content.append(toolbar, wrapTable(t));
     }
-    filter.addEventListener('change', () => {
-      if (changes.size) {
-        status.textContent = 'Save scores before changing the selected item.';
-        filter.value = selectedGradeItem;
-        return;
-      }
-      selectedGradeItem = filter.value;
-      draw();
-    });
+    filter.addEventListener('change', () => { selectedGradeItem = filter.value; draw(); });
     draw();
     if (selectedGradeCell) {
       const item = data.items.find(i => i.id === selectedGradeCell.item), student = data.roster.find(r => r.uni === selectedGradeCell.uni);

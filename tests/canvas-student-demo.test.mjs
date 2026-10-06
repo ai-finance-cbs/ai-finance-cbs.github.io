@@ -23,7 +23,7 @@ for(const role of ['instructor','grader','auditor','unlisted'])test(`demo ${role
 for(const role of ['instructor','grader','student','auditor','unlisted','preview'])test(`demo ${role} cannot mutate archived submissions or local groups`,async()=>{
   if(role==='preview')await b.setPreview('ab1234');else await b.pickRole(role);
   const before=sessionStorage.getItem(KEY);
-  for(const method of ['beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission','chooseGroup','createSet','updateSet','setGroupNote','addGroups'])await assert.rejects(b[method](),/CourseWorks/);
+  for(const method of ['beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission','chooseGroup','createSet','updateSet','setGroupNote','addGroups'])assert.equal(method in b,false,method);
   assert.equal(sessionStorage.getItem(KEY),before);
 });
 test('demo failures and expired leases mask judgments and grades; fresh successful sync restores them',async()=>{

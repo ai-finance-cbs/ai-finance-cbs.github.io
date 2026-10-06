@@ -92,7 +92,8 @@ export async function renderCanvasGradebook({root:canvas,backend,term,profiles})
         name.append(u.uni && profiles?.data.roster.some(r=>r.uni===u.uni) ? el('button',u.name,{type:'button',class:'student-name student-profile-link','data-student-profile':u.uni}) : document.createTextNode(u.name));name.append(el('small',u.uni||u.login_id||'Unmatched'));tr.append(name);
         for(const m of data.mappings) {
           const s=data.submissions.find(s=>String(s.user_id)===String(u.user_id)&&String(s.assignment_id)===String(m.canvas_assignment_id)),td=el('td');
-          const cell=button((canvasAvailable(data)?canvasStatus(s,m):'Status unavailable'),()=>{
+          const status=canvasAvailable(data)?canvasStatus(s,m):'Status unavailable';
+          const cell=button(null,()=>{
             const card=canvas.querySelector('.grade-panel');if(card)card.hidden=true;canvas.querySelector('.gradebook-workspace')?.classList.remove('panel-open');
             previous=cell;panel.replaceChildren();panel.hidden=false;
             const closeButton=button('Close details',close),a=data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id));
@@ -102,7 +103,7 @@ export async function renderCanvasGradebook({root:canvas,backend,term,profiles})
             if(m.kind==='quiz')panel.append(el('p',`Attendance eligibility: ${!canvasAvailable(data)?'Status unavailable':canvasPresent(s)?'Present':'No qualifying score'}`));
             panel.append(el('a','Open in CourseWorks →',{href:`${CANVAS_HOST}/courses/${data.course.course_id}/assignments/${m.canvas_assignment_id}/submissions/${u.user_id}`,target:'_blank',rel:'noopener noreferrer'}));
             closeButton.focus();
-          });cell.setAttribute('aria-label',`${u.name} ${m.site_key}: ${(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable')}`);td.append(cell);tr.append(td);
+          });cell.className='canvas-status-cell';cell.append(statusPill(status,true));cell.setAttribute('aria-label',`${u.name} ${m.site_key}: ${status}`);td.append(cell);tr.append(td);
         }
         tbody.append(tr);
       }
@@ -135,7 +136,10 @@ export function renderCanvasRoster({root,data,profiles,startPreview}) {
     if(r.match_status==='matched' && r.uni) {
       const view=button('View as',()=>startPreview(r.uni));view.setAttribute('aria-label',`View as ${r.name}`);preview.append(view);
     }
-    row.append(name,el('td',r.section_ids?.length?r.section_ids.join(', '):'—'),el('td',r.enrollment_states.join(', ')),el('td',r.match_status),preview);body.append(row);
+    const match=el('td'),matched=r.match_status==='matched';
+    match.append(el('span',r.match_status,{class:matched?'roster-match':'roster-match roster-match-warning'}));
+    row.classList.toggle('roster-needs-match',!matched);
+    row.append(name,el('td',r.section_ids?.length?r.section_ids.join(', '):'—'),el('td',r.enrollment_states.join(', ')),match,preview);body.append(row);
   }
   const wrap=el('div',null,{class:'class-grid-wrap',tabindex:'0','aria-label':'Scrollable Canvas roster'});wrap.append(table);root.append(wrap);
   if(profiles)installStudentProfiles({...profiles,root});

@@ -16,7 +16,7 @@ async function seed(page){
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
     window.seedArchivedGrades([{uni:'ab1234',item_id:1,score:null}]);
-    await b.configureItem(1,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-01-27T14:00:00Z'});
+    window.configureArchivedItem(1,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-01-27T14:00:00Z'});
     await b.syncCanvas('spring-2027');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.canvas['spring-2027'].submissions.find(s=>s.assignment_id==='100'&&s.user_id==='1').cached_due_at='2027-01-27T14:00:00Z';sessionStorage.setItem(key,JSON.stringify(d));
     const rows=await b.assignments();await b.saveAssignment({...rows.find(a=>a.id===1),title:'Pre-Class Survey'});

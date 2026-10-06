@@ -13,9 +13,9 @@ test.beforeEach(async ({page}) => {
 });
 
 test('review Markdown payloads stay escaped in the rendered notes, including bold and headings', async ({page}) => {
-  await enter(page,'instructor','preparation/week-1');const notes=page.locator('[data-prep-section="Other notes"]');await notes.getByRole('button',{name:'Edit Other notes',exact:true}).click();
+  await enter(page,'instructor','preparation/week-1');const notes=page.locator('[data-prep-section="Logistics"]');await notes.getByRole('button',{name:'Add Logistics notes',exact:true}).click();
   const payloads=['[x](javascript:alert(1))','[x](https://a"onmouseover=...)','<img src=x onerror="window.prepXss=1">'];
-  await page.getByLabel('Other notes',{exact:true}).fill(payloads.flatMap(s=>[s,`**${s}**`,`# ${s}`,`## **${s}**`]).join('\n\n'));
+  await page.getByLabel('Logistics notes',{exact:true}).fill(payloads.flatMap(s=>[s,`**${s}**`,`# ${s}`,`## **${s}**`]).join('\n\n'));
   await notes.getByRole('button',{name:'Save',exact:true}).click();await expect(notes.locator('[data-prep-status]')).toContainText('Saved');
   await page.reload();await ready(page);
   const rendered=notes.locator('[data-prep-markdown]');

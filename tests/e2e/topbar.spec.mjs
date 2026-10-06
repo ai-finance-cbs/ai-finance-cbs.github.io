@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const pages = ['/', '/syllabus/', ...Array.from({length:6},(_,i)=>`/syllabus/week-${i+1}/`), '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/nota-bene/', '/materials/',
-  ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks'].map(name => `/materials/${name}/`)];
+  ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'gradebook', 'attendance', 'groups', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 
@@ -92,6 +92,16 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
         if (desktopReference) expect({ height: geometry.height, titleTop: geometry.titleTop,
           navTop: geometry.navTop, submenuTop: geometry.submenuTop }).toEqual(desktopReference);
         expect(fits, `${role} ${path} must not overflow`).toBe(true);
+        // Every page keeps the same disclosure shape and pill typography.
+        const styles = await page.evaluate(() => ({
+          toggles:[...document.querySelectorAll('#materials-root details > summary')].filter(n=>n.getClientRects().length).map(n=>{
+            const s=getComputedStyle(n,'::after');return {radius:s.borderRadius,width:s.width,height:s.height};
+          }),
+          pills:[...document.querySelectorAll('.canvas-status-pill')].map(n=>({radius:getComputedStyle(n).borderRadius,font:getComputedStyle(n).fontFamily})),
+        }));
+        for(const toggle of styles.toggles){expect(toggle.radius).toBe('50%');expect(toggle.width).toBe(toggle.height);}
+        for(const pill of styles.pills){expect(pill.radius).toBe('999px');expect(pill.font).toContain('Inter');}
+
         expect(headingTop).toBeGreaterThan(geometry.height);
         expect(titleFont).toContain('Source Serif');
         expect(titleFits).toBe(true);

@@ -1,4 +1,3 @@
-import { csvCells, normalizeUni } from './core.js';
 export const INSTRUCTOR_PAGES = ['roster', 'files', 'settings', 'preparation', 'speakers'];
 export const CLASS_PAGES = ['gradebook', 'attendance', 'grades', 'groups'];
 export const GRADE_ITEMS = [
@@ -72,66 +71,6 @@ export function gradeTotal(items, grades) {
     missing,
   };
 }
-export function groupOpen(set, now = Date.now()) {
-  return set.is_open && [set.deadline, set.submission_deadline].every(d => !d || new Date(d).getTime() > now);
-}
-export function checkGroupChange(data, access, setId, groupId, uni = access.uni) {
-  if (!canWrite(access)) throw new Error('Student preview is read-only.');
-  if (!['student', 'instructor'].includes(access.role)) throw new Error('Class access required.');
-  const set = data.sets.find((s) => s.id === setId);
-  if (!set) throw new Error('Group set not found.');
-  if (access.role === 'student' && (uni !== access.uni || !groupOpen(set)))
-    throw new Error('Sign-up is closed or this is not your membership.');
-  if (groupId == null) return;
-  if (!data.groups.some((g) => g.id === groupId && g.set_id === setId))
-    throw new Error('Group not found in this set.');
-  if (data.members.some((m) => m.group_id === groupId && m.uni === uni)) return;
-  if (data.members.filter((m) => m.group_id === groupId).length >= set.max_size)
-    throw new Error('This group is full.');
-}
-export function scoreValue(raw, max) {
-  if (String(raw).trim() === '') return null;
-  if (!/^\d+(\.\d{1,2})?$/.test(String(raw).trim()))
-    throw new Error('Enter a score with at most two decimal places.');
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n > Number(max))
-    throw new Error(`Score must be between 0 and ${max}.`);
-  return n;
-}
-export function parseGradesCsv(text, items, roster) {
-  if (text.length > 1_000_000) throw new Error('CSV must be smaller than 1 MB.');
-  const [header = [], ...rows] = csvCells(text.replace(/^\uFEFF/, ''));
-  const names = header.map((h) => h.trim().toLowerCase());
-  if (new Set(names).size !== names.length) throw new Error('Duplicate CSV column names.');
-  const uniColumn = names.indexOf('uni');
-  if (uniColumn < 0) throw new Error('The CSV needs a UNI column.');
-  const columns = names.map((h, index) => ({
-    item: h === 'score' && items.length === 1 ? items[0] : items.find((i) => h === i.title.toLowerCase() || h === gradeCode(i).toLowerCase() || h === `item_${i.id}`),
-    index,
-  }));
-  for (const [index, h] of names.entries())
-    if (!['uni', 'name', 'total', 'optional capped'].includes(h) && !columns[index].item)
-      throw new Error(`Unknown grade column: ${header[index]}.`);
-  const itemIds = columns.filter((c) => c.item).map((c) => c.item.id);
-  if (new Set(itemIds).size !== itemIds.length) throw new Error('Duplicate grade item columns.');
-  if (!columns.some((c) => c.item))
-    throw new Error('No grade item columns found. Export the template first.');
-  const entries = [],
-    seen = new Set();
-  for (const row of rows) {
-    const uni = normalizeUni(row[uniColumn] || '');
-    if (row.length !== header.length || !uni || !roster.some((r) => r.uni === uni) || seen.has(uni))
-      throw new Error(
-        `Invalid or duplicate row for ${uni || '(missing UNI)'}. Nothing was imported.`,
-      );
-    seen.add(uni);
-    for (const { item, index } of columns)
-      if (item)
-        entries.push({ uni, item_id: item.id, score: scoreValue(row[index], item.max_points) });
-  }
-  if (!entries.length) throw new Error('No grade rows found.');
-  return entries;
-}
 // Quote all cells and neutralize spreadsheet formulas in text exports.
 export function toCsv(rows) {
   return rows
@@ -145,23 +84,4 @@ export function toCsv(rows) {
         .join(','),
     )
     .join('\r\n');
-}
-
-export function parseQuizCsv(text, item, roster) {
-  if (text.length > 1_000_000) throw new Error('CSV must be smaller than 1 MB.');
-  const [header = [], ...rows] = csvCells(text.replace(/^\uFEFF/, ''));
-  const h = header.map((s) => s.trim().toLowerCase());
-  if (h.length !== 2 || !h.includes('uni') || !h.includes('score'))
-    throw new Error('Use two CSV columns: uni,score.');
-  return parseGradesCsv(
-    toCsv([
-      ['UNI', item.title],
-      ...rows.map((row) => {
-        if (row.length !== 2) throw new Error('Invalid CSV row.');
-        return [row[h.indexOf('uni')], row[h.indexOf('score')]];
-      }),
-    ]),
-    [item],
-    roster,
-  );
 }

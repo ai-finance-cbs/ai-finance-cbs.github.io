@@ -1,4 +1,4 @@
-import { gradeCode, scoreValue } from './class-core.js';
+import { gradeCode } from './class-core.js';
 import { courseTime, submissionStatus } from './week-core.js';
 import { gradingSubmission } from './staff-core.js';
 
@@ -6,7 +6,7 @@ const el = (tag, text, attrs = {}) => {
   const n = document.createElement(tag); if (text != null) n.textContent = text;
   for (const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); return n;
 };
-export function renderGradePanel({panel, data, item, student, backend, save, close, readOnly, role}) {
+export function renderGradePanel({panel, data, item, student, backend, close}) {
   panel.replaceChildren(); panel.hidden = false;
   const title = el('h2', `${gradeCode(item)} · ${student.name || student.uni}`, {id:'grade-panel-title'});
   const status = el('p', '', {role:'status','data-panel-status':''});
@@ -47,20 +47,8 @@ export function renderGradePanel({panel, data, item, student, backend, save, clo
     }
   }
   const grade=data.grades.find(g=>g.uni===student.uni && g.item_id===item.id);
-  const form=el('form',null,{class:'admin-form'});form.noValidate=true;
-  const visibility = item.released ? 'Visible to students now.' : role === 'grader'
-    ? `Hidden from students until the instructor releases ${gradeCode(item)}.`
-    : `Hidden from students. Visible after you release ${gradeCode(item)}.`;
-  form.append(el('p',visibility,{class:'grade-visibility-note','data-panel-visibility':item.released?'visible':'hidden'}));
-  const field=(text,type,value)=>{const label=el('label',text,{class:'tool-label'}), n=el(type==='textarea'?'textarea':'input',null,{'aria-label':text});if(type!=='textarea')n.type=type;n.value=value ?? '';label.append(n);form.append(label);return n;};
-  const score=field('Score','number',grade?.score);score.min=0;score.max=item.max_points;score.step='.01';
-  const comment=field('Comment','textarea',grade?.comment);comment.maxLength=10000;
-  const values=()=>({score:scoreValue(score.value,item.max_points),comment:comment.value || null});
-  const saveMember=action('Save student grade',()=>save(()=>backend.saveGrades([{uni:student.uni,item_id:item.id,...values()}]),'Student grade saved.'));
-  saveMember.type='submit'; form.addEventListener('submit',e=>{e.preventDefault();});
-  form.append(saveMember);
-  if(item.mode==='group' && submission?.group_id) form.append(action('Grade group',()=>{const v=values();return save(()=>backend.gradeGroup(item.id,submission.group_id,v.score,v.comment),'Group grade saved.');}));
-  form.append(status);
-  if(readOnly)form.querySelectorAll('input,textarea,button').forEach(n=>n.disabled=true);
-  panel.append(form);
+  panel.append(el('p', item.released ? 'Visible to students now.' : 'Hidden from students.', {
+    class:'grade-visibility-note', 'data-panel-visibility':item.released ? 'visible' : 'hidden',
+  }), el('p', `Score: ${grade?.score ?? 'Not graded'} / ${item.max_points}`, {'data-archived-score':''}),
+    el('p', grade?.comment || 'No comment.', {'data-archived-comment':''}), status);
 }

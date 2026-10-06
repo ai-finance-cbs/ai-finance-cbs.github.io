@@ -16,9 +16,9 @@ async function seed(page){
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
     window.seedArchivedGrades([{uni:'ab1234',item_id:1,score:null}]);
-    await b.configureItem(1,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
-    await b.configureItem(3,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
-    await b.configureItem(6,{kind:'link',mode:'group',group_set_id:'demo-set',due_at:null});
+    window.configureArchivedItem(1,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
+    window.configureArchivedItem(3,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
+    window.configureArchivedItem(6,{kind:'link',mode:'group',group_set_id:'demo-set',due_at:null});
     window.moveArchivedMember('ab1234','demo-group-1');
     window.seedArchivedWork([{item_id:1,file_name:'profile-demo.pdf'},{item_id:3,file_name:'late-demo.pdf'},{item_id:6,group_id:'demo-group-1',link:'https://example.test/prototype'}]);
     await b.pickRole('instructor');
@@ -125,7 +125,7 @@ test('every archived work chip opens a read-only panel from staff views',async({
   for(const slug of ['attendance','roster']){
     await enter(page,'instructor',slug);await page.locator('[data-student-profile="ab1234"]').click();await panel(page).locator('[data-profile-chip=M2]').click();
     await expect(page.locator('#grade-panel-title')).toHaveText('M2 · Demo Student');
-    await expect(page.getByLabel('Score',{exact:true})).toBeDisabled();
-    await expect(page.getByRole('button',{name:'Save student grade',exact:true})).toBeDisabled();
+    await expect(page.locator('[data-archived-score]')).toBeVisible();
+    await expect(page.getByRole('button',{name:'Save student grade',exact:true})).toHaveCount(0);
   }
 });

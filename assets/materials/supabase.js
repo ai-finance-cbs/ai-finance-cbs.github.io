@@ -1,8 +1,6 @@
 import { assignmentBody } from './assignment-core.js';
 import { noteValues, speakerValues } from './prep-core.js';
-import { uploadStorageFile } from './storage-upload.js';
 import { exportTermArchive } from './term-export.js';
-import { checkSubmissionFile, submissionContentType } from './submission-core.js';
 import { isColumbiaEmail } from './core.js';
 async function loadClient() {
   if (window.supabase) return window.supabase;
@@ -50,8 +48,6 @@ export async function createBackend(config) {
       return checked(await client.from('student_notes').select('term_id,uni,body,updated_at').eq('term_id',term).eq('uni',uni).maybeSingle()) || {term_id:term,uni,body:'',updated_at:null};
     },
     async saveStudentNote(term, uni, body) { return rpc('save_student_note', {p_term:term,p_uni:uni,p_body:body}); },
-    async setGroupNote(id, note) { return rpc('set_group_note', {p_set:id,p_note:note}); },
-    async addGroups(id, count) { return rpc('add_groups', {p_set:id,p_count:count}); },
     async instructorNote(week) {
       return checked(await client.from('instructor_notes').select('week,body,updated_at').eq('week', week).maybeSingle()) || { week, body:'', updated_at:null };
     },
@@ -79,33 +75,12 @@ export async function createBackend(config) {
     async cleanupLectureOrphan(path) { return fileAction({action:'cleanup',path}); },
     async terms() { return checked(await client.from('terms').select('*').order('created_at')); },
     async setSessionTimes(week, startsAt, endsAt) { return rpc('set_session_times', { p_week: week, p_start: startsAt, p_end: endsAt }); },
-    async configureItem(id, fields) { return rpc('configure_grade_item', { p_item:id, p_kind:fields.kind, p_mode:fields.mode, p_group_set:fields.group_set_id || null, p_due:fields.due_at || null }); },
-    async beginSubmission(item, file) { return rpc('begin_submission', { p_item:item, p_name:file.name, p_size:file.size, p_type:submissionContentType(file) }); },
-    async uploadSubmissionFile(pending, file, onProgress) {
-      await checkSubmissionFile(file);
-      const { session } = checked(await client.auth.getSession());
-      await uploadStorageFile({ ...config, token:session?.access_token, path:pending.storage_path, file, contentType:submissionContentType(file), onProgress });
-    },
-    async finishSubmission(pendingId) { return fileAction({ action:'finish', pending_id:pendingId }, 'submission-file'); },
-    async submitFile(item, file, onProgress) {
-      await checkSubmissionFile(file);
-      const pending = await this.beginSubmission(item, file);
-      await this.uploadSubmissionFile(pending, file, onProgress);
-      return this.finishSubmission(pending.id);
-    },
-    async submitLink(item, link) { return rpc('submit_link', { p_item:item, p_link:link }); },
-    async deleteSubmission(id) { return fileAction({ action:'delete', id }, 'submission-file'); },
     async submissionUrl(id, version = 'current') { return (await fileAction({ action:'download', id, version }, 'submission-file')).url; },
-    async sweepSubmissions() { return fileAction({ action:'sweep' }, 'submission-file'); },
     async testAccounts() { return rpc('list_test_accounts'); },
     async studentAccounts() { return rpc('list_student_accounts'); },
     async linkStudent(email, uni) { return rpc('link_student_account', { p_email: email, p_uni: uni }); },
     async setPreview(uni, term = null) { access = await rpc('set_student_preview', { target_uni: uni, p_term: term }); return access; },
-    async setSessionDate(week, date) { return rpc('set_session_date', { p_week: week, p_date: date }); },
     async saveAttendance(week, entries) { return rpc('save_attendance', { p_week: week, entries }); },
-    async createSet(f) { return rpc('create_group_set', { p_title: f.title, p_count: f.count, p_max: f.max_size, p_deadline: f.deadline }); },
-    async updateSet(id, open, deadline) { return rpc('update_group_set', { p_set: id, p_open: open, p_deadline: deadline }); },
-    async chooseGroup(set, group, uni = null) { return rpc('choose_group', { p_set: set, p_group: group, p_uni: uni }); },
     onSignOut(callback) {
       // Defer work until the SDK releases its authentication lock.
       return client.auth.onAuthStateChange(event => {

@@ -1,7 +1,7 @@
 import {demoQuizPresent,studentAttendance} from './canvas-attendance-demo.js';
 import { safeSubmission } from './submission-core.js';
 import { demoSubmissionLocked, studentSubmissionItems } from './submission-demo.js';
-import { GRADE_ITEMS, checkGroupChange, canWrite } from './class-core.js';
+import { GRADE_ITEMS, canWrite } from './class-core.js';
 export function classSeed() {
   return {
     sessions: Array.from({ length: 6 }, (_, i) => ({ week: i + 1, date: null })),
@@ -122,12 +122,6 @@ export function extendDemo({ read, save, user, saveUser, access }) {
       saveUser(u);
       return access();
     },
-    async setSessionDate(week, date) {
-      requireAdmin();
-      const d = read();
-      d.sessions.find((s) => s.week === week).date = date;
-      save(d);
-    },
     async saveAttendance(week, entries) {
       requireAdmin();
       const d = read();
@@ -156,57 +150,6 @@ export function extendDemo({ read, save, user, saveUser, access }) {
         if (row) d.attendance.push(row);
         auditAttendance(d, old, row);
       }
-      save(d);
-    },
-    async createSet(fields) {
-      requireAdmin();
-      const d = read(),
-        id = crypto.randomUUID();
-      d.sets.push({
-        id,
-        title: fields.title,
-        max_size: fields.max_size,
-        deadline: fields.deadline,
-        is_open: true,
-      });
-      for (let i = 1; i <= fields.count; i++)
-        d.groups.push({ id: crypto.randomUUID(), set_id: id, number: i });
-      save(d);
-    },
-    async updateSet(id, is_open, deadline) {
-      requireAdmin();
-      const d = read();
-      Object.assign(
-        d.sets.find((s) => s.id === id),
-        { is_open, deadline },
-      );
-      save(d);
-    },
-    async setGroupNote(id, note) {
-      requireAdmin();const d=read(),set=d.sets.find(s=>s.id===id);
-      if(!set)throw new Error('Group set not found in the active term.');
-      if([...note].length>500 || /[\r\n]/.test(note))throw new Error('Enter one line, up to 500 characters.');
-      set.note=note.trim();save(d);
-    },
-    async addGroups(id, count) {
-      requireAdmin();const d=read();
-      if(!d.sets.some(s=>s.id===id))throw new Error('Group set not found in the active term.');
-      if(!Number.isInteger(count) || count<1 || count>100)throw new Error('Add between 1 and 100 groups.');
-      const last=Math.max(0,...d.groups.filter(g=>g.set_id===id).map(g=>g.number));
-      for(let n=1;n<=count;n++)d.groups.push({id:crypto.randomUUID(),set_id:id,number:last+n});
-      save(d);
-    },
-    async chooseGroup(set, group, uni = null) {
-      const d = read(),
-        a = access(),
-        target = a.role === 'instructor' ? uni : a.uni;
-      checkGroupChange(d, a, set, group, target);
-      const source=d.members.find(m=>m.set_id===set && m.uni===target)?.group_id;
-      if (a.role==='student' && d.submissions.some(s=>[source,group].filter(Boolean).includes(s.group_id) && d.items.some(i=>i.id===s.item_id && i.group_set_id===set)))
-        throw new Error('Groups with submitted work cannot be joined or left. Ask the instructor.');
-      if (!roster(d).some((r) => r.uni === target)) throw new Error('Student not found.');
-      d.members = d.members.filter((m) => m.set_id !== set || m.uni !== target);
-      if (group) d.members.push({ set_id: set, group_id: group, uni: target });
       save(d);
     },
   };

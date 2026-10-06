@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'node:url';
 import { mkdirSync } from 'node:fs';
 test.beforeEach(async ({page}) => {
   // Exercise only local demo data. Never contact the linked Supabase project.
   await page.addInitScript(() => Object.defineProperty(window, 'COURSE_MATERIALS', { get: () => ({base:'',url:'',key:''}), set: () => {} }));
 });
-const fixture = fileURLToPath(new URL('../fixtures/canvas-roster.csv', import.meta.url));
 const ready = async page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
 const enter = async (page, role, path = '/materials/week-1/') => { await page.goto(`${path}?fakeauth=${role}`); await ready(page); };
 async function switchRole(page, role) {
@@ -57,15 +55,10 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
   await page.goto('/syllabus/week-2/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);
   await expect(page).toHaveURL(/week-2\/#lecture-notes$/); await expect(page.locator('#lecture-notes')).toContainText('Posted after class.');
 });
-test('instructor previews roster, replaces it, uploads a PDF, edits text, and manages access', async ({ page }) => {
+test('instructor reads Canvas roster, uploads a lecture PDF, edits text, and manages access', async ({ page }) => {
   await enter(page, 'instructor', '/materials/roster/');
-  await page.locator('#class-roster > summary').click();
-  await page.getByLabel('Canvas roster CSV').setInputFiles(fixture); await page.getByRole('button', { name: 'Preview roster' }).click();
-  await expect(page.locator('#roster-form')).toContainText('2 valid students. 2 rows need attention.');
-  await expect(page.locator('#roster-form')).toContainText('Missing or invalid UNI.');
-  await expect(page.getByRole('button', { name: 'Replace roster', exact: true })).toBeDisabled();
-  await page.locator('#roster-confirm').check(); await page.getByRole('button', { name: 'Replace roster', exact: true }).click();
-  await expect(page.locator('[data-admin-status]')).toHaveText('Roster replaced: 2 students.');
+  await expect(page.locator('.canvas-roster')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Replace roster',exact:true})).toHaveCount(0);
   await page.goto('/materials/files/'); await ready(page); await upload(page, 'Shared local lecture', true);
   await page.goto('/materials/settings/'); await ready(page);
   await page.locator('#assignment-editor > summary').click();
@@ -138,14 +131,8 @@ test('desktop and phone pages fit, keep public navigation, and render without er
   expect(errors).toEqual([]);
 });
 
-test('invalid roster leaves the class list intact and instructor can delete uploaded PDFs', async ({ page }) => {
+test('instructor can delete uploaded lecture PDFs', async ({ page }) => {
   await enter(page, 'instructor', '/materials/roster/');
-  await page.locator('#class-roster > summary').click();
-  await page.getByLabel('Canvas roster CSV').setInputFiles({ name: 'bad.csv', mimeType: 'text/csv', buffer: Buffer.from('Student,SIS User ID\nMissing UNI,12345') });
-  await page.getByRole('button', { name: 'Preview roster' }).click();
-  await expect(page.locator('#roster-form')).toContainText('No valid UNIs found.');
-  await expect(page.getByRole('button', { name: 'Replace roster', exact: true })).toHaveCount(0);
-  await expect(page.locator('#class-roster')).toContainText('3 students on the class list.');
   await page.goto('/materials/files/'); await ready(page); await upload(page, 'Delete this PDF');
   await page.getByRole('button', { name: 'Delete Delete this PDF', exact: true }).click();
   await page.getByRole('button',{name:'Confirm',exact:true}).click();

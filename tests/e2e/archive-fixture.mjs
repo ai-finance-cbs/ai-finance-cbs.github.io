@@ -9,6 +9,11 @@ export async function installArchiveFixture(page) {
       for(const e of d.canvas?.[term]?.enrollments || []) {const r=rows.find(r=>r.uni===e.uni);if(r)e.name=r.name;}
       sessionStorage.setItem(key,JSON.stringify(d));
     };
+    window.configureArchivedItem=(id,fields)=>{
+      const d=JSON.parse(sessionStorage.getItem(key)),term=d.terms.find(t=>t.status==='active').id;
+      Object.assign(d.items.find(i=>i.term_id===term && i.id===id),fields);
+      sessionStorage.setItem(key,JSON.stringify(d));
+    };
     window.seedArchivedGrades=entries=>{
       const d=JSON.parse(sessionStorage.getItem(key)),term=d.terms.find(t=>t.status==='active').id;
       for(const e of entries){d.grades=d.grades.filter(g=>!(g.term_id===term&&g.uni===e.uni&&g.item_id===e.item_id));if(e.score!=null)d.grades.push({...e,term_id:term});}

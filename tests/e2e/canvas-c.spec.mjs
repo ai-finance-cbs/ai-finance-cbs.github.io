@@ -65,18 +65,18 @@ test('student polish uses one shared pill, inline due text, linked grade titles 
   await expect(page.locator('[data-grade-code=M2] .grade-score')).toHaveText('Not posted');await expect(page.locator('[data-grade-code=M2] .canvas-status-pill')).toHaveText('Submitted ✓');
   await expect(page.locator('#materials-root')).not.toContainText(/9999|PRIVATE|Open in CourseWorks|Total/);
 });
-test('archived site grades remain readable and disabled, and returning to the active term restores the Canvas-only grid',async({page})=>{
+test('archived site grades remain readable without editors, and returning to the active term restores the Canvas-only grid',async({page})=>{
   await seed(page);await page.evaluate(async()=>{await (await import('/assets/materials/demo.js')).createDemo().openTerm('Spring 2028');});
   await enter(page);await page.getByLabel('Term',{exact:true}).selectOption('spring-2027');await ready(page);
-  await expect(page.getByLabel('Gradebook mode')).toHaveValue('legacy');await expect(page.locator('input[data-grade]').first()).toHaveValue('8');await expect(page.locator('input[data-grade]').first()).toBeDisabled();
-  await page.locator('[data-grade-cell]').first().focus();await page.keyboard.press('Enter');await expect(page.locator('.grade-panel')).toBeVisible();await expect(page.getByLabel('Score',{exact:true})).toBeDisabled();
+  await expect(page.getByLabel('Gradebook mode')).toHaveValue('legacy');await expect(page.locator('[data-grade-cell]').first()).toHaveText('8');await expect(page.locator('input[data-grade]')).toHaveCount(0);
+  await page.locator('.archive-grade-cell').first().focus();await page.keyboard.press('Enter');await expect(page.locator('.grade-panel')).toBeVisible();await expect(page.locator('[data-archived-score]')).toBeVisible();
   await page.getByLabel('Term',{exact:true}).selectOption('spring-2028');await ready(page);await expect(page.getByLabel('Gradebook mode')).toHaveCount(0);await expect(page.locator('input[data-grade]')).toHaveCount(0);
 });
 test('failed sync shows unavailable instead of attendance or student grade judgments',async({page})=>{
   await seed(page);await page.evaluate(()=>{const k='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(k));d.canvas['spring-2027'].runs.unshift({status:'failed',started_at:'2027-01-24T10:01:00Z'});sessionStorage.setItem(k,JSON.stringify(d));});
   await enter(page,'student','attendance');await expect(page.locator('.student-attendance-grid tbody tr td:nth-child(3)')).toHaveText(Array(6).fill('Status unavailable'));
   await enter(page,'student','grades');await expect(page.locator('[data-grade-code=M1] .canvas-status-pill')).toHaveText('Status unavailable');
-  await enter(page);await expect(page.locator('.canvas-grid tbody td button').first()).toHaveText('Status unavailable');
+  await enter(page);await expect(page.locator('.canvas-grid tbody td button').first()).toHaveAttribute('aria-label',/Status unavailable$/);await expect(page.locator('.canvas-grid tbody td .canvas-status-pill').first()).toHaveText('?');
 });
 for(const width of [1440,390,320])test(`Canvas tools and shared pills fit the right pane at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:950});await seed(page);

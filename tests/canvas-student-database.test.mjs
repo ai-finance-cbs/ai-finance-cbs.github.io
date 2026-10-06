@@ -119,10 +119,9 @@ for(const who of ['teacher','grader','a','auditor','outside','anon','preview','s
   if(who!=='service')await deny(()=>h.rows("insert into storage.objects(bucket_id,name) values('submissions','forged.pdf')"),/row-level security/);
   await h.as('owner');assert.equal((await h.rows('select id from submissions')).length,1);assert.equal((await h.rows('select id from group_sets where id=$1',[group])).length,1);
 });
-test('staff archives remain readable; score entry, release, and quiz attendance still work',async()=>{
+test('staff archives remain readable after submission and group retirement',async()=>{
   for(const who of ['teacher','grader']){await h.as(who);assert.equal((await h.rows('select id,storage_path,on_time_path,file_name from submissions')).length,1);assert.equal((await h.rpc('class_data',TERM)).submissions.length,1);}
-  await h.as('grader');await h.rpc('save_grades',JSON.stringify([{uni:'aa1001',item_id:7,score:0}]));
-  await h.as('teacher');await h.rpc('release_grade_item',7,true);assert.equal((await h.rpc('class_data',TERM)).attendance.find(a=>a.uni==='aa1001').status,'present');
+
 });
 test('new functions use fixed search paths, deny raw student mirror reads, and accept no identity argument',async()=>{
   await seed();await h.as('owner');

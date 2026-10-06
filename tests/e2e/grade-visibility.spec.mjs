@@ -6,7 +6,7 @@ const ready = page => expect(page.locator('html')).toHaveAttribute('data-materia
 const enter = async (page, role = 'instructor', slug = 'gradebook') => {
   await page.goto(`/materials/${slug}/?fakeauth=${role}`); await ready(page);
 };
-const release = (page, code, state) => page.getByRole('button', { name:`${code} visibility: ${state}`, exact:true });
+const release = (page, code, state) => page.getByLabel(`${code} visibility: ${state}`, {exact:true});
 const prompt = page => page.getByRole('group', { name:'Release confirmation' });
 const row = page => page.locator('tr[data-student="demo student ab1234"]');
 const flag = (page, id) => page.evaluate(async id => (await (await import('/assets/materials/demo.js')).createDemo().classData('spring-2027')).items.find(i => i.id === id).released, id);
@@ -44,7 +44,7 @@ test('archived column flags style every cell and distinguish visible totals from
     const cells = page.locator(`[data-grade-cell$=":${item.id}"]`);
     for (const cell of await cells.all()) await expect(cell).toHaveAttribute('data-release-state', item.released ? 'visible' : 'hidden');
   }
-  const hidden = row(page).locator('[data-grade-cell="ab1234:2"] input');
+  const hidden = row(page).locator('[data-grade-cell="ab1234:2"]');
   await expect(hidden).toHaveCSS('color','rgb(119, 119, 119)'); await expect(hidden).toHaveCSS('background-color','rgb(247, 247, 247)');
   await expect(hidden).toHaveCSS('font-style','normal');
   await expect(release(page,'M1','Visible')).toHaveCSS('background-color','rgb(140, 47, 57)');
@@ -52,7 +52,7 @@ test('archived column flags style every cell and distinguish visible totals from
   await expect(row(page).locator('[data-all-total]')).toHaveText('55');
   await expect(page.locator('.gradebook-grid thead th').last()).toHaveText('Total (visible)incl. hidden');
   await page.locator('#grade-legend > summary').click();
-  await expect(page.locator('[data-visibility-legend]')).toHaveText('Hidden: scores and comments stay private. Visible: students can see their scores and comments.');
+  await expect(page.locator('#grade-legend')).toContainText('Archived scores and comments are read-only. Hidden items remain private.');
   await page.locator('#grade-legend > summary').click();
   await screenshot(page,'gradebook-visibility');
   await page.getByLabel('Gradebook item').selectOption('2');
@@ -71,8 +71,8 @@ test('graders read archived column states and the correct panel message without 
   await expect(page.locator('span.grade-visibility')).toHaveCount(16);
   await expect(page.locator('[data-release-item="1"]')).toHaveText('Visible'); await expect(page.locator('[data-release-item="2"]')).toHaveText('Hidden');
   await page.locator('[data-grade-cell="ab1234:2"]').click();
-  await expect(page.locator('[data-panel-visibility]')).toHaveText('Hidden from students until the instructor releases M2.');
-  await expect(page.getByLabel('Score',{exact:true})).toBeDisabled();
+  await expect(page.locator('[data-panel-visibility]')).toHaveText('Hidden from students.');
+  await expect(page.locator('[data-archived-score]')).toBeVisible();
   await page.locator('[data-grade-cell="ab1234:1"]').click(); await expect(page.locator('[data-panel-visibility]')).toHaveText('Visible to students now.');
   await expect(row(page).locator('[data-visible-total]')).toHaveText('23'); await expect(row(page).locator('[data-all-total]')).toHaveText('55');
   expect(await page.evaluate(async () => 'releaseItem' in (await import('/assets/materials/demo.js')).createDemo())).toBe(false);
