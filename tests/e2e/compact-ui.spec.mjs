@@ -180,8 +180,8 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
         await grid.evaluate(w => { w.scrollTop = 0; w.scrollLeft = 0; });
       }
       if (section === 'settings') {
-        await expect(page.locator('#materials-root .settings-card > details')).toHaveCount(10); await expect(page.locator('#materials-root > .settings-card')).toHaveCount(7);
-        await expect(page.locator('#materials-root .settings-card > details[open]')).toHaveCount(0);
+        await expect(page.locator('#materials-root > details')).toHaveCount(10);
+        await expect(page.locator('#materials-root > details[open]')).toHaveCount(0);
       }
       await page.screenshot({ path: `evidence/compact-ui/${section}-${width}.png`, fullPage: true });
     }
