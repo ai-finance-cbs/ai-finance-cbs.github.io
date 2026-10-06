@@ -19,7 +19,22 @@ document.body.classList.toggle('class-tools', !!root && ['week', 'landing', 'ass
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
 const message = dialog.querySelector('[data-login-message]');
-const state = { backend: null, access: null, version: 0, selectedTerm: null };
+let savedTerm = null; try { savedTerm = localStorage.getItem('b8403-term'); } catch {}
+const state = { backend: null, access: null, version: 0, selectedTerm: savedTerm };
+// Staff pick the term in the header (next to the course title); term-aware pages load that term.
+const TERM_PAGES = ['gradebook', 'attendance', 'roster', 'groups'];
+async function headerTerm() {
+  const label = document.querySelector('.brand-term'); if (!label) return;
+  document.querySelector('.term-switch')?.remove(); label.hidden = false;
+  if (!['instructor', 'grader'].includes(state.access?.role) || document.body.classList.contains('standalone-tool')) return;
+  let terms = []; try { terms = await state.backend.terms(); } catch { return; }
+  if (!terms.some(t => t.id === state.selectedTerm)) state.selectedTerm = state.access.term_id;
+  const select = el('select', null, { class: 'term-switch', 'aria-label': 'Term' });
+  for (const t of terms) select.append(el('option', `${t.title}${t.status === 'active' ? '' : ' · Read-only'}`, { value: t.id }));
+  select.value = state.selectedTerm;
+  select.addEventListener('change', () => { state.selectedTerm = select.value; try { localStorage.setItem('b8403-term', select.value); } catch {} refresh(); });
+  label.hidden = true; label.closest('.brand-heading').querySelector('.course-brand').after(select);
+}
 let previewRoster = [];
 async function startPreview(uni) {
   if (!await leavePreparation()) { document.querySelector('[data-view-select]').value = ''; return; }
@@ -34,6 +49,8 @@ const el = (tag, text, attrs = {}) => {
   for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
   return node;
 };
+// Loading state: the course paperclip bobbing above a short label.
+const loader = (text = 'Loading…') => { const box = el('div', null, { class: 'course-loader', role: 'status' }); box.append(el('img', null, { src: `${config.base || ''}/assets/loader-clip.png`, alt: '', width: '72', height: '72' }), el('span', text)); return box; };
 const button = (label, click, extra = '') => { const b = el('button', label, { type: 'button', class: `materials-button ${extra}` }); if (click) b.addEventListener('click', click); return b; };
 function confirmInline(control, text) {
   return new Promise(resolve => {
@@ -149,7 +166,7 @@ async function refresh() {
   // Menu visibility only; every page still checks access on the server. The same flags are
   // remembered in this browser so the next page or tab can show the menu before sign-in is re-checked.
   const menu = { ...roleMenu, assignments: catalog.length > 0, assignmentCodes:catalog.map(i => i.code) };
-  applyMenu(menu);
+  applyMenu(menu); headerTerm();
   try { if (state.access) localStorage.setItem('b8403-menu', JSON.stringify(menu)); else localStorage.removeItem('b8403-menu'); } catch {}
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
@@ -161,7 +178,7 @@ async function refresh() {
   document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
-  if (root) { root.onclick=null;root.replaceChildren(el('p', 'Loading course materials…')); }
+  if (root) { root.onclick=null;root.replaceChildren(loader()); }
   try {
     if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
       const sessions = await state.backend.sessions();
@@ -196,19 +213,21 @@ async function refresh() {
       outlineChanged();
     } else if (root && [...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page)) {
       const page = root.dataset.page;
-      const chooseTerm = ['instructor','grader'].includes(state.access.role) && ['gradebook','attendance','roster'].includes(page);
-      const terms = chooseTerm ? await state.backend.terms() : [];
+      const chooseTerm = ['instructor','grader'].includes(state.access.role) && TERM_PAGES.includes(page);
       const term = chooseTerm ? state.selectedTerm || state.access.term_id : state.access.term_id;
       const data = await state.backend.classData(term);
       if (version !== state.version) return;
       const pageAccess = { ...state.access, read_only: state.access.read_only || term !== state.access.term_id };
       root.replaceChildren();
-      if (chooseTerm) {
+      // Gradebook opens in its own tab without the header, so it keeps its own term picker.
+      if (chooseTerm && document.body.classList.contains('standalone-tool')) {
+        const terms = await state.backend.terms();
         const label = el('label', 'Term', { class:'term-filter' }), select = el('select',null,{'aria-label':'Term'});
         for (const t of terms) select.append(el('option',`${t.title}${t.status==='active'?'':' · Read-only'}`,{value:t.id}));
         select.value=term; label.append(select); root.append(label);
-        select.addEventListener('change',()=>{state.selectedTerm=select.value;refresh();});
+        select.addEventListener('change',()=>{ state.selectedTerm=select.value; try { localStorage.setItem('b8403-term', select.value); } catch {} refresh(); });
       }
+      if (chooseTerm && term !== state.access.term_id) root.append(el('p', 'Viewing an earlier term. Read-only.', { class: 'term-readonly-note' }));
       if (page === 'submit') renderSubmit({ root, data, access: state.access, backend: state.backend, refresh, path });
       else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: pageAccess, refresh, startPreview });
       else {

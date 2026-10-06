@@ -134,3 +134,21 @@ test('a new tab shows the signed-in menu at first paint, before sign-in is re-ch
   await expect(second.locator('.topnav').getByRole('link', { name: 'Course Materials', exact: true })).toBeVisible();
   await expect(second.locator('.staff-menu')).toBeVisible();
 });
+
+test('staff switch terms from the header; term-aware pages follow and earlier terms are read-only', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(window, 'COURSE_MATERIALS', { get: () => ({ base: '', url: '', key: '' }), set: () => {} }));
+  await page.goto('/materials/attendance/?fakeauth=instructor');
+  await expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
+  await page.evaluate(async () => { const b = (await import('/assets/materials/demo.js')).createDemo(); await b.openTerm('Fall 2027'); });
+  await page.reload(); await expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
+  const sw = page.locator('.topbar .term-switch');
+  await expect(sw).toBeVisible(); await expect(page.locator('.brand-term')).toBeHidden();
+  await expect(sw.locator('option')).toHaveText(['Spring 2027 · Read-only', 'Fall 2027']);
+  await sw.selectOption('spring-2027');
+  await expect(page.locator('.term-readonly-note')).toHaveText('Viewing an earlier term. Read-only.');
+  await page.goto('/materials/roster/'); await expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
+  await expect(page.locator('.topbar .term-switch')).toHaveValue('spring-2027');
+  await expect(page.locator('.term-readonly-note')).toBeVisible();
+  await page.goto('/materials/attendance/?fakeauth=student'); await expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
+  await expect(page.locator('.term-switch')).toHaveCount(0); await expect(page.locator('.brand-term')).toBeVisible();
+});

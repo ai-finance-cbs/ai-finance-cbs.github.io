@@ -1207,3 +1207,23 @@ body.standalone-tool .content { max-width:none; }
 .class-grid-wrap:has(> .attendance-grid) { width:max-content; max-width:100%; }
 .attendance-grid .session-date { width:auto; text-align:center; }
 .attendance-confirm .attendance-question { font-weight:600; }
+
+/* Header term switcher (staff): looks like the term label, opens a list of terms. */
+.term-switch { appearance:none; -webkit-appearance:none; margin:0 0 0 12px; border:0; border-bottom:1px dashed #bbb; border-radius:0; color:var(--muted); font:400 15px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif; height:auto; padding:0 16px 0 0; cursor:pointer; vertical-align:baseline;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E") no-repeat right 2px center; }
+.term-switch:hover, .term-switch:focus { border-bottom-color:#555; outline:none; }
+.term-readonly-note { color:#8C2F39; font-size:13px; margin:0 0 8px; }
+
+/* Loading: the course paperclip bobs gently. */
+.course-loader { display:flex; flex-direction:column; align-items:center; gap:8px; padding:48px 0; color:#777; font-size:13px; }
+.course-loader img { image-rendering:pixelated; animation:clip-bob 1.1s ease-in-out infinite; }
+@keyframes clip-bob { 0%,100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-8px) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { .course-loader img { animation:none; } }
+/* With the switcher, the heading becomes a row: course name, then the term menu; the demo tag wraps below. */
+.brand-heading:has(.term-switch) { display:flex; flex-wrap:wrap; align-items:flex-start; column-gap:0; }
+.brand-heading:has(.term-switch) > .course-brand { min-width:0; }
+.brand-heading:has(.term-switch) > .demo-tag { flex-basis:100%; }
+.brand-heading .term-switch { height:24px; line-height:24px; margin-top:0; flex-shrink:0; }
+@media (max-width:1180px) { .term-switch { font-size:12px; margin-left:8px; } }
+/* Very small phones: no room for the menu; keep the plain term label. */
+@media (max-width:480px) { .brand-heading .term-switch { display:none; } .topbar .brand-term[hidden] { display:inline !important; } }
