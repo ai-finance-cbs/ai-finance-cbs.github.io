@@ -100,7 +100,7 @@ for(const width of [1440,1280])test(`Phase C screenshots and gradebook fits 17 c
   await page.setViewportSize({width,height:1000});await uploadGroup(page);await enter(page,'instructor','gradebook');mkdirSync('evidence/phase-c',{recursive:true});
   const fits=async()=>{expect(await page.locator('.gradebook-grid').evaluate(t=>t.scrollWidth<=t.parentElement.clientWidth)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);};
   const shot=async name=>{await page.evaluate(async()=>{document.activeElement?.blur();window.scrollTo({top:0,left:0,behavior:'instant'});await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);await page.screenshot({path:`evidence/phase-c/${name}-${width}.png`,fullPage:true});};
-  await fits();await expect(page.locator('.site-sidebar')).toBeHidden();await shot('gradebook-instructor');
+  await fits();await expect(page.locator('.site-sidebar')).toBeVisible();await shot('gradebook-instructor');
   await page.locator('[data-grade-cell="ab1234:3"]').click();await fits();await shot('gradebook-group-panel');
   await page.goto('/materials/settings/');await ready(page);await page.locator('#session-times > summary').click();await page.locator('#submission-settings > summary').click();await page.locator('#lecture-pdfs > summary').click();await shot('settings');
   await page.goto('/materials/attendance/');await ready(page);await shot('attendance-staff');

@@ -199,11 +199,13 @@ export function renderClassPage(ctx) {
       await task();
       if (rerender) {
         await refresh();
-        root.querySelector('[data-admin-status]')?.append(document.createTextNode(text));
-        [...root.querySelectorAll('.class-grid-wrap')].forEach((w, i) => {
+        // The mode container is replaced when the page refreshes.
+        const currentRoot = ctx.currentRoot?.() || root;
+        currentRoot.querySelector('[data-admin-status]')?.append(document.createTextNode(text));
+        [...currentRoot.querySelectorAll('.class-grid-wrap')].forEach((w, i) => {
           if (positions[i]) [w.scrollLeft, w.scrollTop] = positions[i];
         });
-        if (focusLabel) [...root.querySelectorAll('[aria-label]')].find(n => n.getAttribute('aria-label') === focusLabel)?.focus({ preventScroll: true });
+        if (focusLabel) [...currentRoot.querySelectorAll('[aria-label]')].find(n => n.getAttribute('aria-label') === focusLabel)?.focus({ preventScroll: true });
       } else status.textContent = text;
       return true;
     } catch (e) {

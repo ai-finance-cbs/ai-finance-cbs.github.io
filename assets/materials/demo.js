@@ -1,4 +1,5 @@
 import { extendAssignments } from './assignment-demo.js';
+import { extendCanvas } from './canvas-demo.js';
 import { extendProfiles } from './profile-demo.js';
 import { extendPrep } from './prep-demo.js';
 import { extendTerms } from './term-demo.js';
@@ -44,6 +45,7 @@ export function createDemo() {
   };
   const visible = row => { const a = requireRole(); return (a.role !== 'auditor' || row.auditor_visible) && (!('storage_path' in row) || ['instructor','grader'].includes(a.role) || row.released || (row.release_at && new Date(row.release_at).getTime() <= Date.now())); };
   return {
+    ...extendCanvas({ readAll, saveAll, access }),
     ...extendTerms({ readAll, saveAll, access }),
     ...extendPrep({ readAll, saveAll, access }),
     ...extendProfiles({ readAll, saveAll, access }),

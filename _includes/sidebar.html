@@ -22,7 +22,7 @@
           <ul>
         {% assign staff_tabs = 'Gradebook,Attendance' | split: ',' %}
         {% for tab in staff_tabs %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}
-            <li data-zone="staff"><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}{% if tab == 'Gradebook' %} target="_blank" rel="noopener"{% endif %}>{{ tab }}</a></li>
+            <li data-zone="staff"><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}>{{ tab }}</a></li>
         {% endfor %}
             <li class="staff-sep" data-materials-admin hidden aria-hidden="true"></li>
         {% assign admin_tabs = 'Roster,Settings,Preparation,Speakers' | split: ',' %}

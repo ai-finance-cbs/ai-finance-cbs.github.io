@@ -1,4 +1,5 @@
 import { renderAssignments } from './assignment-ui.js';
+import { renderCanvasSettings, renderCanvasMode } from './canvas-ui.js';
 import { ASSIGNMENT_CODES } from './assignment-core.js';
 import { renderSpeakers, leavePreparation } from './prep-ui.js';
 import { renderPreparationOutline } from './prep-outline-ui.js';
@@ -14,7 +15,6 @@ import { OWNER, WEEK_TITLES, ROLE_LABELS, fakeAuthAllowed, isColumbiaEmail, norm
 const config = window.COURSE_MATERIALS || { base: '', url: '', key: '' };
 const root = document.getElementById('materials-root');
 document.body.classList.toggle('class-tools', !!root && ['week', 'landing', 'assignments', ...CLASS_PAGES, ...INSTRUCTOR_PAGES].includes(root.dataset.page));
-// Speakers stays in the right pane; Gradebook is a standalone page in its own tab; other tool pages use the full width.
 // Every class and staff tool stays in the right pane; the left pane is never covered.
 const openSettings = new Set();
 const dialog = document.getElementById('materials-login');
@@ -22,7 +22,7 @@ const message = dialog.querySelector('[data-login-message]');
 let savedTerm = null; try { savedTerm = localStorage.getItem('b8403-term'); } catch {}
 const state = { backend: null, access: null, version: 0, selectedTerm: savedTerm };
 // Staff pick the term in the header (next to the course title); term-aware pages load that term.
-const TERM_PAGES = ['gradebook', 'attendance', 'roster', 'groups'];
+const TERM_PAGES = ['gradebook', 'attendance', 'roster', 'groups', 'settings'];
 async function headerTerm() {
   const label = document.querySelector('.brand-term'); if (!label) return;
   document.querySelector('.term-switch')?.remove(); label.hidden = false;
@@ -219,7 +219,6 @@ async function refresh() {
       if (version !== state.version) return;
       const pageAccess = { ...state.access, read_only: state.access.read_only || term !== state.access.term_id };
       root.replaceChildren();
-      // Gradebook opens in its own tab without the header, so it keeps its own term picker.
       if (chooseTerm && document.body.classList.contains('standalone-tool')) {
         const terms = await state.backend.terms();
         const label = el('label', 'Term', { class:'term-filter' }), select = el('select',null,{'aria-label':'Term'});
@@ -229,6 +228,8 @@ async function refresh() {
       }
       if (chooseTerm && term !== state.access.term_id) root.append(el('p', 'Viewing an earlier term. Read-only.', { class: 'term-readonly-note' }));
       if (page === 'submit') renderSubmit({ root, data, access: state.access, backend: state.backend, refresh, path });
+      else if (page === 'gradebook') renderCanvasMode({root,backend:state.backend,term,
+        renderLegacy:legacy=>renderClassPage({root:legacy,page,data,backend:state.backend,access:pageAccess,refresh,startPreview,currentRoot:()=>root.querySelector('[data-legacy-gradebook]')})});
       else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: pageAccess, refresh, startPreview });
       else {
         root.append(el('p', '', { class: 'materials-status', 'data-admin-status': '', role: 'status' }));
@@ -239,6 +240,9 @@ async function refresh() {
         } else if (page === 'files') {
           const files = await state.backend.files(); if (version !== state.version) return; renderFileAdmin(files);
         } else if (page === 'settings') {
+          await renderCanvasSettings({root:section('Canvas','canvas-settings'),backend:state.backend,term,items:data.items,readOnly:pageAccess.read_only});
+          if (version !== state.version) return;
+          if (!pageAccess.read_only) {
           const [admin, assignments, tests, announcements, overview] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts(), state.backend.announcements(), state.backend.staffOverview()]);
           if (version !== state.version) return;
           renderScheduleAdmin(data);
@@ -253,6 +257,7 @@ async function refresh() {
           const list = el('ul'); for (const t of tests) list.append(el('li', `${t.email} · ${ROLE_LABELS[t.role]}${t.uni ? ` · ${t.uni}` : ''}`));
           testSection.append(list);
           groupSettings(overview);
+          }
         }
       }
       outlineChanged();
@@ -465,7 +470,7 @@ function renderTermAdmin(overview) {
   const form=newForm('open-term'),name=field(form,'New term name','name');name.required=true;name.maxLength=100;
   const approve=field(form,'Archive the current term and open the new term','confirm',false,'checkbox');approve.required=true;
   const open=button('Open term');open.type='submit';form.append(open);const status=formStatus(form);
-  form.addEventListener('submit',e=>{e.preventDefault();if(approve.checked)runAction(open,status,()=>state.backend.openTerm(name.value.trim()),'New term opened.',true);});
+  form.addEventListener('submit',e=>{e.preventDefault();if(approve.checked)runAction(open,status,async()=>{await state.backend.openTerm(name.value.trim());state.selectedTerm=null;try{localStorage.removeItem('b8403-term');}catch{}},'New term opened.',true);});
   sectionNode.append(form);
   for(const term of overview.terms.filter(t=>t.status!=='active')) {
     const row=el('section',null,{id:`term-${term.id}`,class:'term-actions','data-term':term.id});row.append(el('h3',term.title),el('p',term.status));

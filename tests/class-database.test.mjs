@@ -322,10 +322,18 @@ const tables = [
   'speakers',
   'student_notes',
   'assignment_pages',
+  ...['courses','assignment_map','enrollments','assignments','submissions','groups','group_members','sync_runs'].map(t => 'canvas_' + t),
 ];
 const privateTables = ['test_accounts', 'student_previews', 'student_accounts'];
-const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge','calendar_data'];
+const serviceFunctions = ['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge','calendar_data','begin_canvas_sync','publish_canvas_sync','fail_canvas_sync'];
 const fnCases = {
+  canvas_staff_data: ['spring-2027'],
+  save_canvas_course: ['spring-2027',240315],
+  save_canvas_mapping: ['spring-2027','M1',100,'milestone',1],
+  request_canvas_sync: ['spring-2027'],
+  begin_canvas_sync: ['spring-2027'],
+  publish_canvas_sync: ['00000000-0000-0000-0000-000000000099','{}'],
+  fail_canvas_sync: ['00000000-0000-0000-0000-000000000099','failed','Denied'],
   assignment_catalog: ['spring-2027'],
   save_assignment_page: ['spring-2027','M1','Denied'],
   calendar_data: [],
@@ -462,7 +470,7 @@ test('per-role forbidden reads/writes on every table and direct private helper c
       );
       for (const sql of [
         `delete from ${t} returning *`,
-        `update ${t} set ${['submissions','pending_uploads','terms','speakers'].includes(t) ? 'id=id' : ['instructor_notes','student_notes'].includes(t) ? 'body=body' : t === 'assignment_pages' ? 'body_md=body_md' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : ['grades','group_grade_records'].includes(t) ? 'score=score' : t === 'term_exports' ? 'term_id=term_id' : 'actor_email=actor_email'} returning *`,
+        `update ${t} set ${['submissions','pending_uploads','terms','speakers'].includes(t) ? 'id=id' : ['instructor_notes','student_notes'].includes(t) ? 'body=body' : t === 'assignment_pages' ? 'body_md=body_md' : t === 'profiles' ? 'email=email' : t === 'roster' ? 'name=name' : t === 'allowlist' ? 'role=role' : ['assignments', 'announcements'].includes(t) ? 'title=title' : t === 'lecture_files' ? 'title=title' : t === 'attendance_sessions' ? 'date=date' : t === 'attendance' ? 'status=status' : t === 'group_sets' ? 'title=title' : t === 'class_groups' ? 'number=number' : t === 'group_memberships' ? 'uni=uni' : t === 'grade_items' ? 'released=true' : ['grades','group_grade_records'].includes(t) ? 'score=score' : (t === 'term_exports' || t.startsWith('canvas_')) ? 'term_id=term_id' : 'actor_email=actor_email'} returning *`,
       ]) {
         try {
           assert.equal((await rows(sql)).length, 0, `${who}: ${sql}`);
@@ -513,7 +521,7 @@ test('each role calls each public function, including guessed identities and gra
             'get_access',
             ...(['a', 'grader','auditor'].includes(who) ? ['class_data','assignment_catalog'] : []),
             ...(who === 'a' ? ['begin_submission'] : []),
-            ...(who === 'grader' ? ['save_grades', 'student_profile'] : []),
+            ...(who === 'grader' ? ['save_grades', 'student_profile', 'canvas_staff_data'] : []),
           ];
     for (const [fn, args] of Object.entries(fnCases)) {
       if (who === 'a' && fn === 'delete_submission') await assert.rejects(rpc(fn,...args), /Submission unavailable/);

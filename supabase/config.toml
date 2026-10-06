@@ -3,3 +3,7 @@ verify_jwt = true
 
 [functions.calendar]
 verify_jwt = false
+
+# The handler verifies instructor JWTs or the scheduler secret itself.
+[functions.canvas-sync]
+verify_jwt = false

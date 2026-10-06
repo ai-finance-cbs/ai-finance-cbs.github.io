@@ -108,7 +108,7 @@ test('migration preserves legacy overrides and retains guards, audit, and restri
   const db = new PGlite();
   try {
     await db.exec(bootstrapSQL);
-    for (const file of migrationFiles.slice(0, -1)) await db.exec(readFileSync(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'));
+    for (const file of migrationFiles.slice(0, migrationFiles.indexOf('017_attendance_excuse.sql'))) await db.exec(readFileSync(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'));
     await db.exec("insert into attendance(uni,week,status,manual_override,source_quiz) values('aa1001',1,'present',true,null),('aa1001',2,'absent',true,2),('aa1001',3,'excused',true,3)");
     const before = (await db.query('select uni,week,status,manual_override,source_quiz from attendance order by week')).rows;
     await db.exec(readFileSync(new URL('../supabase/migrations/017_attendance_excuse.sql', import.meta.url), 'utf8'));

@@ -99,7 +99,7 @@ test('Supabase default privileges reproduce the inherited anon EXECUTE gap and 0
   const functions = await rows(
     "select p.oid,p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'",
   );
-  assert.equal(functions.length, 43);
+  assert.equal(functions.length, 50);
   for (const f of functions) {
     assert.equal(
       (await rows("select has_function_privilege('anon',$1,'execute') allowed", [f.oid]))[0]
@@ -111,7 +111,7 @@ test('Supabase default privileges reproduce the inherited anon EXECUTE gap and 0
       (
         await rows("select has_function_privilege('authenticated',$1,'execute') allowed", [f.oid])
       )[0].allowed,
-      !['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge','calendar_data'].includes(f.proname),
+      !['confirm_submission_upload','reject_submission_upload','submission_sweep_candidates','record_term_export','record_term_purge','calendar_data','begin_canvas_sync','publish_canvas_sync','fail_canvas_sync'].includes(f.proname),
       f.proname,
     );
   }

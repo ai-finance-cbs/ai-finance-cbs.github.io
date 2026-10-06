@@ -33,6 +33,10 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async canvasData(term) { return rpc('canvas_staff_data', {p_term:term}); },
+    async saveCanvasCourse(term, course) { return rpc('save_canvas_course', {p_term:term,p_course:course}); },
+    async saveCanvasMapping(term, row) { return rpc('save_canvas_mapping', {p_term:term,p_key:row.site_key,p_assignment:row.canvas_assignment_id||null,p_kind:row.kind,p_week:row.week}); },
+    async syncCanvas(term) { return fileAction({term_id:term}, 'canvas-sync'); },
     async assignmentCatalog(term) { return rpc('assignment_catalog', { p_term:term }); },
     async assignmentPages(term, codes) {
       return checked(await client.from('assignment_pages').select('term_id,code,body_md,updated_at').eq('term_id',term).in('code',codes));
