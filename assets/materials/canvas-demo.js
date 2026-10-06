@@ -1,4 +1,4 @@
-import {canvasId,mappingValues,canvasItems,canvasPresent,canvasPosted} from './canvas-core.js';
+import {canvasId,mappingValues,canvasItems,canvasPresent,canvasPosted,canvasStudentProjection} from './canvas-core.js';
 const empty=term=>({term_id:term,course:null,mappings:[],assignments:[],enrollments:[],submissions:[],groups:[],group_members:[],runs:[]});
 export function extendCanvas({readAll,saveAll,access}) {
   function requireStaff(term,write=false) {
@@ -14,7 +14,7 @@ export function extendCanvas({readAll,saveAll,access}) {
     const result=empty(term), now=new Date().toISOString();
     result.course={term_id:term,course_id:'240315',generation:'demo',last_synced_at:now};
     result.assignments=canvasItems(d.items.filter(i=>i.term_id===term)).map((i,n)=>({id:String(100+n),name:i.title,published:true,points_possible:10,due_at:'2027-03-01T14:00:00Z'}));
-    result.mappings=canvasItems(d.items.filter(i=>i.term_id===term)).slice(0,2).map((i,n)=>({...i,canvas_assignment_id:String(100+n)}));
+    result.mappings=canvasItems(d.items.filter(i=>i.term_id===term)).filter(i=>i.site_key!=='Q6').map((i,n)=>({...i,canvas_assignment_id:String(100+n)}));
     result.enrollments=d.roster.filter(r=>r.term_id===term).map((r,n)=>({...r,user_id:String(n+1),login_id:r.uni,match_status:'matched',enrollment_states:['active']}));
     result.enrollments.push({user_id:'99',login_id:'zz9999',name:'Unmatched Canvas student',uni:null,match_status:'unmatched',enrollment_states:['active']});
     result.submissions=result.enrollments.flatMap((u,n)=>result.assignments.map((a,i)=>{
@@ -24,10 +24,19 @@ export function extendCanvas({readAll,saveAll,access}) {
     result.groups=[{id:'10',category_id:'1',category_name:'Prototype',name:'Demo group'}];
     result.group_members=result.enrollments.slice(0,2).map(u=>({group_id:'10',user_id:u.user_id,name:u.name}));
     result.runs=[{id:'demo',status:'succeeded',started_at:now,finished_at:now,counts:{enrollments:4},error:null}];
+    write(d,term,result);
     return result;
   }
   const write=(d,term,value)=>{d.canvas={...d.canvas,[term]:value};saveAll(d);};
   return {
+    async canvasStudentData(term) {
+      const a=access(),d=readAll(),t=d.terms.find(t=>t.id===term);
+      if(a?.role!=='student' || !a.uni || !t || t.status==='closed' || (a.view_as && term!==a.term_id)
+        || !d.roster.some(r=>r.term_id===term && r.uni===a.uni)) throw new Error('Student access required for this term.');
+      const v=initial(d,term),enrollment=v.enrollments.find(e=>e.uni===a.uni && e.match_status==='matched'
+        && (e.enrollment_states.includes('active') || t.status==='archived-readable' && e.enrollment_states.includes('completed')));
+      return canvasStudentProjection(v,enrollment);
+    },
     async canvasData(term) {const d=requireStaff(term);return initial(d,term);},
     async saveCanvasCourse(term,course,confirmReset=false) {
       const d=requireStaff(term,true),v=initial(d,term),id=canvasId(course);

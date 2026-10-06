@@ -1,20 +1,10 @@
 import { prepareExport, verifyExport } from '../_shared/term-export.js';
 import { courseHandler, canWrite } from '../_shared/course-auth.js';
-import { validSubmissionBytes, MAX_BYTES } from '../_shared/submission-files.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PENDING_FIELDS='id,term_id,item_id,owner_uni,group_id,uploader_id,storage_path,file_name,file_size,mime_type,started_at,expires_at';
 export function createHandler(createClient, env) {
   return courseHandler(createClient,env,async ({body,access,userClient,admin,respond,actor}) => {
     if (!['finish','download','sweep','purge','export','record','delete'].includes(body.action)) return respond(400,{error:'Unknown file action.'});
-    if (body.action==='delete') {
-      if (!canWrite(access,['student'])) return respond(403,{error:'Active student access required. Preview is read-only.'});
-      if (!UUID.test(body.id || '')) return respond(400,{error:'Invalid submission ID.'});
-      const {data:paths,error}=await userClient.rpc('delete_submission',{p_id:body.id});
-      if (error) return respond(409,{error:error.message});
-      const cleanupError=paths?.length ? (await admin().storage.from('submissions').remove(paths)).error : null;
-      // As with replacements, committed deletions stay successful. The orphan sweep retries failed cleanup.
-      return respond(200,{deleted:true,cleanup_pending:!!cleanupError});
-    }
+    if (['finish','delete'].includes(body.action)) return respond(410,{error:'Use CourseWorks. Local submissions are read-only archives.'});
     if (body.action==='download') {
       if (!['student','grader','instructor'].includes(access.role)) return respond(403,{error:'Submission access required.'});
       if (!UUID.test(body.id || '')) return respond(400,{error:'Invalid submission ID.'});
@@ -60,37 +50,5 @@ export function createHandler(createClient, env) {
       if (paths?.length && (await service.storage.from('submissions').remove(paths)).error) return respond(502,{error:'Could not remove expired uploads. Try again.'});
       return respond(200,{removed:paths?.length || 0});
     }
-    if (!canWrite(access,['student'])) return respond(403,{error:'Active student access required. Preview is read-only.'});
-    if (!UUID.test(body.pending_id || '')) return respond(400,{error:'Invalid pending upload ID.'});
-    const {data:pending,error:pendingError}=await userClient.from('pending_uploads').select(PENDING_FIELDS).eq('id',body.pending_id).single();
-    if (pendingError || !pending) return respond(404,{error:'Pending upload unavailable.'});
-    const service=admin(), bucket=service.storage.from('submissions');
-    const discard = async () => {
-      const {data:paths,error}=await service.rpc('reject_submission_upload',{p_term:pending.term_id,p_pending:pending.id});
-      if (error) return error;
-      return paths?.length ? (await bucket.remove(paths)).error : null;
-    };
-    // Sweep only paths returned by SQL. Browser-supplied paths are never used.
-    const {data:expired,error:sweepError}=await service.rpc('submission_sweep_candidates',{p_term:access.term_id});
-    if (sweepError || (expired?.length && (await bucket.remove(expired)).error)) return respond(502,{error:'Could not clean expired uploads. Try again.'});
-    if (new Date(pending.expires_at).getTime()<=Date.now()) return respond(409,{error:'Pending upload expired.'});
-    const {data:file,error:downloadError}=await bucket.download(pending.storage_path);
-    if (downloadError || !file) return respond(409,{error:'Upload the file before finishing.'});
-    if (file.size>MAX_BYTES || file.size!==Number(pending.file_size) || !validSubmissionBytes(new Uint8Array(await file.arrayBuffer()),pending.file_name,pending.mime_type)) {
-      const error=await discard();
-      return respond(error ? 502 : 400,{error:error ? 'File rejected; cleanup failed. Try again.' : 'File contents do not match the allowed type or size. Upload a valid file.'});
-    }
-    const {data:receipt,error:verifyError}=await service.rpc('confirm_submission_upload',{p_term:pending.term_id,p_pending:pending.id,p_size:file.size,p_type:pending.mime_type});
-    if (verifyError || !receipt) return respond(409,{error:'Pending upload expired or was replaced. Start again.'});
-    const {data:result,error:finishError}=await userClient.rpc('finish_submission',{p_pending:pending.id,p_receipt:receipt});
-    if (finishError) {
-      // SQL excludes committed files, including a concurrent successful finish of this same upload.
-      const error=await discard();
-      return respond(error ? 502 : 409,{error:error ? 'Finish failed; cleanup failed. Try again.' : finishError.message});
-    }
-    const paths=result?.replaced_paths || [];
-    const cleanupError=paths.length ? (await bucket.remove(paths)).error : null;
-    // A committed submission stays successful. A later sweep retries any failed old-object deletion.
-    return respond(200,{submission:result.submission,cleanup_pending:!!cleanupError});
   });
 }

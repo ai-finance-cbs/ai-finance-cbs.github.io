@@ -1,4 +1,4 @@
-import {CANVAS_HOST,canvasId,canvasItems,canvasStatus,canvasPresent,canvasPosted,suggestedAssignment} from './canvas-core.js';
+import {CANVAS_HOST,canvasAvailable,canvasId,canvasItems,canvasStatus,canvasPresent,canvasPosted,suggestedAssignment} from './canvas-core.js';
 const el=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);return n;};
 const button=(text,fn)=>{const b=el('button',text,{type:'button',class:'prep-text-action'});b.addEventListener('click',fn);return b;};
 const time=value=>value?new Date(value).toLocaleString('en-US',{timeZone:'America/New_York'}):'—';
@@ -83,7 +83,7 @@ export function renderCanvasMode({root,backend,term,renderLegacy}) {
     canvas.replaceChildren(el('p','Loading Canvas…',{role:'status'}));
     try {
       const data=await backend.canvasData(term);if(!canvas.isConnected)return;
-      canvas.replaceChildren(el('p',health(data),{'data-canvas-health':''}),el('p','Read-only comparison. Student pages still use the existing site records.'));
+      canvas.replaceChildren(el('p',health(data),{'data-canvas-health':''}),el('p','Read-only Canvas status. Grade entry remains available during the transition.'));
       if(!data.course?.generation){canvas.append(el('p','No Canvas snapshot. Configure and sync Canvas in Settings.'));return;}
       const table=el('table',null,{class:'class-grid canvas-grid'}),head=el('tr');head.append(el('th','Student',{scope:'col'}));
       for(const m of data.mappings)head.append(el('th',m.site_key,{scope:'col',title:data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id))?.name||m.site_key}));
@@ -96,15 +96,15 @@ export function renderCanvasMode({root,backend,term,renderLegacy}) {
         const tr=el('tr'),name=el('th',u.name,{scope:'row'});name.append(el('small',u.uni||u.login_id||'Unmatched'));tr.append(name);
         for(const m of data.mappings) {
           const s=data.submissions.find(s=>String(s.user_id)===String(u.user_id)&&String(s.assignment_id)===String(m.canvas_assignment_id)),td=el('td');
-          const cell=button(canvasStatus(s,m),()=>{
+          const cell=button((canvasAvailable(data)?canvasStatus(s,m):'Status unavailable'),()=>{
             previous=cell;panel.replaceChildren();panel.hidden=false;
             const closeButton=button('Close details',close),a=data.assignments.find(a=>String(a.id)===String(m.canvas_assignment_id));
             panel.append(closeButton,el('h3',`${u.name} · ${a?.name||m.site_key}`));
-            for(const [key,value] of [['Status',canvasStatus(s,m)],['Submitted',time(s?.submitted_at)],['Due',time(s?.cached_due_at)],['Seconds late',s?.seconds_late??'—'],['Score',s?.score??'—'],['Posted',canvasPosted(s)?time(s.posted_at):'Not posted'],['Roster match',u.match_status]])panel.append(el('p',`${key}: ${value}`));
+            for(const [key,value] of [['Status',(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable')],['Submitted',time(s?.submitted_at)],['Due',time(s?.cached_due_at)],['Seconds late',s?.seconds_late??'—'],['Score',s?.score??'—'],['Posted',canvasPosted(s)?time(s.posted_at):'Not posted'],['Roster match',u.match_status]])panel.append(el('p',`${key}: ${value}`));
             if(m.kind==='quiz')panel.append(el('p',`Attendance eligibility: ${canvasPresent(s)?'Present':'No qualifying score'}`));
             panel.append(el('a','Open in CourseWorks →',{href:`${CANVAS_HOST}/courses/${data.course.course_id}/assignments/${m.canvas_assignment_id}/submissions/${u.user_id}`,target:'_blank',rel:'noopener noreferrer'}));
             closeButton.focus();
-          });cell.setAttribute('aria-label',`${u.name} ${m.site_key}: ${canvasStatus(s,m)}`);td.append(cell);tr.append(td);
+          });cell.setAttribute('aria-label',`${u.name} ${m.site_key}: ${(canvasAvailable(data)?canvasStatus(s,m):'Status unavailable')}`);td.append(cell);tr.append(td);
         }
         tbody.append(tr);
       }

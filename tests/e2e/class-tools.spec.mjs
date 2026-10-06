@@ -28,11 +28,12 @@ test('grader menu and direct page gates expose only materials, grades, and atten
     'Nota Bene',
     'Course Materials',
     'Assignments',
+    'Groups',
   ]);
   await expect(page.locator('.staff-menu li:not([hidden]) a')).toHaveText(['Gradebook', 'Attendance']);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.locator('[data-view-picker]')).toBeHidden();
-  for (const path of ['roster', 'files', 'settings', 'groups', 'grades', 'submit']) {
+  for (const path of ['roster', 'files', 'settings', 'grades']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root')).toContainText(/instructors|does not have access/);
@@ -79,35 +80,13 @@ test('grader enters quiz scores by column and CSV; attendance is read-only and f
   await ready(page);
   await expect(page.getByLabel('ab1234 Week 2 attendance', { exact: true }).locator('.attendance-mark')).toHaveText('–');
 });
-test('student sees own released scores and teammate identities only after joining', async ({
-  page,
-}) => {
-  await enter(page, 'student', 'attendance');
-  await expect(page.locator('#my-grades')).toHaveCount(0);
-  await page.goto('/materials/grades/'); await ready(page);
-  await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('8 / 10');
-  await expect(page.locator('[data-grade-code=M2] .grade-score')).toHaveCount(0);
-  await expect(page.locator('#materials-root')).not.toContainText('Second Student');
-  await page.goto('/materials/groups/');
-  await ready(page);
-  await expect(page.locator('#materials-root')).not.toContainText('Second Student');
-  await expect(page.locator('#materials-root')).not.toContainText('cd5678');
-  await page.getByRole('button', { name: 'Join Group 1 in Week 2 lab', exact: true }).click();
-  await expect(page.locator('#materials-root')).toContainText('Second Student');
-  await expect(page.locator('#materials-root')).toContainText('cd5678@columbia.edu');
-  const members = await page.evaluate(async () => {
-    const { createDemo } = await import('/assets/materials/demo.js');
-    return (await createDemo().classData()).members;
-  });
-  expect(members.find((m) => m.name === 'Second Student').uni).toBeNull();
-  await page.getByRole('button', { name: 'Switch to Group 2 in Week 2 lab', exact: true }).click();
-  await expect(page.locator('#materials-root')).not.toContainText('Second Student');
-  await page.getByRole('button', { name: 'Leave Group 2 in Week 2 lab', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Join Group 2 in Week 2 lab', exact: true }),
-  ).toBeVisible();
+test('student sees posted Canvas grades and teammate names without joining controls',async({page})=>{
+  await enter(page,'student','grades');await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('8 / 10');
+  await expect(page.locator('[data-grade-code=M2] .grade-score')).toHaveText('Not posted');
+  await page.goto('/materials/groups/');await ready(page);await expect(page.locator('#materials-root')).toContainText('Second Student');
+  await expect(page.locator('#materials-root')).not.toContainText('cd5678');await expect(page.locator('#materials-root button')).toHaveCount(0);
 });
-test('instructor can excuse attendance, create and lock groups, and release scores', async ({
+test('instructor can excuse attendance, read Canvas groups, and release legacy scores', async ({
   page,
 }) => {
   await enter(page, 'instructor', 'attendance');
@@ -118,12 +97,7 @@ test('instructor can excuse attendance, create and lock groups, and release scor
   await expect(cell.locator('.attendance-mark')).toHaveText('EX');
   await page.goto('/materials/groups/');
   await ready(page);
-  await page.getByLabel('Group set title', { exact: true }).fill('Final project');
-  await page.getByLabel('Number of groups', { exact: true }).fill('3');
-  await page.getByRole('button', { name: 'Create group set', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Final project', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Lock Final project', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open Final project', exact: true })).toBeVisible();
+  await expect(page.locator('#materials-root button,#materials-root input,#materials-root select')).toHaveCount(0);
   await page.goto('/materials/gradebook/');
   await ready(page);
   await page.getByRole('button', { name: 'Q1 visibility: Hidden', exact: true }).click();
@@ -155,7 +129,6 @@ test('view-as matches student content and denies writes even when calling the ba
     'Attendance',
     'Grades',
     'Groups',
-    'Submit',
   ]);
   await page.goto('/materials/groups/');
   await ready(page);
@@ -185,7 +158,7 @@ test('view-as matches student content and denies writes even when calling the ba
   await page.screenshot({ path: 'evidence/class-tools/preview-phone.png', fullPage: true });
   await page.locator('[data-preview-exit]').click();
   await expect(page.locator('[data-role]')).toHaveText('Instructor');
-  await expect(page.getByRole('button', { name: 'Create group set', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create group set', exact: true })).toHaveCount(0);
 });
 test('auditor gets shared Assignments but cannot open student or staff tools', async ({ page }) => {
   await enter(page, 'auditor', 'week-1');
@@ -198,7 +171,7 @@ test('auditor gets shared Assignments but cannot open student or staff tools', a
     'Course Materials',
     'Assignments',
   ]);
-  for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings', 'submit']) {
+  for (const path of ['attendance', 'grades', 'groups', 'gradebook', 'roster', 'files', 'settings']) {
     await page.goto(`/materials/${path}/`);
     await ready(page);
     await expect(page.locator('#materials-root input')).toHaveCount(0);
@@ -241,5 +214,5 @@ test('students and preview see plain attendance until the matching quiz is relea
   await enter(page, 'student', 'attendance');
   await expect(page.locator('.class-grid tbody tr').first()).toContainText('from Quiz 1');
   await page.goto('/materials/grades/'); await ready(page);
-  await expect(page.locator('[data-grade-code=Q1] .grade-score')).toHaveText('0 / 3');
+  await expect(page.locator('[data-grade-code=Q1] .grade-score')).toHaveText('Not posted');
 });

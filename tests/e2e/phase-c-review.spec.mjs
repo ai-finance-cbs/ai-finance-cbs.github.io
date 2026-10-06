@@ -1,9 +1,11 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import {test,expect} from '@playwright/test';
 import {mkdirSync,readFileSync} from 'node:fs';
 import {unzipSync,strFromU8} from 'fflate';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter=async(page,role,slug)=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
 test.beforeEach(async({page})=>{
+  await installArchiveFixture(page);
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.route('https://cdn.jsdelivr.net/npm/fflate@0.8.3/esm/browser.js',route=>route.fulfill({contentType:'text/javascript',body:readFileSync('node_modules/fflate/esm/browser.js','utf8')}));
   await page.clock.setFixedTime(new Date('2027-01-26T13:00:00Z'));
@@ -13,7 +15,7 @@ async function seed(page) {
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
     for(const id of [2,3,5,6])await b.configureItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
-    await b.chooseGroup('demo-set','demo-group-1','ab1234');
+    window.moveArchivedMember('ab1234','demo-group-1');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.grades=[];sessionStorage.setItem(key,JSON.stringify(d));
   });
 }
@@ -29,16 +31,6 @@ async function prepareArchive(page) {
   });
   await page.reload();await ready(page);await page.locator('#term-rollover > summary').click();
 }
-test('Submit uses one compact row per item, one hint, linked milestone titles, and no optional week or unset due placeholders',async({page})=>{
-  await page.setViewportSize({width:1440,height:900});await seed(page);await enter(page,'student','submit');
-  await expect(page.locator('.submit-item')).toHaveCount(9);await expect(page.locator('.submission-hint')).toHaveCount(1);
-  await expect(page.locator('#submit-M1 h2 a')).toHaveAttribute('href','/materials/week-1/#milestone-1');await expect(page.locator('#submit-FP h2 a')).toHaveAttribute('href','/materials/week-6/#final-prototype');
-  for(const code of ['O1','O2','O3']) {const row=page.locator(`#submit-${code}`);await expect(row.locator('a')).toHaveCount(0);await expect(row.locator('.upcoming-meta')).toBeEmpty();await expect(row).not.toContainText(/Week|announced|Instructions/);}
-  expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);
-  const first=page.locator('#submit-M1');await first.getByRole('button',{name:'Submit',exact:true}).click();await expect(first.locator('[data-submission-status]')).toHaveText('Choose a file to submit.');await expect(first.locator('[role=status]')).toHaveCount(1);
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.pickRole('instructor');const d=await b.classData();const i=d.items.find(i=>i.code==='O2');await b.configureItem(i.id,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-02-03T14:00:00Z'});await b.pickRole('student');});
-  await page.reload();await ready(page);await expect(page.locator('#submit-O2 .upcoming-meta')).toContainText('Feb 3');await expect(page.locator('#submit-O2 a')).toHaveCount(0);
-});
 test('browser download records counts and missing files before closing; orphan list and confirmed cleanup remain separate',async({page})=>{
   await prepareArchive(page);const term=page.locator('#term-spring-2027');await expect(term.getByRole('button',{name:'Close previous term'})).toBeDisabled();
   const download=page.waitForEvent('download');await term.getByRole('button',{name:'Export grades and submissions'}).click();const file=await download;
@@ -53,7 +45,7 @@ test('browser download records counts and missing files before closing; orphan l
 for(const width of [1440,1280])test(`review screenshots for compact Submit and Settings at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:900});await seed(page);await enter(page,'student','submit');mkdirSync('evidence/phase-c/round-1',{recursive:true});
   const shot=async name=>{await page.evaluate(async()=>{document.activeElement?.blur();window.scrollTo({top:0,behavior:'instant'});await document.fonts.ready;});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`evidence/phase-c/round-1/${name}-${width}.png`,fullPage:true});};
-  expect(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight)).toBe(true);await shot('submit-student');
+  await expect(page).toHaveURL(/assignments\/milestone-1/);await shot('assignments-student');
   await prepareArchive(page);const term=page.locator('#term-spring-2027');const download=page.waitForEvent('download');await term.getByRole('button',{name:'Export grades and submissions'}).click();await download;await expect(term.locator('[data-export-summary]')).toBeVisible();
   await page.locator('#lecture-pdfs > summary').click();await page.getByRole('button',{name:'List unreferenced files'}).click();await expect(page.locator('[data-orphan-files]')).toContainText('unreferenced.pdf');await shot('settings');
 });

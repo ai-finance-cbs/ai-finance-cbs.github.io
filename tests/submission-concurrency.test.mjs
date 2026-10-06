@@ -1,3 +1,4 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp } from 'node:fs/promises';
@@ -30,7 +31,7 @@ async function database(run) {
   try {
     await pg.initialise();await pg.start();
     for(let i=0;i<4;i++){const c=pg.getPgClient('postgres','127.0.0.1');await c.connect();clients.push(c);}
-    const [owner,a,b,grader]=clients,h=await phaseDatabase(owner);
+    const [owner,a,b,grader]=clients,h=await phaseDatabase(owner,'018_canvas_mirror.sql');
     await authenticate(a,'a');await authenticate(b,'b');await authenticate(grader,'grader');
     await run({h,owner,a,b,grader});
   } finally {

@@ -57,7 +57,7 @@ test('column flags style every cell and distinguish visible totals from all reco
   await expect(row(page).locator('[data-visible-total]')).toHaveText('23');
   await expect(row(page).locator('[data-all-total]')).toHaveText('55');
   await enter(page,'student','grades');
-  await expect(page.locator('[data-grade-total]')).toHaveText('Total23 / 100');
+  await expect(page.locator('[data-grade-total]')).toHaveCount(0);
   await expect(page.locator('[data-grade-code=M2]')).not.toContainText('Feedback 2');
 });
 
@@ -77,7 +77,7 @@ test('release requires inline confirmation, Cancel preserves privacy, and panel 
   await expect(row(page).locator('[data-visible-total]')).toHaveText('30'); await expect(row(page).locator('[data-all-total]')).toHaveText('55');
   await expect(row(page).locator('[data-grade-cell="ab1234:2"] input')).toHaveCSS('background-color','rgb(255, 255, 255)');
   await page.reload(); await ready(page); await expect(release(page,'M2','Visible')).toBeVisible();
-  await enter(page,'student','grades'); await expect(page.locator('[data-grade-code=M2]')).toContainText('Feedback 2');
+  await enter(page,'student','grades'); await expect(page.locator('[data-grade-code=M2]')).not.toContainText('Feedback 2');
   await enter(page); await release(page,'M2','Visible').click();
   await expect(release(page,'M2','Hidden')).toHaveAttribute('aria-pressed','false'); await expect(prompt(page)).toBeHidden();
   await page.locator('[data-grade-cell="ab1234:2"]').click(); await expect(note).toHaveText('Hidden from students. Visible after you release M2.');

@@ -1,4 +1,5 @@
 import { renderAssignments } from './assignment-ui.js';
+import { loadCanvas, renderCanvasGrades, renderCanvasGroups } from './canvas-student-ui.js';
 import { renderCanvasSettings, renderCanvasMode } from './canvas-ui.js';
 import { ASSIGNMENT_CODES } from './assignment-core.js';
 import { renderSpeakers, leavePreparation } from './prep-ui.js';
@@ -6,7 +7,7 @@ import { renderPreparationOutline } from './prep-outline-ui.js';
 import { newYorkInput, newYorkTime } from './staff-core.js';
 import { gradeCode } from './class-core.js';
 import { announcementText } from './upcoming-core.js';
-import { renderWeek, renderSubmit } from './week-ui.js';
+import { renderWeek } from './week-ui.js';
 import { currentWeek, weekSlug, inClassFile } from './week-core.js';
 import { CLASS_PAGES, INSTRUCTOR_PAGES, zones, pageAllowed } from './class-core.js';
 import { renderClassPage, renderRosterTable, table, wrapTable } from './class-ui.js';
@@ -23,11 +24,12 @@ let savedTerm = null; try { savedTerm = localStorage.getItem('b8403-term'); } ca
 const state = { backend: null, access: null, version: 0, selectedTerm: savedTerm };
 // Staff pick the term in the header (next to the course title); term-aware pages load that term.
 const TERM_PAGES = ['gradebook', 'attendance', 'roster', 'groups', 'settings'];
-async function headerTerm() {
+async function headerTerm(version) {
   const label = document.querySelector('.brand-term'); if (!label) return;
   document.querySelector('.term-switch')?.remove(); label.hidden = false;
   if (!['instructor', 'grader'].includes(state.access?.role) || document.body.classList.contains('standalone-tool')) return;
   let terms = []; try { terms = await state.backend.terms(); } catch { return; }
+  if(version !== state.version)return;
   if (!terms.some(t => t.id === state.selectedTerm)) state.selectedTerm = state.access.term_id;
   const select = el('select', null, { class: 'term-switch', 'aria-label': 'Term' });
   for (const t of terms) select.append(el('option', `${t.title}${t.status === 'active' ? '' : ' · Read-only'}`, { value: t.id }));
@@ -149,11 +151,18 @@ function applyMenu(m) {
 }
 async function refresh() {
   const version = ++state.version;
+  document.documentElement.dataset.materialsReady = 'false';
+  try { await renderMaterials(version); }
+  finally {
+    if(version === state.version && !state.redirecting)document.documentElement.dataset.materialsReady = 'true';
+  }
+}
+async function renderMaterials(version) {
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
   const visible = zones(state.access);
   const roleMenu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
-    student: state.access?.role === 'student', klass: visible.class, ed: visible.class || visible.grading,
+    student: state.access?.role === 'student', klass: visible.class || visible.grading, ed: visible.class || visible.grading,
     signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
   // Show the role's menu as soon as sign-in resolves; the Assignments tab waits for its list.
   let cached = null; try { cached = JSON.parse(localStorage.getItem('b8403-menu') || 'null'); } catch {}
@@ -166,7 +175,8 @@ async function refresh() {
   // Menu visibility only; every page still checks access on the server. The same flags are
   // remembered in this browser so the next page or tab can show the menu before sign-in is re-checked.
   const menu = { ...roleMenu, assignments: catalog.length > 0, assignmentCodes:catalog.map(i => i.code) };
-  applyMenu(menu); headerTerm();
+  applyMenu(menu); await headerTerm(version);
+  if(version !== state.version)return;
   try { if (state.access) localStorage.setItem('b8403-menu', JSON.stringify(menu)); else localStorage.removeItem('b8403-menu'); } catch {}
   updateModal();
   const banner = document.querySelector('[data-preview-banner]');
@@ -178,7 +188,13 @@ async function refresh() {
   document.querySelector('[data-view-picker]').hidden = !visible.instructor;
   if (!member()) { showGate(); document.querySelectorAll('[data-slides-status]').forEach(n => n.textContent = ''); return; }
   if (root && !pageAllowed(root.dataset.page, state.access)) { showGate(); return; }
-  if (root) { root.onclick=null;root.replaceChildren(); } // loading image turned off for now; loader() kept for later
+  if (root) {
+    // Read the actual open state before detaching nodes. Their toggle events can arrive later.
+    for(const detail of root.querySelectorAll('details.admin-section')) {
+      if(detail.open)openSettings.add(detail.id);else openSettings.delete(detail.id);
+    }
+    root.onclick=null;root.replaceChildren();
+  }
   try {
     if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
       const sessions = await state.backend.sessions();
@@ -188,18 +204,18 @@ async function refresh() {
       location.replace(path(weekSlug(currentWeek(sessions))));
       return;
     } else if (root?.dataset.page === 'week') {
-      const data = await state.backend.classData();
+      const [data,canvas] = await Promise.all([state.backend.classData(),loadCanvas(state.backend,state.access,state.access.term_id)]);
       if (version !== state.version) return;
       root.replaceChildren();
-      renderWeek({ root, data, access: state.access, backend: state.backend, refresh, path, fileLink });
+      renderWeek({ root, data, canvas, access: state.access, backend: state.backend, refresh, path, fileLink });
       outlineChanged();
     } else if (root?.dataset.page === 'assignments') {
       if (catalogError) throw catalogError;
       const codes = root.dataset.assignmentCode === 'optional' ? ASSIGNMENT_CODES.filter(code => code.startsWith('O')) : [root.dataset.assignmentCode];
-      const [data, pages] = await Promise.all([state.backend.classData(), state.backend.assignmentPages(state.access.term_id,codes)]);
+      const [data, pages, canvas] = await Promise.all([state.backend.classData(), state.backend.assignmentPages(state.access.term_id,codes),loadCanvas(state.backend,state.access,state.access.term_id)]);
       if (version !== state.version) return;
       root.replaceChildren();
-      renderAssignments({ root,data,access:state.access,backend:state.backend,refresh,path },catalog,pages);
+      renderAssignments({ root,data,canvas,access:state.access,backend:state.backend,refresh,path },catalog,pages);
       outlineChanged();
     } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
       const prep = root.dataset.page === 'preparation';
@@ -227,8 +243,11 @@ async function refresh() {
         select.addEventListener('change',()=>{ state.selectedTerm=select.value; try { localStorage.setItem('b8403-term', select.value); } catch {} refresh(); });
       }
       if (chooseTerm && term !== state.access.term_id) root.append(el('p', 'Viewing an earlier term. Read-only.', { class: 'term-readonly-note' }));
-      if (page === 'submit') renderSubmit({ root, data, access: state.access, backend: state.backend, refresh, path });
-      else if (page === 'gradebook') renderCanvasMode({root,backend:state.backend,term,
+      if (['grades','groups'].includes(page)) {
+        const canvas=await loadCanvas(state.backend,pageAccess,term);
+        if(version !== state.version)return;
+        (page==='grades'?renderCanvasGrades:renderCanvasGroups)({root,data,canvas,access:pageAccess});
+      } else if (page === 'gradebook') renderCanvasMode({root,backend:state.backend,term,
         renderLegacy:legacy=>renderClassPage({root:legacy,page,data,backend:state.backend,access:pageAccess,refresh,startPreview,currentRoot:()=>root.querySelector('[data-legacy-gradebook]')})});
       else if (CLASS_PAGES.includes(page) || page === 'gradebook') renderClassPage({ root, page, data, backend: state.backend, access: pageAccess, refresh, startPreview });
       else {
@@ -246,7 +265,6 @@ async function refresh() {
           const [admin, assignments, tests, announcements, overview] = await Promise.all([state.backend.adminData(), state.backend.assignments(), state.backend.testAccounts(), state.backend.announcements(), state.backend.staffOverview()]);
           if (version !== state.version) return;
           renderScheduleAdmin(data);
-          renderGroupSettings(data);
           renderFileAdmin(data.files);
           renderTermAdmin(overview);
           renderAnnouncementAdmin(announcements);
@@ -327,7 +345,7 @@ function section(title, id) {
   s.append(el(collapsible ? 'summary' : 'h2', title));
   if (collapsible) {
     s.open = openSettings.has(id);
-    s.addEventListener('toggle', () => { if (s.open) openSettings.add(id); else openSettings.delete(id); });
+    s.addEventListener('toggle', () => { if(!s.isConnected)return;if (s.open) openSettings.add(id); else openSettings.delete(id); });
   }
   root.append(s); return s;
 }
@@ -445,22 +463,6 @@ function renderScheduleAdmin(data) {
       await state.backend.configureItem(item.id,{kind:item.kind,mode:mode.value,group_set_id:mode.value==='group'?set.value:null,due_at:newYorkTime(due.value)});
     },'Submission settings saved.',true); });
     details.append(form); items.append(details);
-  }
-}
-function renderGroupSettings(data) {
-  const sectionNode=section('Group sign-up settings','group-settings');
-  if(!data.sets.length)sectionNode.append(el('p','Create a group set on Groups first.'));
-  for(const set of data.sets) {
-    const form=newForm(`group-note-${set.id}`);form.append(el('h3',set.title));
-    const note=field(form,'Sign-up note','note',set.note || '');note.maxLength=500;
-    const save=button('Save sign-up note');save.type='submit';form.append(save);const status=formStatus(form);
-    form.addEventListener('submit',e=>{e.preventDefault();runAction(save,status,()=>state.backend.setGroupNote(set.id,note.value),'Sign-up note saved.');});
-    const addForm=newForm(`group-add-${set.id}`);
-    addForm.append(el('p',`${data.groups.filter(g=>g.set_id===set.id).length} groups`));
-    const count=field(addForm,'Number of groups to add','count',1,'number');count.min=1;count.max=100;count.required=true;
-    const add=button('Add groups');add.type='submit';addForm.append(add);const addStatus=formStatus(addForm);
-    addForm.addEventListener('submit',e=>{e.preventDefault();runAction(add,addStatus,()=>state.backend.addGroups(set.id,Number(count.value)),'Groups added.',true);});
-    sectionNode.append(form,addForm);
   }
 }
 function renderTermAdmin(overview) {

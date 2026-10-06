@@ -1,10 +1,7 @@
 ---
-title: "Submit"
-kicker: Class Tools
+layout: null
 permalink: /materials/submit/
 ---
-<div id="materials-root" data-page="submit" aria-live="polite">
-  <p>Sign in to see course materials.</p>
-  <button class="materials-button" type="button" data-login>Log in</button>
-</div>
-<noscript><p>Enable JavaScript to sign in and load your class tools.</p></noscript>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Assignments</title></head><body><p><a href="{{ '/materials/assignments/' | relative_url }}">Go to Assignments</a></p><script>
+location.replace({{ '/materials/assignments/' | relative_url | jsonify }}+location.search+location.hash);
+</script></body></html>

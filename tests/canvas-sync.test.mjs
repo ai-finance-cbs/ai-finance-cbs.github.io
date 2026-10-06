@@ -69,7 +69,7 @@ test('status precedence, posted-only flags, and missing-policy attendance handle
   for(const workflow_state of ['submitted','pending_review','graded'])assert.equal(canvasStatus({...base,workflow_state}),'Done');
   assert.equal(canvasStatus(base,{},Date.parse('2027-02-28')),'Not yet due');assert.equal(canvasStatus(base,{},Date.parse('2027-03-02')),'Missing');
   assert.equal(canvasStatus({...base,cached_due_at:null}),'No due date');assert.equal(canvasStatus(null),'Status unavailable');
-  assert.equal(canvasStatus({...base,assignment_visible:false}),'Not assigned');assert.equal(canvasStatus(base,{kind:'optional'}),'Optional');
+  assert.equal(canvasStatus({...base,assignment_visible:false}),'Status unavailable');assert.equal(canvasStatus(base,{kind:'optional'}),'Optional');
   assert.equal(canvasStatus({...base,missing:true,score:0,late_policy_status:'missing'},{kind:'optional'}),'Optional');
   for(const score of [0,2])assert.equal(canvasPresent({...base,score}),true);
   for(const changes of [{score:null},{score:0,missing:true},{score:0,late_policy_status:'missing'}])assert.equal(canvasPresent({...base,...changes}),false);

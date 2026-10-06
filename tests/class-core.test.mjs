@@ -25,8 +25,8 @@ test('role pages and preview write controls match the server contract', () => {
       'files',
       'settings',
     ],
-    grader: ['landing', 'week', 'gradebook', 'attendance'],
-    student: ['landing', 'week', 'grades', 'attendance', 'groups', 'submit'],
+    grader: ['landing', 'week', 'gradebook', 'attendance', 'groups'],
+    student: ['landing', 'week', 'grades', 'attendance', 'groups'],
     auditor: ['landing', 'week'],
     unlisted: [],
   };

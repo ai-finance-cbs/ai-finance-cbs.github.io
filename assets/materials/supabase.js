@@ -33,6 +33,7 @@ export async function createBackend(config) {
   return {
     demo: false,
     classData,
+    async canvasStudentData(term) { return rpc('canvas_student_data', {p_term:term}); },
     async canvasData(term) { return rpc('canvas_staff_data', {p_term:term}); },
     async saveCanvasCourse(term, course, confirmReset=false) { return rpc('save_canvas_course', {p_term:term,p_course:course,p_confirm_reset:confirmReset}); },
     async saveCanvasMapping(term, row) { return rpc('save_canvas_mapping', {p_term:term,p_key:row.site_key,p_assignment:row.canvas_assignment_id||null,p_kind:row.kind,p_week:row.week}); },

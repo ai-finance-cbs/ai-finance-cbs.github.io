@@ -4,10 +4,13 @@ import { bootstrapSQL, migrationFiles, seedGoogleIdentity } from './database.mjs
 export const TERM='spring-2027';
 export const people={teacher:'oh@gsb.columbia.edu',grader:'grader@columbia.edu',auditor:'auditor@columbia.edu',a:'aa1001@columbia.edu',b:'bb1002@columbia.edu',c:'cc1003@columbia.edu',d:'dd1004@columbia.edu',outside:'zz9999@columbia.edu'};
 export const uid=who=>`20000000-0000-0000-0000-${String(Object.keys(people).indexOf(who)+1).padStart(12,'0')}`;
-export async function phaseDatabase(db=new PGlite()) {
+export async function phaseDatabase(db=new PGlite(), through=null) {
   const exec=sql=>db.exec ? db.exec(sql) : db.query(sql);
   await exec(bootstrapSQL);
-  for(const file of migrationFiles) await exec(readFileSync(new URL('../../supabase/migrations/'+file,import.meta.url),'utf8'));
+  for(const file of migrationFiles) {
+    await exec(readFileSync(new URL('../../supabase/migrations/'+file,import.meta.url),'utf8'));
+    if(file===through)break;
+  }
   for(const [who,email] of Object.entries(people)) {
     await db.query('insert into auth.users values($1,$2,now(),\'{"provider":"google"}\')',[uid(who),email]);
     await seedGoogleIdentity(db,uid(who),email);

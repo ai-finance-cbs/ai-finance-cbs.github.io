@@ -1,7 +1,8 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {phaseDatabase,TERM} from './helpers/phase-a.mjs';
-const fixture=async task=>{const h=await phaseDatabase();try{await task(h);}finally{await h.db.close();}};
+const fixture=async task=>{const h=await phaseDatabase(undefined,'018_canvas_mirror.sql');try{await task(h);}finally{await h.db.close();}};
 
 test('group grade baselines survive individual overrides and never reach student or preview snapshots',()=>fixture(async h=>{
   await h.as('teacher');const set=await h.rpc('create_group_set','Teams',2,4,null);

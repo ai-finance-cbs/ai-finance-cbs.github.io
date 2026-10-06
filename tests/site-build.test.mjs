@@ -21,7 +21,7 @@ test('private assignment descriptions never enter generated HTML or JS', context
   }
 });
 test('material page source contains gates and no real assignment content', () => {
-  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks']) {
+  for (const page of ['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'attendance', 'groups', 'gradebook', 'roster', 'settings', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks']) {
     const html = readFileSync(new URL(`materials/${page}/index.html`, output), 'utf8');
     assert.match(html, /Sign in to see course materials/);
     assert.doesNotMatch(html, /<section class="assignment-section"/);
@@ -32,7 +32,7 @@ test('every legacy address redirects and no active page links to Schedule or ret
     const html=readFileSync(new URL(`schedule/${slug}index.html`,output),'utf8');
     assert.match(html,new RegExp(`/syllabus/${slug}`)); assert.match(html,/location.replace/);
   }
-  for(const slug of ['upcoming','assignments','lecture-notes','files']) {
+  for(const slug of ['upcoming','assignments','lecture-notes','files','submit']) {
     const html=readFileSync(new URL(`materials/${slug}/index.html`,output),'utf8');
     assert.match(html,/location.replace/); assert.match(html,/\/materials\//);
   }

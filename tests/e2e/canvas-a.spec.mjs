@@ -40,10 +40,22 @@ for(const role of ['student','auditor','unlisted','preview'])test(`${role} canno
   await page.goto('/materials/gradebook/');await ready(page);await expect(page.getByLabel('Gradebook mode')).toHaveCount(0);
 });
 test('header term selection isolates Canvas settings and makes archived settings read-only',async({page})=>{
+  // Hold the new term response. A stale ready flag let the old disclosure receive the click.
+  await page.route('**/assets/materials/canvas-demo.js',async route=>{
+    const response=await route.fetch();
+    await route.fulfill({response,body:(await response.text()).replace('async canvasData(term) {',
+      'async canvasData(term) { if(window.__holdCanvasTerm===term)await new Promise(resolve=>{window.__releaseCanvasTerm=resolve;});')});
+  });
   await enter(page);await page.evaluate(async()=>{await (await import('/assets/materials/demo.js')).createDemo().openTerm('Spring 2028');});await page.reload();await ready(page);
-  await page.getByLabel('Term',{exact:true}).selectOption('spring-2028');await page.locator('#canvas-settings summary').click();
+  await page.locator('#canvas-settings summary').click();
+  await page.evaluate(()=>window.__holdCanvasTerm='spring-2028');
+  await page.getByLabel('Term',{exact:true}).selectOption('spring-2028');
+  await expect(page.locator('html')).toHaveAttribute('data-materials-ready','false');
+  await expect.poll(()=>page.evaluate(()=>typeof window.__releaseCanvasTerm)).toBe('function');
+  await page.evaluate(()=>{window.__holdCanvasTerm=null;window.__releaseCanvasTerm();});await ready(page);
+  await expect(page.locator('#canvas-settings')).toHaveAttribute('open','');
   await expect(page.getByLabel('Canvas course ID')).toHaveValue('');
-  await page.getByLabel('Term',{exact:true}).selectOption('spring-2027');await expect(page.getByLabel('Canvas course ID')).toHaveValue('240315');
+  await page.getByLabel('Term',{exact:true}).selectOption('spring-2027');await ready(page);await expect(page.getByLabel('Canvas course ID')).toHaveValue('240315');
   await expect(page.getByLabel('Canvas course ID')).toBeDisabled();await expect(page.getByRole('button',{name:'Sync now',exact:true})).toBeDisabled();
 });
 for(const width of [1440,390,320])test(`Canvas grid and pop-up stay in the right pane at ${width}px`,async({page})=>{
@@ -106,7 +118,7 @@ test('a live sync blocks course reset with an error and permits a deliberate ret
 
 test('the first course configuration needs no reset confirmation, and invalid IDs save nothing',async({page})=>{
   await enter(page);await page.evaluate(async()=>{await (await import('/assets/materials/demo.js')).createDemo().openTerm('Spring 2028');});
-  await page.reload();await ready(page);await page.getByLabel('Term',{exact:true}).selectOption('spring-2028');
+  await page.reload();await ready(page);await page.getByLabel('Term',{exact:true}).selectOption('spring-2028');await ready(page);
   const row=page.locator('#canvas-settings');await row.locator('summary').click();const input=row.getByLabel('Canvas course ID');
   await input.fill('invalid');await row.getByRole('button',{name:'Save course',exact:true}).click();await expect(row.getByRole('status')).toContainText('valid Canvas ID');
   await input.fill('240315');await row.getByRole('button',{name:'Save course',exact:true}).click();await expect(row.getByRole('status')).toHaveText('Course saved.');

@@ -197,8 +197,8 @@ test('compact screens at desktop and phone sizes, with sticky headers and studen
     await expect(page.locator('#materials-root select')).toHaveCount(0);
     await page.screenshot({ path: `evidence/compact-ui/student-attendance-${width}.png`, fullPage: true });
     await page.goto('/materials/groups/'); await ready(page);
-    const groupAction = await page.getByRole('button', { name: 'Join Group 1 in Week 2 lab', exact: true }).boundingBox();
-    expect(groupAction.x + groupAction.width).toBeLessThan(width);
+    await expect(page.locator('#materials-root button')).toHaveCount(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.screenshot({ path: `evidence/compact-ui/student-groups-${width}.png`, fullPage: true });
     await enter(page, 'grader', 'gradebook');
     await expect(page.getByRole('checkbox')).toHaveCount(0);

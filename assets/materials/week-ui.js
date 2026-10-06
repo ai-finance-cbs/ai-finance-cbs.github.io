@@ -1,8 +1,5 @@
-import { itemName, assignmentSlug } from './assignment-core.js';
-import { dueLine } from './due-ui.js';
-import { SUBMIT_CODES, submissionWeek } from './staff-core.js';
-import { canWrite, gradeCode } from './class-core.js';
-import { courseTime, ownGroup, ownSubmission, submissionStatus, fileReleased, inClassFile } from './week-core.js';
+import { canvasSubmissionBlock } from './canvas-student-ui.js';
+import { courseTime, fileReleased, inClassFile } from './week-core.js';
 
 const el = (tag, text, attrs = {}) => {
   const node = document.createElement(tag);
@@ -15,145 +12,6 @@ const block = (title, id) => {
   section.append(el('h2', title));
   return section;
 };
-export function submissionBlock({ data, access, path, backend, refresh }, code, compact = false, controlsOnly = false) {
-  const item = data.submission_items.find(i => gradeCode(i) === code);
-  const week = submissionWeek(code);
-  const assignment = !code.startsWith('O') && data.assignments.find(a => a.id === week);
-  const name = itemName(item || { code, title:assignment?.title || '' }, data.assignments);
-  const section = block(controlsOnly ? 'Upload' : compact ? name : 'Milestone', controlsOnly ? `assignment-upload-${code}` : compact ? `submit-${code}` : week === 6 ? 'final-prototype' : `milestone-${week}`);
-  section.dataset.submitCode = code;
-  section.classList.add('assignment-section');
-  if (compact) {
-    section.classList.add('submit-item');
-    const heading = section.querySelector('h2');
-    if (week) { const link = el('a', heading.textContent, { href: `${path(`week-${week}`)}${week === 6 ? '#final-prototype' : `#milestone-${week}`}` }); heading.replaceChildren(link); }
-  }
-  if (!compact && !controlsOnly) {
-    const title = el('h3', null, { class:'milestone-title' });
-    title.append(el('span', name), dueLine(item?.due_at, 'span')); section.append(title);
-    section.append(el('a', 'Instructions →', { class:'assignment-instructions-link', href:path(`assignments/${assignmentSlug(code)}`) }));
-  }
-  if (code.startsWith('O') && !controlsOnly) section.querySelector('h2').append(el('span', 'Optional task', { class:'optional-task-label' }));
-  if (compact) section.append(el('p', item?.due_at ? `Due ${courseTime(item.due_at)}` : '', { class:'upcoming-meta' }));
-  if (!item) return section;
-  const group = ownGroup(data, item, access.uni);
-  if (!compact && !controlsOnly) {
-    const own = ownSubmission(data, item, access.uni);
-    const state = item.locked || own?.locked ? ['Graded', 'graded'] : own?.late ? ['Late', 'late'] : own ? ['Submitted', 'done']
-      : item.mode === 'group' && !group && access.role === 'student' ? ['Join a group', 'todo'] : ['Incomplete', 'todo'];
-    section.querySelector('h3')?.append(el('span', state[0], { class: `ms-chip ms-${state[1]}`, 'data-milestone-state': state[1] }));
-  }
-  if (compact || (item.mode === 'group' && group)) section.append(el('p', item.mode === 'individual' ? 'Individual' : group ? `Group ${group.number}` : 'Group', { class:'submission-mode' }));
-  const submission = ownSubmission(data, item, access.uni);
-  const status = el('p', '', { class: 'submission-status', role: 'status', 'data-submission-status': '' });
-  const stateLine = el('div', null, { class:'submission-state' }); stateLine.append(status);
-  const showStatus = () => {
-    status.replaceChildren(document.createTextNode(submissionStatus(submission)));
-    if (submission) {
-      status.append(document.createTextNode(` · ${submission.file_name || submission.link}${compact ? '' : ` · ${courseTime(submission.submitted_at)}`}`));
-      if (submission.link) status.append(document.createTextNode(' · '), el('a', 'Open submission', { href: submission.link, target: '_blank', rel: 'noopener noreferrer' }));
-    }
-  };
-  showStatus();
-  status.title = status.textContent;
-  if (compact) section.append(stateLine);
-  if (item.locked || submission?.locked) {
-    if (compact) { status.textContent = 'Graded, locked.'; return section; }
-    const locked = el('div', null, { class: 'submission-box', 'data-submission-locked': '' });
-    locked.append(el('p', 'Graded, locked.'), status); section.append(locked); return section;
-  }
-  if (item.mode === 'group' && !group && access.role === 'student') {
-    if (compact) status.replaceChildren(el('a', 'Join a group first', { href: path('groups') }));
-    else section.append(el('a', 'Join a group', { href:path('groups') }), status);
-    return section;
-  }
-  if (item.kind === 'none') return section;
-  const form = el('form', null, { class: 'submission-box' });
-  const row = el('div', null, { class: 'submission-row' });
-  const input = el('input', null, { id: `submission-${item.id}`, type: item.kind === 'link' ? 'url' : 'file', 'aria-label': item.kind === 'link' ? 'Prototype HTTPS link' : 'Submission file' });
-  const save = el('button', submission ? 'Replace submission' : 'Submit', { type: 'submit', class: 'materials-button' });
-  const progress = el('div', null, { class:'submission-progress', 'data-upload-progress':'' }); progress.hidden = true;
-  const meter = el('progress', null, { max:'100', value:'0', 'aria-label':'File upload progress' });
-  const progressText = el('span', '', { 'data-upload-percent':'' }); progress.append(meter, progressText);
-  let choose, remove;
-  if (item.kind === 'file') {
-    input.accept = '.pdf,.docx,.xlsx,.pptx,.zip'; input.hidden = true;
-    choose = el('button', 'Choose file', { type: 'button', class: 'materials-button' });
-    choose.addEventListener('click', () => input.click());
-    const filename = el('span', 'No file selected', { class: 'selected-file-name', 'data-selected-file': '' });
-    input.addEventListener('change', () => { filename.textContent = input.files[0]?.name || 'No file selected'; if (compact) { status.textContent = filename.textContent; status.title = filename.textContent; } });
-    row.append(choose);
-    if (!compact) { const selected = el('div', null, { class:'selected-file' }); selected.append(filename, progress); row.append(selected); }
-    else stateLine.append(progress);
-    row.append(input);
-  } else {
-    input.placeholder = 'https://';
-    row.append(input);
-  }
-  row.append(save);
-  const writable = access.role === 'student' && canWrite(access);
-  const disable = value => { for (const control of [input, choose, save, remove]) if (control) control.disabled = value; };
-  disable(!writable);
-  form.noValidate = true;
-  const hint = el('p', item.kind === 'file' ? 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB' : 'Use an HTTPS video link.', { class: 'submission-hint', id: `submission-hint-${item.id}` });
-  input.setAttribute('aria-describedby', compact ? 'submit-format-hint' : hint.id);
-  if (compact) form.append(row); else form.append(row, stateLine, hint);
-  let saving = false;
-  if (submission && writable && (!submission.group_id || submission.is_uploader) && (!item.due_at || Date.now() < new Date(item.due_at).getTime())) {
-    const actions = el('span', null, { class:'submission-delete' });
-    remove = el('button', 'Delete submission', { type:'button', class:'text-action' });
-    remove.addEventListener('click', () => {
-      if (saving) return;
-      saving = true; disable(true);
-      const prompt = el('span', `Delete ${submission.file_name || submission.link}?`, { class:'inline-confirm', 'data-delete-confirm':'' });
-      const confirm = el('button', 'Delete', { type:'button', class:'materials-button' });
-      const cancel = el('button', 'Cancel', { type:'button', class:'materials-button' });
-      const finish = () => { prompt.remove(); saving = false; disable(!writable); };
-      cancel.addEventListener('click', finish);
-      confirm.addEventListener('click', async () => {
-        confirm.disabled = true; cancel.disabled = true; status.textContent = 'Deleting…';
-        try { await backend.deleteSubmission(submission.id); await refresh(); }
-        catch (error) { status.textContent = error.message; }
-        finally { finish(); }
-      });
-      prompt.append(confirm, cancel); actions.append(prompt); cancel.focus();
-    });
-    actions.append(remove); stateLine.append(actions);
-  }
-  form.addEventListener('submit', async event => {
-    event.preventDefault(); if (!writable || saving) return;
-    saving = true; disable(true); status.textContent = 'Submitting…';
-    try {
-      if (item.kind === 'link') {
-        const link = input.value.trim();
-        if (!/^https:\/\//i.test(link)) throw new Error('Link must start with https://.');
-        await backend.submitLink(item.id, link);
-      } else {
-        if (!input.files[0]) throw new Error('Choose a file to submit.');
-        if (compact) { status.textContent = input.files[0].name; status.title = input.files[0].name; }
-        await backend.submitFile(item.id, input.files[0], percent => {
-          progress.hidden = false; meter.value = percent;
-          progressText.textContent = `Uploading ${percent}%`;
-        });
-      }
-      await refresh();
-    } catch (error) {
-      progress.hidden = true;
-      status.textContent = error.message;
-      // Another member or grader may have changed the owner while this page was open.
-      if (/graded.*locked/i.test(error.message)) {
-        disable(true);
-        status.setAttribute('data-submission-locked', '');
-        return;
-      }
-    } finally {
-      progress.hidden = true;
-      saving = false;
-      if (!status.hasAttribute('data-submission-locked')) disable(!writable);
-    }
-  });
-  section.append(form); return section;
-}
 export function renderWeek(ctx) {
   const { root, data, access, backend, refresh, fileLink } = ctx;
   const week = Number(root.dataset.week);
@@ -181,7 +39,7 @@ export function renderWeek(ctx) {
     const dueSummary = el('span', '', { class: 'card-summary' }); due.querySelector('h2').after(dueSummary);
     const dueReadings = document.querySelector('[data-week-due-readings]');
     if (dueReadings) due.append(dueReadings.content.cloneNode(true));
-    if (access.role !== 'auditor') { due.append(el('h3', 'Milestone', { class: 'card-sub' })); due.append(submissionBlock(ctx, week === 6 ? 'FP' : `M${week}`)); }
+    if (access.role !== 'auditor') { due.append(el('h3', 'Milestone', { class: 'card-sub' })); due.append(canvasSubmissionBlock(ctx, week === 6 ? 'FP' : `M${week}`)); }
     // Total reading time comes from the listed lengths.
     const lengths = [...due.querySelectorAll('.due-reading-list [data-length]')].map(n => n.dataset.length);
     const minutes = lengths.reduce((sum, text) => sum + (Number(/(\d+)\s*hr/.exec(text)?.[1] || 0) * 60) + Number(/(\d+)\s*min/.exec(text)?.[1] || 0), 0);
@@ -217,11 +75,4 @@ export function renderWeek(ctx) {
   // Card 3: the full reading list with levels
   const readings = document.querySelector('[data-week-readings]');
   if (readings) root.append(readings.content.cloneNode(true));
-}
-
-export function renderSubmit(ctx) {
-  ctx.root.append(el('p', 'PDF, DOCX, XLSX, PPTX, or ZIP · up to 25 MB. Final Prototype: HTTPS video link.', { id:'submit-format-hint', class:'submission-hint' }));
-  for (const code of SUBMIT_CODES) {
-    if (ctx.data.submission_items.some(i => gradeCode(i) === code && ['file','link'].includes(i.kind))) ctx.root.append(submissionBlock(ctx, code, true));
-  }
 }

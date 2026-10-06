@@ -1,9 +1,11 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter=async(page,role,slug)=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
 const pdf=name=>({name,mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\nPhase C\n%%EOF')});
 test.beforeEach(async({page})=>{
+  await installArchiveFixture(page);
   await page.route('https://cdn.jsdelivr.net/npm/fflate@0.8.3/esm/browser.js',route=>route.fulfill({contentType:'text/javascript',body:readFileSync('node_modules/fflate/esm/browser.js','utf8')}));
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.setFixedTime(new Date('2027-01-26T13:00:00Z'));
@@ -13,17 +15,13 @@ async function seed(page) {
   await page.evaluate(async()=>{
     const b=(await import('/assets/materials/demo.js')).createDemo();
     for(const id of [2,3,5,6])await b.configureItem(id,{kind:id===6?'link':'file',mode:'group',group_set_id:'demo-set',due_at:'2027-01-26T14:00:00Z'});
-    await b.chooseGroup('demo-set','demo-group-1','ab1234');
+    window.moveArchivedMember('ab1234','demo-group-1');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.grades=[];sessionStorage.setItem(key,JSON.stringify(d));
   });
 }
 async function uploadGroup(page) {
-  await seed(page);await enter(page,'student','week-3');
-  await page.getByLabel('Submission file',{exact:true}).setInputFiles(pdf('on-time.pdf'));
-  await page.getByRole('button',{name:'Submit',exact:true}).click();await expect(page.locator('[data-submission-status]')).toContainText('on-time.pdf');
-  await page.clock.setFixedTime(new Date('2027-01-26T14:10:00Z'));
-  await page.getByLabel('Submission file',{exact:true}).setInputFiles(pdf('late.pdf'));
-  await page.getByRole('button',{name:'Replace submission',exact:true}).click();await expect(page.locator('[data-submission-status]')).toContainText('Late');
+  await seed(page);
+  await page.evaluate(()=>window.seedArchivedWork([{item_id:3,group_id:'demo-group-1',file_name:'late.pdf',on_time_path:'archive/on-time.pdf'}]));
 }
 test('group panel grades snapshot members, retains on-time work, flags overrides and membership changes',async({page})=>{
   await uploadGroup(page);await enter(page,'instructor','gradebook');
@@ -36,7 +34,7 @@ test('group panel grades snapshot members, retains on-time work, flags overrides
   for(const uni of ['ab1234','cd5678'])await expect(page.getByLabel(`${uni} Milestone #3`,{exact:true})).toHaveValue('7');
   await page.getByLabel('ab1234 Milestone #3',{exact:true}).fill('9');await page.getByRole('button',{name:'Save scores',exact:true}).click();
   await expect(page.locator('[data-grade-cell="ab1234:3"] .override-mark')).toBeVisible();
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.chooseGroup('demo-set','demo-group-2','ab1234');});await page.reload();await ready(page);
+  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();window.moveArchivedMember('ab1234','demo-group-2');});await page.reload();await ready(page);
   await page.locator('[data-grade-cell="ab1234:3"]').click();await expect(panel).toContainText('Now Group 2');
   await expect(panel).toContainText('Second Student');await expect(panel.getByLabel('Comment',{exact:true})).toHaveValue('Group feedback');
 });
@@ -66,20 +64,6 @@ test('Settings manages New York times, linked modes, blocked submitted changes, 
   const row=await page.evaluate(async()=>(await (await import('/assets/materials/demo.js')).createDemo().files())[0]);expect(row.release_at).toBe('2027-03-15T13:00:00.000Z');expect(row.category).toBe('in_class');expect(row.released).toBe(false);
   await page.goto('/materials/files/');await ready(page);await expect(page).toHaveURL(/settings\/#lecture-pdfs/);
 });
-test('Submit lists all nine upload items, shares inline validation, and respects graded, preview, and archived locks',async({page})=>{
-  await seed(page);await enter(page,'student','submit');
-  expect(await page.locator('[data-submit-code]').evaluateAll(nodes=>nodes.map(n=>n.dataset.submitCode))).toEqual(['M1','M2','M3','M4','M5','FP','O1','O2','O3']);
-  const first=page.locator('#submit-M1');await expect(first.getByRole('link',{name:'Milestone #1: Demo milestone 1',exact:true})).toHaveAttribute('href','/materials/week-1/#milestone-1');
-  await first.getByRole('button',{name:'Submit',exact:true}).click();await expect(first.locator('[data-submission-status]')).toHaveText('Choose a file to submit.');
-  await first.getByLabel('Submission file',{exact:true}).setInputFiles(pdf('survey.pdf'));await first.getByRole('button',{name:'Submit',exact:true}).click();await expect(first.locator('[data-submission-status]')).toContainText('survey.pdf');
-  const prototype=page.locator('#submit-FP');await prototype.getByLabel('Prototype HTTPS link').fill('http://bad.example');await prototype.getByRole('button',{name:'Submit',exact:true}).click();await expect(prototype.locator('[data-submission-status]')).toHaveText('Link must start with https://.');
-  await prototype.getByLabel('Prototype HTTPS link').fill('https://video.example/demo');await prototype.getByRole('button',{name:'Submit',exact:true}).click();await expect(prototype.locator('[data-submission-status]')).toContainText('https://video.example/demo');
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.pickRole('instructor');await b.saveGrades([{uni:'ab1234',item_id:1,score:0}]);await b.setPreview('ab1234');});await page.reload();await ready(page);
-  await expect(first).toContainText('Graded, locked.');await expect(page.locator('#submit-M4').getByRole('button',{name:'Choose file'})).toBeDisabled();
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.setPreview(null);await b.openTerm('Spring 2028');await b.pickRole('student');});await page.reload();await ready(page);
-  await expect(page.locator('#submit-M4').getByRole('button',{name:'Submit',exact:true})).toBeDisabled();
-  await enter(page,'auditor','submit');await expect(page.locator('#materials-root')).toContainText('does not have access');
-});
 test('term controls export before close and leave purging manual; staff can filter archived grades',async({page})=>{
   await seed(page);await enter(page,'instructor','settings');await page.locator('#term-rollover > summary').click();
   await page.getByLabel('New term name').fill('Spring 2028');await page.getByLabel('Archive the current term and open the new term').check();await page.getByRole('button',{name:'Open term',exact:true}).click();
@@ -105,7 +89,7 @@ for(const width of [1440,1280])test(`Phase C screenshots and gradebook fits 17 c
   await page.goto('/materials/settings/');await ready(page);await page.locator('#session-times > summary').click();await page.locator('#submission-settings > summary').click();await page.locator('#lecture-pdfs > summary').click();await shot('settings');
   await page.goto('/materials/attendance/');await ready(page);await shot('attendance-staff');
   await enter(page,'student','submit');await shot('submit-student');await page.goto('/materials/grades/');await ready(page);await shot('grades-student');
-  await expect(page.locator('[data-grade-total]')).toContainText('Total');await expect(page.locator('.tool-help,.subline')).toHaveCount(0);
+  await expect(page.locator('[data-grade-total]')).toHaveCount(0);await expect(page.locator('.tool-help,.subline')).toHaveCount(0);
   await page.evaluate(()=>{const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.items.push({term_id:'spring-2027',id:17,code:'Q6',title:'Layout capacity check',max_points:3,kind:'none',mode:'individual',released:false});sessionStorage.setItem(key,JSON.stringify(d));});
   await enter(page,'instructor','gradebook');await expect(page.locator('.gradebook-grid thead th')).toHaveCount(19);await fits();
 });

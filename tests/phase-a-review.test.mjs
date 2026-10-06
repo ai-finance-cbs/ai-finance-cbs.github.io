@@ -1,9 +1,10 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { phaseDatabase, TERM, uid } from './helpers/phase-a.mjs';
 let h;
-before(async()=>{h=await phaseDatabase();});after(async()=>h?.db.close());
+before(async()=>{h=await phaseDatabase(undefined,'018_canvas_mirror.sql');});after(async()=>h?.db.close());
 beforeEach(async()=>{
   await h.as('owner');await h.db.exec("delete from private.student_previews; delete from pending_uploads; delete from submissions; delete from grades; delete from attendance; delete from group_memberships; delete from class_groups; update grade_items set group_set_id=null,due_at=null,released=false; delete from group_sets; delete from storage.objects");
 });

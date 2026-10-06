@@ -1,9 +1,11 @@
+import {installArchiveFixture} from './archive-fixture.mjs';
 import {test,expect} from '@playwright/test';
 import {mkdirSync} from 'node:fs';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
 const enter=async(page,role,slug)=>{await page.goto(`/materials/${slug}/?fakeauth=${role}`);await ready(page);};
 const panel=page=>page.locator('.grade-panel[data-profile-uni]');
 test.beforeEach(async({page})=>{
+  await installArchiveFixture(page);
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.setFixedTime(new Date('2027-02-03T14:15:00Z'));
   await page.setViewportSize({width:1440,height:1000});
@@ -17,11 +19,8 @@ async function seed(page){
     await b.configureItem(1,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
     await b.configureItem(3,{kind:'file',mode:'individual',due_at:'2027-02-03T14:00:00Z'});
     await b.configureItem(6,{kind:'link',mode:'group',group_set_id:'demo-set',due_at:null});
-    await b.chooseGroup('demo-set','demo-group-1','ab1234');
-    await b.pickRole('student');
-    await b.submitFile(1,new File(['%PDF-1.7\nSynthetic\n%%EOF'],'profile-demo.pdf',{type:'application/pdf'}));
-    await b.submitFile(3,new File(['%PDF-1.7\nSynthetic\n%%EOF'],'late-demo.pdf',{type:'application/pdf'}));
-    await b.submitLink(6,'https://example.test/prototype');
+    window.moveArchivedMember('ab1234','demo-group-1');
+    window.seedArchivedWork([{item_id:1,file_name:'profile-demo.pdf'},{item_id:3,file_name:'late-demo.pdf'},{item_id:6,group_id:'demo-group-1',link:'https://example.test/prototype'}]);
     await b.pickRole('instructor');
     await b.saveGrades([{uni:'ab1234',item_id:1,score:8,comment:'Visible feedback'},{uni:'ab1234',item_id:2,score:9,comment:'Private grading feedback'}]);
     await b.saveGrades([{uni:'ab1234',item_id:7,score:0}]);
@@ -77,15 +76,8 @@ test('archived cards show saved notes read-only and preview has no cards',async(
   await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.setPreview('ab1234','spring-2027');});
   await page.goto('/materials/attendance/');await ready(page);await expect(page.locator('[data-student-profile]')).toHaveCount(0);await expect(page.getByLabel('Private instructor note')).toHaveCount(0);
 });
-test('Settings saves the student sign-up note and adds empty groups',async({page})=>{
-  await enter(page,'instructor','settings');
-  await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();await b.setGroupNote('demo-set','');const key='b8403-demo-state-v3',data=JSON.parse(sessionStorage.getItem(key));data.sets[0].max_size=4;sessionStorage.setItem(key,JSON.stringify(data));});
-  await page.reload();await ready(page);await page.locator('#group-settings > summary').click();
-  const note='Up to 4 per group. Working alone? Join an empty group by yourself.';
-  await page.getByLabel('Sign-up note',{exact:true}).fill(note);await page.getByRole('button',{name:'Save sign-up note',exact:true}).click();await expect(page.locator('#group-note-demo-set [role=status]')).toHaveText('Sign-up note saved.');
-  await page.getByLabel('Number of groups to add').fill('3');await page.getByRole('button',{name:'Add groups',exact:true}).click();await expect(page.locator('#group-settings')).toContainText('5 groups');
-  await enter(page,'student','groups');await expect(page.locator('.group-note')).toHaveText(note);await expect(page.locator('.group-grid tbody tr')).toHaveCount(5);await expect(page.locator('.group-grid tbody tr').last()).toContainText('No members yet.');
-  await page.screenshot({path:'evidence/phase-g/groups-note.png',fullPage:true});
+test('Settings no longer offers local group editing',async({page})=>{
+  await enter(page,'instructor','settings');await expect(page.locator('#group-settings')).toHaveCount(0);
 });
 test('no calendar links appear on Course Goals or week pages (Simon removed them)',async({page})=>{
   await page.goto('/syllabus/');await expect(page.locator('.calendar-links,[data-calendar-links]')).toHaveCount(0);

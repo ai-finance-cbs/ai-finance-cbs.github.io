@@ -15,6 +15,8 @@ async function seed(page){
     const b=(await import('/assets/materials/demo.js')).createDemo();
     await b.saveGrades([{uni:'ab1234',item_id:1,score:null}]);
     await b.configureItem(1,{kind:'file',mode:'individual',group_set_id:null,due_at:'2027-01-27T14:00:00Z'});
+    await b.syncCanvas('spring-2027');
+    const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.canvas['spring-2027'].submissions.find(s=>s.assignment_id==='100'&&s.user_id==='1').cached_due_at='2027-01-27T14:00:00Z';sessionStorage.setItem(key,JSON.stringify(d));
     const rows=await b.assignments();await b.saveAssignment({...rows.find(a=>a.id===1),title:'Pre-Class Survey'});
     for(const code of ['M1','M2','M3','M4','M5','FP','O1','O2','O3'])await b.saveAssignmentPage('spring-2027',code,'# Synthetic instructions\n\n**Demo** and *example*\n\n- First step\n- Second step\n\n[Reference](https://example.test/)\n\n<script>window.assignmentXss=1</script>\n<img src=x onerror=alert(1)>\n[Unsafe](javascript:alert)');
   });
@@ -24,7 +26,7 @@ test('week milestone uses the full name, trimmed content, instructions link, and
   await expect(box.locator('h3')).toContainText('Milestone #1: Pre-Class Survey');
   await expect(box.locator('.due-line')).toHaveText('Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs remaining');
   await expect(box.locator('.due-line')).toHaveCSS('color','rgb(31, 58, 107)');
-  await expect(box.locator('[data-milestone-state]')).toHaveText('Incomplete');
+  await expect(box.locator('[data-milestone-state]')).toHaveText('Done');
   await expect(box).not.toContainText(/Deliverable|Graded on|Individual|Synthetic local example/);
   await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);
   await expect(box.getByRole('link',{name:'Instructions →'})).toHaveAttribute('href','/materials/assignments/milestone-1/');
@@ -36,7 +38,7 @@ test('week milestone uses the full name, trimmed content, instructions link, and
   await page.clock.setFixedTime(new Date('2027-01-27T14:00:00Z'));await page.clock.runFor(60000);
   await expect(box.locator('.due-line')).toContainText('Past due');await expect(box.locator('.due-line')).toHaveCSS('color','rgb(153, 83, 92)');
 });
-test('student instructions render safe Markdown and summary; shared uploads and full names work across tabs',async({page})=>{
+test('student instructions render safe Markdown and summary beside CourseWorks links',async({page})=>{
   await seed(page);await enter(page,'student');
   await expect(page.locator('.page-heading h1')).toHaveText('Milestone #1: Pre-Class Survey');
   const root=page.locator('#materials-root');await expect(root.locator('.due-line')).toContainText('3 days 4 hrs remaining');
@@ -48,14 +50,11 @@ test('student instructions render safe Markdown and summary; shared uploads and 
   await expect(root.locator('.assignment-summary')).toContainText('Deliverable: Demo submission.');await expect(root.locator('.assignment-summary')).toContainText('Graded on: Demo criteria.');
   await expect(root.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);
   await page.screenshot({path:'evidence/phase-h/assignment-student.png',fullPage:true});
-  await page.getByLabel('Submission file').setInputFiles(pdf);await root.getByRole('button',{name:'Submit',exact:true}).click();await expect(root.locator('[data-submission-status]')).toContainText('Submitted · survey.pdf');
-  await page.getByRole('button',{name:'Delete submission'}).click();await page.getByRole('button',{name:'Delete',exact:true}).click();await expect(root.locator('[data-submission-status]')).toHaveText('Not submitted');
-  for(const slug of ['submit','grades']){
-    await enter(page,'student',slug);await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
-    await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
-    await expect(root.locator('.optional-task-label')).toHaveCount(slug==='submit'?3:4);
-    if(slug==='submit')await page.screenshot({path:'evidence/phase-h/submit-student.png',fullPage:true});
-  }
+  await expect(page.getByLabel('Submission file')).toHaveCount(0);
+  await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
+  await enter(page,'student','grades');await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
+  await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
+  await expect(root.locator('.optional-task-label')).toHaveCount(4);
 });
 test('instructor edits inline, cancels, saves, reloads, and receives unsaved navigation and sign-out warnings',async({page})=>{
   await seed(page);await enter(page,'instructor');
@@ -71,11 +70,11 @@ test('instructor edits inline, cancels, saves, reloads, and receives unsaved nav
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Unsaved changes');await page.getByRole('button',{name:'Keep editing'}).click();
   const dialog=page.waitForEvent('dialog');const reload=page.evaluate(()=>{location.reload();});const warning=await dialog;expect(warning.type()).toBe('beforeunload');await warning.dismiss();await reload;
   await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');
-  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Choose file',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Choose file',exact:true})).toHaveCount(0);
 });
 test('grader is read-only, auditors see only shared pages, and menu visibility follows sharing',async({page})=>{
   await seed(page);await enter(page,'grader');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
-  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Submit',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('link',{name:'Open in CourseWorks →'})).toBeVisible();
   const reject=()=>page.evaluate(async()=>{try{await (await import('/assets/materials/demo.js')).createDemo().saveAssignmentPage('spring-2027','M1','Forbidden');return false;}catch{return true;}});
   expect(await reject()).toBe(true);
   await enter(page,'auditor');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');await expect(page.locator('.submission-box')).toHaveCount(0);expect(await reject()).toBe(true);

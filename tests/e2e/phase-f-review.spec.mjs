@@ -12,38 +12,6 @@ test.beforeEach(async ({page}) => {
   await page.clock.setFixedTime(new Date('2027-01-26T13:00:00Z'));
 });
 
-for (const [kind,id,code,week] of [['file',2,'M2',2],['link',6,'FP',6]]) test(`group ${kind} Delete belongs to the latest uploader on Submit and week pages`, async ({page}) => {
-  await enter(page,'instructor','submit');
-  await page.evaluate(async ({kind,id}) => {
-    const b=(await import('/assets/materials/demo.js')).createDemo();
-    await b.configureItem(id,{kind,mode:'group',group_set_id:'demo-set',due_at:'2099-01-01'});
-    await b.chooseGroup('demo-set','demo-group-1','ab1234');
-  },{kind,id});
-  await enter(page,'student','submit');
-  const item=page.locator(`#submit-${code}`);
-  const submit=async replacement => {
-    if(kind==='file')await item.getByLabel('Submission file').setInputFiles(pdf);
-    else await item.getByLabel('Prototype HTTPS link').fill(`https://example.test/${replacement?'peer':'original'}`);
-    await item.getByRole('button',{name:replacement?'Replace submission':'Submit',exact:true}).click();
-    await expect(item.locator('[data-submission-status]')).toContainText('Submitted');
-  };
-  await submit(false);await expect(item.getByRole('button',{name:'Delete submission',exact:true})).toBeVisible();
-  for(const slug of [`week-${week}`,'submit']) {
-    await asStudent(page,'cd5678',slug);
-    await expect(page.getByRole('button',{name:'Delete submission',exact:true})).toHaveCount(0);
-    await expect(page.getByRole('button',{name:'Replace submission',exact:true})).toBeEnabled();
-  }
-  const denial=await page.evaluate(async id => {
-    const b=(await import('/assets/materials/demo.js')).createDemo(),s=(await b.classData()).submissions.find(s=>s.item_id===id);
-    try {await b.deleteSubmission(s.id);return 'allowed';}catch(e){return e.message;}
-  },id);
-  expect(denial).toBe('Only the member who uploaded this file can delete it. You can replace it.');
-  await submit(true);await expect(item.getByRole('button',{name:'Delete submission',exact:true})).toBeVisible();
-  await asStudent(page,'ab1234',`week-${week}`);await expect(page.getByRole('button',{name:'Delete submission',exact:true})).toHaveCount(0);
-  await asStudent(page,'cd5678',`week-${week}`);await page.getByRole('button',{name:'Delete submission',exact:true}).click();
-  await page.getByRole('button',{name:'Delete',exact:true}).click();await expect(page.locator('[data-submission-status]')).toHaveText('Not submitted');
-});
-
 test('review Markdown payloads stay escaped in the rendered notes, including bold and headings', async ({page}) => {
   await enter(page,'instructor','preparation/week-1');const notes=page.locator('[data-prep-section="Other notes"]');await notes.getByRole('button',{name:'Edit Other notes',exact:true}).click();
   const payloads=['[x](javascript:alert(1))','[x](https://a"onmouseover=...)','<img src=x onerror="window.prepXss=1">'];

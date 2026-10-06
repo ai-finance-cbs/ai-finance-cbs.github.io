@@ -1,8 +1,9 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {phaseDatabase,TERM} from './helpers/phase-a.mjs';
 let h;
-before(async()=>{h=await phaseDatabase();});after(async()=>h?.db.close());
+before(async()=>{h=await phaseDatabase(undefined,'018_canvas_mirror.sql');});after(async()=>h?.db.close());
 test('release and auditor predicates match raw metadata and SECURITY DEFINER projections',async()=>{
   await h.as('teacher');
   for(const [title,visible,released,date] of [['past',true,false,'2000-01-01'],['future',true,false,'2100-01-01'],['click',true,true,'2100-01-01'],['private',false,true,null]])

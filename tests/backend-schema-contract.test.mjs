@@ -1,3 +1,4 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createBackend} from '../assets/materials/supabase.js';
@@ -41,7 +42,7 @@ function query(table) {
   return q;
 }
 before(async()=>{
-  h=await phaseDatabase();await h.as('owner');
+  h=await phaseDatabase(undefined,'018_canvas_mirror.sql');await h.as('owner');
   await h.rows("insert into assignments(term_id,id,title,due,points,description,deliverable,grading,auditor_visible) values($1,1,'Demo','Week 1',10,'Synthetic','Demo','Demo',false)",[TERM]);
   const client={from:query,rpc:async(name,args={})=>{
     const params=Object.values(args).map(v=>typeof v==='object' && v!==null?JSON.stringify(v):v);

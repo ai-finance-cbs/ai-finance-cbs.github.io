@@ -1,8 +1,9 @@
+// Historical archive workflow: run before migration 019 retires submission and group writes.
 import {test,beforeEach,afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {phaseDatabase,TERM} from './helpers/phase-a.mjs';
 let h,set;
-beforeEach(async()=>{h=await phaseDatabase();await h.as('teacher');set=await h.rpc('create_group_set','Project groups',2,4,null);await h.rpc('save_student_note',TERM,'aa1001','PRIVATE-NOTE');});
+beforeEach(async()=>{h=await phaseDatabase(undefined,'018_canvas_mirror.sql');await h.as('teacher');set=await h.rpc('create_group_set','Project groups',2,4,null);await h.rpc('save_student_note',TERM,'aa1001','PRIVATE-NOTE');});
 afterEach(async()=>h?.db.close());
 
 test('student notes are instructor-only, bounded, unaudited, and archived read-only',async()=>{

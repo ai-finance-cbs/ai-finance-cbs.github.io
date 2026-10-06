@@ -79,38 +79,13 @@ test('owner and grader downloads use caller-scoped metadata and 300-second attac
   const peer=setup({hidden:true});assert.equal((await peer.run({action:'download',id:ID})).status,404);
   assert.ok(!peer.calls.includes('service-client'));
 });
-test('finish verifies the uploaded object then calls the caller RPC and deletes only returned replacement paths',async()=>{
-  const x=setup({expired:['expired.pdf'],replaced:['old.pdf']}),res=await x.run({action:'finish',pending_id:ID,path:'attacker.pdf',replaced_paths:['victim.pdf']});
-  assert.equal(res.status,200);assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:['expired.pdf']},{remove:['old.pdf']}]);
-  const verify=x.calls.findIndex(c=>c.server==='confirm_submission_upload'),finish=x.calls.findIndex(c=>c.caller==='finish_submission');
-  assert.ok(verify>0 && finish>verify);assert.equal(x.calls.some(c=>c.server==='finish_submission'),false);
-  assert.deepEqual(x.calls.find(c=>c.server==='confirm_submission_upload').args,{p_term:'spring-2027',p_pending:ID,p_size:pdf.length,p_type:TYPES.pdf});
-});
-test('missing objects never finish; forged magic bytes and over-size objects are rejected and removed',async()=>{
-  const missing=setup({absent:true});assert.equal((await missing.run({action:'finish',pending_id:ID})).status,409);
-  assert.equal(missing.calls.some(c=>c.caller==='finish_submission'),false);
-  for(const file of [new Blob([new Uint8Array(pdf.length).fill(77)]),{size:MAX_BYTES+1}]) {
-    const x=setup({file}),res=await x.run({action:'finish',pending_id:ID});assert.equal(res.status,400);
-    assert.equal(x.calls.some(c=>c.caller==='finish_submission'),false);
-    assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[PATH]}]);
-  }
-});
-test('a failed or duplicate finish deletes only paths confirmed unreferenced by the database',async()=>{
-  for(const alreadyCommitted of [false,true]) {
-    const x=setup({finishError:'Graded, locked.',alreadyCommitted});assert.equal((await x.run({action:'finish',pending_id:ID})).status,409);
-    assert.ok(x.calls.some(c=>c.server==='reject_submission_upload'));
-    assert.deepEqual(x.calls.filter(c=>c.remove),alreadyCommitted?[]:[{remove:[PATH]}]);
-  }
-  const x=setup({replaced:['old.pdf'],removeError:{message:'temporary'}}),res=await x.run({action:'finish',pending_id:ID});
-  assert.equal(res.status,200);assert.equal((await res.json()).cleanup_pending,true);
-});
 test('expired sweeps require instructor access and use server-selected paths',async()=>{
   const x=setup({access:{role:'instructor'},expired:['expired.pdf','superseded.pdf']});
   assert.equal((await x.run({action:'sweep',paths:['victim.pdf']})).status,200);
   assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:['expired.pdf','superseded.pdf']}]);
   assert.equal((await x.run({action:'purge'})).status,400,'Purge requires an explicit term and the export/close gate.');
   const expired=setup({pending:{expires_at:'2020-01-01'}});
-  assert.equal((await expired.run({action:'finish',pending_id:ID})).status,409);
+  assert.equal((await expired.run({action:'finish',pending_id:ID})).status,410);
   assert.equal(expired.calls.some(c=>c.download),false);
 });
 test('role, preview, archived, origin, and identity denials never reach privileged storage',async()=>{
@@ -120,7 +95,7 @@ test('role, preview, archived, origin, and identity denials never reach privileg
     [{role:'auditor'},'download'],[{role:'student',view_as:{uni:'aa1001'}},'finish'],
     [{role:'student',read_only:true},'finish'],[{role:'instructor',read_only:true},'sweep'],
   ];
-  for(const [access,action] of denied){const x=setup({access});assert.equal((await x.run({action,id:ID,pending_id:ID})).status,403);assert.ok(!x.calls.includes('service-client'));}
+  for(const [access,action] of denied){const x=setup({access});assert.equal((await x.run({action,id:ID,pending_id:ID})).status,action==='finish'&&access.role!=='unlisted'?410:403);assert.ok(!x.calls.includes('service-client'));}
   const invalid=setup({invalid:true});assert.equal((await invalid.run({action:'finish',pending_id:ID})).status,401);
   const x=setup();assert.equal((await x.handler(x.request({action:'finish',pending_id:ID},{origin:'https://evil.example'}))).status,403);
   assert.equal((await x.run({action:'download',id:'../private'})).status,400);
@@ -130,8 +105,8 @@ test('review 6: a PDF needs both its header and an end marker within the final 1
   for(const content of ['%PDF-1.7\ntruncated','%PDF-1.7\n%%EOF'+'x'.repeat(1024)]) {
     const bytes=new TextEncoder().encode(content);assert.equal(validSubmissionBytes(bytes,'work.pdf',TYPES.pdf),false);
     const x=setup({file:new Blob([bytes]),pending:{file_size:bytes.length}});
-    assert.equal((await x.run({action:'finish',pending_id:ID})).status,400);
-    assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[PATH]}]);
+    assert.equal((await x.run({action:'finish',pending_id:ID})).status,410);
+    assert.deepEqual(x.calls.filter(c=>c.remove),[]);
   }
   assert.ok(validSubmissionBytes(new TextEncoder().encode('%PDF-1.7\n%%EOF'+' '.repeat(1019)),'work.pdf',TYPES.pdf));
 });
@@ -142,24 +117,10 @@ test('review 12: every privileged submission RPC receives the trusted term expli
   assert.deepEqual(instructor.calls.find(c=>c.server).args,{p_term:'spring-2027'});
 });
 
-test('delete uses the caller RPC and only its returned object paths; links need no service client',async()=>{
-  const x=setup(),res=await x.run({action:'delete',id:ID,paths:['victim.pdf'],term_id:'forged',owner_uni:'other'});
-  assert.equal(res.status,200);assert.deepEqual(await res.json(),{deleted:true,cleanup_pending:false});
-  assert.deepEqual(x.calls.find(c=>c.caller==='delete_submission').args,{p_id:ID});
-  assert.deepEqual(x.calls.filter(c=>c.remove),[{remove:[PATH,'server-on-time.pdf']}]);
-  const link=setup({deletePaths:[]});assert.equal((await link.run({action:'delete',id:ID})).status,200);assert.ok(!link.calls.includes('service-client'));
-});
-test('delete denies wrong roles, preview, archived, late, graded, non-members and other uploaders before privileged removal',async()=>{
-  for(const access of [...['instructor','grader','auditor','unlisted'].map(role=>({role})),{role:'student',view_as:{uni:'aa1001'}},{role:'student',read_only:true}]) {
-    const x=setup({access});assert.equal((await x.run({action:'delete',id:ID})).status,403);assert.ok(!x.calls.includes('service-client'));
+
+for(const role of ['student','grader','instructor','auditor','unlisted'])test(`${role}: retired finish and delete never reach database writes or Storage`,async()=>{
+  for(const action of ['finish','delete'])for(const flags of [{},{view_as:{uni:'aa1001'}},{read_only:true}]){
+    const x=setup({access:{role,...flags}}),response=await x.run({action,id:ID,pending_id:ID});
+    assert.equal(response.status,role==='unlisted'?403:410);assert.deepEqual(x.calls,[{caller:'get_access',args:undefined}]);
   }
-  for(const deleteError of ['The deadline has passed.','Graded, locked.','Submission access required.','Submission unavailable.','Only the member who uploaded this file can delete it. You can replace it.']) {
-    const x=setup({deleteError}),res=await x.run({action:'delete',id:ID});assert.equal(res.status,409);assert.equal((await res.json()).error,deleteError);assert.ok(!x.calls.includes('service-client'));
-  }
-  const invalid=setup({invalid:true});assert.equal((await invalid.run({action:'delete',id:ID})).status,401);
-  const x=setup();assert.equal((await x.run({action:'delete',id:'../other'})).status,400);
-});
-test('a committed deletion reports deferred cleanup on a storage failure, matching replacement semantics',async()=>{
-  const x=setup({removeError:{message:'temporary'}}),res=await x.run({action:'delete',id:ID});
-  assert.equal(res.status,200);assert.deepEqual(await res.json(),{deleted:true,cleanup_pending:true});
 });

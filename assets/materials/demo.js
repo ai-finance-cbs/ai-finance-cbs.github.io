@@ -52,6 +52,9 @@ export function createDemo() {
     ...extendAssignments({ read, save, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
+    // Keep archive reads and grading. All new work and group changes belong in CourseWorks.
+    ...Object.fromEntries(['beginSubmission','uploadSubmissionFile','finishSubmission','submitFile','submitLink','deleteSubmission',
+      'createSet','updateSet','chooseGroup','setGroupNote','addGroups'].map(name=>[name,async()=>{throw new Error('Use CourseWorks. Local submissions and groups are read-only archives.');}])),
     demo: true,
     async sessions() { requireRole(); return read().sessions; },
     async announcements() { requireRole(); return (read().announcements || []).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)); },

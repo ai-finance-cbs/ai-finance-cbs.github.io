@@ -1,3 +1,4 @@
+// Historical archive workflow: current Canvas permissions are tested in canvas-student-database.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, mkdir, writeFile } from 'node:fs/promises';
@@ -53,7 +54,7 @@ test(
       }
       const [owner, instructor, a, b] = clients;
       await owner.query(bootstrapSQL);
-      for (const file of migrationFiles)
+      for (const file of migrationFiles.filter(file=>!file.startsWith('019_')))
         await owner.query(
           await readFile(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8'),
         );

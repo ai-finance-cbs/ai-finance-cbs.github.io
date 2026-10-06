@@ -1282,3 +1282,21 @@ body.standalone-tool .content { max-width:none; }
 .canvas-popup h3 { font:600 17px/1.4 Inter,Arial,sans-serif; }
 .canvas-popup p { margin:8px 0; font-size:13px; }
 @media(max-width:819px) { .canvas-popup { width:calc(100vw - 32px); } .canvas-mapping select { max-width:230px; } }
+
+/* Canvas student views use the same quiet rules as the teaching content. */
+.canvas-sync-note { font-size: 11px; color: #777; margin: 8px 0 16px; }
+.canvas-status { font-size: 12px; font-weight: 600; margin: 8px 0; }
+.canvas-assignment .courseworks-link { display: inline-block; font-size: 12px; }
+.canvas-group-set { border-top: 1px solid #ececec; margin-top: 20px; padding-top: 12px; }
+.canvas-group { border-top: 1px solid #ececec; padding: 10px 0; }
+.canvas-group ul { margin: 4px 0; padding-left: 18px; }
+.canvas-grades .student-grade { grid-template-columns: minmax(0,1fr) auto auto; }
+.canvas-grades .grade-score { white-space: nowrap; min-width: 80px; }
+.canvas-grades .student-grade > a { grid-column: 2; grid-row: 1; font-size: 12px; }
+.canvas-grades .optional-task-label { grid-column: 1; grid-row: 2; }
+.canvas-assignment .milestone-title .due-line { border-left: 0; padding-left: 0; }
+@media (max-width: 600px) {
+  .canvas-grades .student-grade { grid-template-columns: minmax(0,1fr) auto; }
+  .canvas-grades .grade-score { grid-column: 2; }
+  .canvas-grades .student-grade > a { grid-column: 1 / -1; grid-row: 3; }
+}
