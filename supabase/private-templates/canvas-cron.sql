@@ -6,7 +6,7 @@ create extension if not exists pg_net;
 do $$ declare j bigint; begin
   for j in select jobid from cron.job where jobname='canvas-sync-active-term' loop perform cron.unschedule(j); end loop;
 end $$;
-select cron.schedule('canvas-sync-active-term','*/15 * * * *', $job$
+select cron.schedule('canvas-sync-active-term','*/5 * * * *', $job$
   select net.http_post(
     url:=(select decrypted_secret from vault.decrypted_secrets where name='canvas_sync_url'),
     headers:=jsonb_build_object('Content-Type','application/json','x-cron-secret',

@@ -28,7 +28,7 @@ export async function loadCanvas(backend, access, term) {
 }
 function updateHealth(node) {
   const date=node.dataset.syncedAt;
-  node.textContent=`Last synced: ${date ? courseTime(date) : node.dataset.syncUnknown==='true' ? 'Unavailable' : 'Never'}${date && Date.now()-Date.parse(date)>1800000 ? ' · Updates delayed' : ''}${node.dataset.available==='false' ? ' · Status unavailable' : ''}`;
+  node.textContent=`Last synced: ${date ? courseTime(date) : node.dataset.syncUnknown==='true' ? 'Unavailable' : 'Never'}${date && Date.now()-Date.parse(date)>900000 ? ' · Updates delayed' : ''}${node.dataset.available==='false' ? ' · Status unavailable' : ''}`;
 }
 export function canvasHealth(data) {
   const line=el('p',null,{class:'canvas-sync-note','data-canvas-health':'','data-synced-at':data?.last_synced_at || '', 'data-available':String(!!data?.available),'data-sync-unknown':String(!!data?.sync_unknown)});

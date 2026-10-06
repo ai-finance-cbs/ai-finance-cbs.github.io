@@ -6,7 +6,7 @@ const button=(text,fn)=>{const b=el('button',text,{type:'button',class:'prep-tex
 const time=value=>value?new Date(value).toLocaleString('en-US',{timeZone:'America/New_York'}):'—';
 function health(data) {
   const date=data.course?.last_synced_at,run=data.runs[0];
-  return `Last synced: ${date?time(date):'Never'} · ${run?.status || 'Not connected'}${date && Date.now()-Date.parse(date)>1800000?' · Updates delayed':''}${run?.error?` · ${run.error}`:''}`;
+  return `Last synced: ${date?time(date):'Never'} · ${run?.status || 'Not connected'}${date && Date.now()-Date.parse(date)>900000?' · Updates delayed':''}${run?.error?` · ${run.error}`:''}`;
 }
 export async function renderCanvasSettings({root,backend,term,items,readOnly}) {
   const content=el('div',null,{class:'canvas-settings'}),status=el('p','Loading Canvas…',{role:'status'});root.append(content,status);
