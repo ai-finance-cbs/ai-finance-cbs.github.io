@@ -1326,3 +1326,7 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 }
 /* Milestone line inside "Due before class" reads at body size, not as fine print. */
 .class-tools #materials-root .canvas-assignment .milestone-title, .class-tools #materials-root #due-before-class .canvas-assignment > .milestone-title { font-size:15px; }
+/* Assignment pages are reading pages: same serif body text as Syllabus and Library, not the 13px staff-grid type. */
+.class-tools #materials-root[data-page="assignments"] :is(.prep-markdown, .assignment-summary) :is(p, li, dd) { font-family:"Source Serif 4", Georgia, serif; font-size:17px; line-height:1.6; color:var(--body); }
+.class-tools #materials-root[data-page="assignments"] .prep-markdown td { font-family:"Source Serif 4", Georgia, serif; font-size:15.5px; }
+.class-tools #materials-root[data-page="assignments"] :is(.assignment-mode, .due-line) { font-size:15px; }
