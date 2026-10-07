@@ -112,7 +112,7 @@ for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture r
 });
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {
-  const publicMenu=['Home','Syllabus','Library','Staff','Nota Bene'];
+  const publicMenu=['Home','Syllabus','Library','Staff','AI Takes'];
   for(const [role,extra] of Object.entries({student:['Course Materials','Assignments','Attendance','Grades','Groups'],auditor:['Course Materials','Assignments'],grader:['Course Materials','Assignments','Groups'],instructor:['Course Materials','Assignments','Groups']})) {
     const tools={student:[],auditor:[],grader:['Gradebook','Attendance'],instructor:['Gradebook','Attendance','Roster','Settings','Preparation','Speakers']}[role];
     await enter(page,role);
