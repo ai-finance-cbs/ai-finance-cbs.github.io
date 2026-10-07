@@ -49,7 +49,7 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
   await expect(root.locator('.prep-markdown li')).toHaveText(['First step','Second step']);
   await expect(root.getByRole('link',{name:'Reference'})).toHaveAttribute('target','_blank');
   await expect(root.locator('.prep-markdown img,.prep-markdown script')).toHaveCount(0);expect(await page.evaluate(()=>window.assignmentXss)).toBeUndefined();
-  await expect(root.locator('.assignment-summary')).toContainText('Deliverable: Demo submission.');await expect(root.locator('.assignment-summary')).toContainText('Graded on: Demo criteria.');
+  await expect(root.locator('.assignment-summary')).toHaveCount(0);
   await expect(root.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);
   await page.screenshot({path:'evidence/phase-h/assignment-student.png',fullPage:true});
   await expect(page.getByLabel('Submission file')).toHaveCount(0);

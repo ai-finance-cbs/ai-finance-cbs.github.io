@@ -34,16 +34,6 @@ export function renderAssignments(ctx, catalog, pages) {
         return {body:saved.body_md,updated_at:saved.updated_at};
       } },
     });
-    const week = item.code === 'FP' ? 6 : /^M[1-5]$/.test(item.code) ? Number(item.code[1]) : null;
-    const assignment = data.assignments.find(a => a.id === week);
-    if (assignment) {
-      const summary = el('div','','assignment-summary');
-      if (assignment.description) summary.append(el('p',assignment.description));
-      for (const [label,text] of [['Deliverable',assignment.deliverable],['Graded on',assignment.grading]]) {
-        if (text) { const line = el('p',''); line.append(el('strong',`${label}: `),document.createTextNode(text)); summary.append(line); }
-      }
-      section.append(summary);
-    }
     if (access.role !== 'auditor') section.append(canvasSubmissionBlock(ctx,item.code,true));
     root.append(section);
   }
