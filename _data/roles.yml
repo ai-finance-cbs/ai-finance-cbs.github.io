@@ -176,3 +176,59 @@
       description: Decide with the CFO whether to fund an expansion from cash on hand or new debt.
       onet_id: 8870
       label: Own
+- slug: finance-faculty
+  title: Finance Faculty
+  onet_code: "25-1011.00"
+  onet_title: Business Teachers, Postsecondary
+  summary: >-
+    This is the task map for my own job as a finance professor at Columbia Business School. The job
+    has two halves: producing research papers, and teaching MBA and PhD students. Notice that grading
+    shows up twice, because scoring an exam and deciding a final grade are different kinds of work.
+  tasks:
+    - name: Building research datasets
+      description: Pull stock prices, fund holdings, and insurance company filings from databases and merge them into one research panel.
+      onet_id: 5681
+      label: Process
+    - name: Literature review
+      description: Find and summarize the existing papers related to a new research idea.
+      onet_id: 5670
+      label: Process
+    - name: Scoring exams
+      description: Score students' exam answers against the answer key and the grading rubric.
+      onet_id: 5664
+      label: Process
+    - name: Picking research ideas
+      description: Estimate which of several research ideas is most likely to produce a clear, publishable result.
+      onet_id: 5681
+      label: Predict
+    - name: Empirical estimation
+      description: Estimate from data how much investor demand moves asset prices, a number nobody knows in advance.
+      onet_id: 5681
+      label: Predict
+    - name: Anticipating referees
+      description: Forecast the objections referees and editors will raise, and fix the paper before it is submitted.
+      onet_id: 5681
+      label: Predict
+    - name: Writing papers
+      description: Write the paper so that referees and readers are convinced the result is right and important.
+      onet_id: 5681
+      label: Persuade
+    - name: Seminar presentations
+      description: Present research at other universities and conferences, and defend it against questions.
+      onet_id: 5670
+      label: Persuade
+    - name: Lecturing
+      description: Teach a class session that changes how students think about a topic.
+      onet_id: 5662
+      label: Persuade
+    - name: Refereeing
+      description: Recommend whether a journal should accept or reject another researcher's paper, and stand behind the report.
+      label: Own
+    - name: Final course grades
+      description: Decide each student's final grade and answer for it if the student appeals.
+      onet_id: 5663
+      label: Own
+    - name: Advising PhD students
+      description: Own the relationship with PhD students and answer for their progress toward the job market.
+      onet_id: 5680
+      label: Own
