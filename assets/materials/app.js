@@ -215,7 +215,7 @@ async function renderMaterials(version) {
       const [data, pages, canvas] = await Promise.all([state.backend.classData(), state.backend.assignmentPages(state.access.term_id,codes),loadCanvas(state.backend,state.access,state.access.term_id)]);
       if (version !== state.version) return;
       root.replaceChildren();
-      renderAssignments({ root,data,canvas,access:state.access,backend:state.backend,refresh,path },catalog,pages);
+      await renderAssignments({ root,data,canvas,access:state.access,backend:state.backend,refresh,path },catalog,pages);
       outlineChanged();
     } else if (root && ['preparation','speakers'].includes(root.dataset.page)) {
       const prep = root.dataset.page === 'preparation';
