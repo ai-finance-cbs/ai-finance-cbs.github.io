@@ -1,12 +1,20 @@
 {% assign role = site.data.roles | where: "slug", include.slug | first %}
+<div class="role-tools"><button class="materials-button role-pdf" type="button" onclick="window.print()">Export to PDF</button></div>
 <p class="role-summary">{{ role.summary }}</p>
+<p class="role-instruct">Label each task with one of the four kinds of financial work from Week 1. Write P1, P2, P3, or P4 in the last column.</p>
+<dl class="role-legend">
+  <div><dt>P1 · Process</dt><dd>Find, extract, or organize information that already exists.</dd></div>
+  <div><dt>P2 · Predict</dt><dd>Estimate or forecast something that is not yet known.</dd></div>
+  <div><dt>P3 · Persuade</dt><dd>Communicate to change what someone thinks or does.</dd></div>
+  <div><dt>P4 · Position</dt><dd>Decide, sign, or answer for the outcome, including owning a relationship.</dd></div>
+</dl>
 <table class="role-tasks">
-  <colgroup><col class="role-task-num"><col class="role-task-name"><col></colgroup>
-  <thead><tr><th>#</th><th>Task</th><th>Description</th></tr></thead>
+  <colgroup><col class="role-task-num"><col class="role-task-name"><col><col class="role-task-label"></colgroup>
+  <thead><tr><th>#</th><th>Task</th><th>Description</th><th>Label</th></tr></thead>
   <tbody>
   {% for t in role.tasks %}
-    <tr><td>{{ forloop.index }}</td><td>{{ t.name }}</td><td>{{ t.description }}</td></tr>
+    <tr><td>{{ forloop.index }}</td><td>{{ t.name }}</td><td>{{ t.description }}</td><td class="role-blank"></td></tr>
   {% endfor %}
   </tbody>
 </table>
-<p class="role-source">Source: O*NET 30.1, {{ role.onet_title }} ({{ role.onet_code }}). Tasks trimmed and lightly edited for this course.</p>
+<p class="role-source">Source: O*NET 30.1, {{ role.onet_title }} ({{ role.onet_code }}). Tasks trimmed and rewritten as concrete tasks for this course.</p>

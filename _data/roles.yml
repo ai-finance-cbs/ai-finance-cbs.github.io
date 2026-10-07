@@ -1,4 +1,4 @@
-# Milestone #2 role task lists. Source: O*NET 30.1 task statements, trimmed and lightly edited.
+# Milestone #2 role task lists. Source: O*NET 30.1 task statements, trimmed and rewritten as concrete tasks.
 # Each task keeps its O*NET task ID so the edit can be traced back to the original.
 - slug: investment-banking
   title: Investment Banking
@@ -10,47 +10,47 @@
     and the presentations that carry a deal from pitch to close.
   tasks:
     - name: Capital structure advice
-      description: Advise clients on how much capital to raise, from which sources, and when.
+      description: Recommend how much capital the client should raise, from which sources, and when, and stand behind that advice.
       onet_id: 21579
-    - name: Structuring a financing
-      description: Assess a client's capital needs and current market conditions to design a financing package.
+    - name: Sizing the financing
+      description: Estimate how much capital the client will need and how investors are likely to react to different deal structures.
       onet_id: 21592
-    - name: Restructuring and refinancing
-      description: Work with clients to restructure existing debt, refinance it, or raise new debt.
+    - name: Restructuring negotiations
+      description: Negotiate new terms with lenders on behalf of a client that must restructure or refinance its debt.
       onet_id: 21585
-    - name: Distressed company analysis
-      description: Analyze the financial and operating performance of companies in financial difficulty and recommend remedies.
+    - name: Distressed company review
+      description: Pull debt maturities, covenants, and cash balances out of a struggling company's filings into one summary.
       onet_id: 21580
     - name: Financial modeling
-      description: Build financial models to solve financial problems or to estimate the financial and capital impact of a transaction.
+      description: Forecast revenue, cash flow, and leverage in a three-statement model of the company after the deal.
       onet_id: 21590
     - name: Valuation
-      description: Value a company or its securities.
+      description: Estimate what the company is worth using discounted cash flows and trading multiples.
       onet_id: 21597
     - name: Pricing an offering
-      description: Determine the price at which securities should be syndicated and offered to the public.
+      description: Decide with the client on the final price of a stock or bond offering, the night before it launches.
       onet_id: 21587
     - name: Comparable company analysis
-      description: Evaluate and compare the relative quality of securities and companies within an industry.
+      description: Collect financials and trading multiples for peer companies into a comps table.
       onet_id: 21591
-    - name: Industry and market research
-      description: Track economic, industry, and company developments using financial publications, data services, government sources, company filings, and interviews.
+    - name: Industry research
+      description: Gather and summarize filings, news, and market data on an industry.
       onet_id: 21596
     - name: Charts and exhibits
-      description: Build charts, graphs, and tables in spreadsheets to illustrate analyses and reports.
+      description: Design the charts that make a deal's main point clear at a glance.
       onet_id: 21589
-    - name: Client presentations
-      description: Create client presentations, such as pitch books and deal proposals.
+    - name: Pitch books
+      description: Draft the presentation that convinces a client to hire the bank.
       onet_id: 21586
-    - name: Deal execution materials
-      description: Prepare the materials needed to execute a transaction, from data rooms to offering documents.
+    - name: Data room review
+      description: Find every contract in the data room with a change-of-control clause and log it.
       onet_id: 21598
-    - name: Client relationships and origination
-      description: Develop and maintain client relationships and help win new corporate clients.
+    - name: Client relationships
+      description: Be the banker the CEO calls first, and own the relationship over many years.
       onet_id: 21588
     - name: Coordinating advisors
-      description: Work with lawyers, accountants, and public relations advisors on a deal.
+      description: Keep lawyers, accountants, and PR advisors aligned on the deal message and timeline.
       onet_id: 21582
-    - name: Training junior bankers
-      description: Supervise, train, and mentor junior team members.
+    - name: Supervising juniors
+      description: Review junior bankers' work and take responsibility for everything that leaves the team.
       onet_id: 21604
