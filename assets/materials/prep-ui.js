@@ -188,10 +188,10 @@ export function renderAssignmentSections({ root, note, backend, editable = false
       const body = el('div', null, { class:'prep-markdown', 'data-prep-markdown':'' });
       if (openIndex === index) {
         const form = el('form', null, { class:'admin-form prep-form' });
-        const input = el('textarea', null, { maxlength:'50000', 'aria-label':`${section.title || 'Introduction'} text`, rows:String(Math.min(24, Math.max(6, draft.split('\n').length + 2))) });
+        const input = el('textarea', null, { maxlength:'50000', 'aria-label':`${section.title || 'Introduction'} text`, rows:String(Math.min(24, Math.max(4, draft.split('\n').length + 2))) });
         input.value = draft;
         const status = el('span', '', { role:'status', 'data-prep-status':'' });
-        const save = button('Save', () => {}); save.type = 'submit'; save.disabled = draft === section.body;
+        const save = button('Save', () => {}); save.type = 'submit'; save.classList.add('primary'); save.disabled = draft === section.body;
         const cancel = button('Cancel', () => { openIndex = null; draw(); });
         input.addEventListener('input', () => { draft = input.value; save.disabled = saving || draft === section.body; status.textContent = draft !== section.body ? 'Unsaved changes' : ''; });
         form.addEventListener('submit', async event => {
@@ -213,7 +213,7 @@ export function renderAssignmentSections({ root, note, backend, editable = false
           if (openIndex !== null && draft !== sections[openIndex].body && !confirm('Discard unsaved changes in the other section?')) return;
           openIndex = index; draft = section.body; draw();
         });
-        edit.setAttribute('aria-label', `Edit ${section.title || 'introduction'}`); edit.className = 'assignment-panel-edit';
+        edit.setAttribute('aria-label', `Edit ${section.title || 'introduction'}`); edit.className = 'text-action';
         head.append(edit);
       }
       // prepMarkdown emits only escaped text and a small, tested list of elements.

@@ -1350,10 +1350,14 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .assignment-panel { border:1px solid #ECECEC; border-radius:6px; padding:18px 22px 6px; background:#FFFFFF; }
 .assignment-panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
 .class-tools #materials-root .assignment-panel-head h2 { margin:0 0 10px; font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#1A1A1A; }
-.assignment-panel-edit { font-size:12.5px; }
 .assignment-panel:not([data-assignment-section="Introduction"]) .assignment-panel-head + .prep-markdown { margin-top:0; }
 .class-tools #materials-root .assignment-panel .prep-markdown h3 { font-size:16px; margin:20px 0 8px; }
 .class-tools #materials-root .assignment-panel textarea { width:100%; box-sizing:border-box; font:14px/1.55 ui-monospace,Menlo,monospace; }
 .class-tools #materials-root p.assignment-panel-empty { color:#999; font-style:normal; }
 @media (max-width:480px) { .assignment-panel { padding:14px 14px 4px; } }
 .assignment-panel .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+/* Button rule (DESIGN.md): three kinds only. Inline text action = blue text, no box. */
+.text-action { background:none; border:0; padding:0; margin:0; cursor:pointer; color:#2F6FB8; font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.text-action:hover { text-decoration:underline; text-underline-offset:3px; }
+.class-tools #materials-root .assignment-panel .prep-controls { display:flex; align-items:center; gap:10px; margin:10px 0 12px; }
+.class-tools #materials-root .assignment-panel .prep-controls .materials-button { margin:0; }
