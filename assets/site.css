@@ -1374,3 +1374,6 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .class-tools #materials-root .assignment-panel .prep-markdown > :last-child > li:last-child { margin-bottom:0; }
 @media (max-width:480px) { .assignment-panel, .assignment-panel.assignment-submission { padding:16px 14px; } }
 .class-tools #materials-root .assignment-submission .canvas-assignment { padding-bottom:0; }
+/* Staff page: website shown as a globe icon next to the email. */
+.staff-links .staff-web { display:inline-flex; vertical-align:-3px; margin-left:8px; color:var(--accent); text-decoration:none; }
+.staff-links .staff-web:hover { color:var(--ink); }
