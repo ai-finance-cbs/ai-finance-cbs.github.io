@@ -1471,3 +1471,12 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .deliverables-table .dl-date { color:var(--muted); font-size:13px; }
 @media (max-width:600px) { .deliverables-table col.dl-item { width:30%; } .deliverables-table col.dl-mode, .deliverables-table td:nth-child(4), .deliverables-table th:nth-child(4) { display:none; } }
 .deliverables-table td:nth-child(3) { white-space:nowrap; }
+/* Submission panel sits outside .assignment-sections: give it the same 14px gap as between panels. */
+.assignment-page > .assignment-sections { margin-bottom:0; }
+.assignment-page > .assignment-submission { margin-top:14px; }
+/* Individual / Group: a read-only two-part pill. Active side filled blue; not a control, so no pointer. */
+.class-tools #materials-root .assignment-mode { display:inline-flex; margin:6px 0 4px; border:1px solid #D5D5D5; border-radius:999px; overflow:hidden; cursor:default; user-select:none; }
+.class-tools #materials-root .assignment-mode .mode-option { padding:3px 14px; font:500 12.5px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#9A9A9A; background:#FFFFFF; }
+.class-tools #materials-root .assignment-mode .mode-option + .mode-option { margin-left:0; border-left:1px solid #D5D5D5; }
+.class-tools #materials-root .assignment-mode .mode-option.is-active { background:#2F6FB8; color:#FFFFFF; font-weight:600; }
+.class-tools #materials-root .assignment-mode .mode-option.is-active + .mode-option, .class-tools #materials-root .assignment-mode .mode-option + .mode-option.is-active { border-left-color:#2F6FB8; }
