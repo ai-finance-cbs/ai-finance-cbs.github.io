@@ -10,7 +10,7 @@ permalink: /
   <h2 id="six-weeks">Syllabus</h2>
   <ol class="week-index">
     {% for week in site.data.weeks %}
-    <li><a href="{{ '/syllabus/week-' | append: week.number | append: '/' | relative_url }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
+    <li><a href="{{ '/syllabus/tentative-schedule/#week-' | append: week.number | relative_url }}"><span class="week-label">Week {{ week.number }}</span><span class="week-link-title">{{ week.title }}</span></a></li>
     {% endfor %}
   </ol>
 </section>

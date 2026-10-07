@@ -42,7 +42,7 @@ test('signed-in Home and Materials land on the first unfinished class, then Week
 
 test('all old URLs redirect, retaining assignment anchors, notes, and query parameters', async ({page}) => {
   for(const slug of ['',...Array.from({length:6},(_,i)=>`week-${i+1}/`)]) {
-    await page.goto(`/schedule/${slug}`); await ready(page); await expect(page).toHaveURL(new RegExp(`/syllabus/${slug}$`));
+    await page.goto(`/schedule/${slug}`); await ready(page); await expect(page).toHaveURL(new RegExp(slug?`/syllabus/tentative-schedule/#${slug.slice(0,-1)}$`:'/syllabus/$'));
   }
   await page.goto('/materials/assignments/?fakeauth=student#milestone-3'); await ready(page);
   await expect(page).toHaveURL(/materials\/assignments\/milestone-3\/#milestone-3$/);
@@ -108,7 +108,7 @@ for(const width of [1440,390]) test(`Phase B pages fit and screenshots capture r
   await capture('week-3-student-before');
   await enter(page,'instructor');await capture('week-3-instructor');
   await enter(page,'student','grades');await capture('grades');
-  await page.goto('/syllabus/week-1/');await ready(page);await capture('syllabus-week-1');
+  await page.goto('/syllabus/tentative-schedule/');await ready(page);await capture('syllabus-week-1');
 });
 
 test('each role gets its exact menu and Files stays reachable only by the instructor', async ({page}) => {

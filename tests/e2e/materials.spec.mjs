@@ -22,7 +22,7 @@ async function upload(page, title, shared = false) {
   await expect(page.getByRole('link', { name:title, exact:true })).toBeVisible();
 }
 test('signed-out syllabus links open one modal and retain their intended milestone', async ({ page }) => {
-  await page.goto('/syllabus/week-2/'); await ready(page);
+  await page.goto('/syllabus/tentative-schedule/'); await ready(page);
   await expect(page.getByRole('link', { name: 'Course Materials', exact: true })).toBeHidden();
   await page.getByRole('link', { name: 'Milestone #2: Proposal and Task Map' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -45,14 +45,14 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
   await expect(page.getByRole('link', { name: 'Course Materials', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
   await page.goto('/materials/files/'); await ready(page); await expect(page.locator('#materials-root')).toContainText('for instructors');
-  await page.goto('/syllabus/week-3/'); await ready(page);
-  await expect(page.locator('[data-slides-status]')).toHaveText('Posted after class.');
+  await page.goto('/syllabus/tentative-schedule/'); await ready(page);
+  await expect(page.locator('[data-slides-status="3"]')).toHaveText('Posted after class.');
   await page.getByRole('link', { name: 'Milestone #3: Working Setup' }).click(); await ready(page);
   await expect(page).toHaveURL(/week-3\/#milestone-3$/);
   await expect(page.locator('#outline')).toContainText('Milestone');
-  await page.goto('/syllabus/week-6/'); await ready(page);
+  await page.goto('/syllabus/tentative-schedule/'); await ready(page);
   await page.getByRole('link', { name: 'Final Prototype', exact: true }).click(); await ready(page); await expect(page).toHaveURL(/#final-prototype$/);
-  await page.goto('/syllabus/week-2/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);
+  await page.goto('/syllabus/tentative-schedule/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);
   await expect(page).toHaveURL(/week-2\/#lecture-notes$/); await expect(page.locator('#lecture-notes')).toContainText('Posted after class.');
 });
 test('instructor reads Canvas roster, uploads a lecture PDF, edits text, and manages access', async ({ page }) => {
@@ -114,7 +114,7 @@ test('desktop and phone pages fit, keep public navigation, and render without er
   mkdirSync('evidence/class-tools', { recursive: true });
   for (const width of [1440, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 950 });
-    for (const path of ['/', '/library/', '/syllabus/week-1/', '/materials/week-1/', '/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) {
+    for (const path of ['/', '/library/', '/syllabus/tentative-schedule/', '/materials/week-1/', '/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) {
       await enter(page, 'instructor', path);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} at ${width}`).toBe(true);
       await expect(page.locator('h1')).toHaveCount(1);
@@ -141,7 +141,7 @@ test('instructor can delete uploaded lecture PDFs', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Delete this PDF', exact: true })).toHaveCount(0);
 });
 test('login from a milestone returns to that exact assignment after demo sign-in', async ({ page }) => {
-  await enter(page, 'student', '/syllabus/week-4/');
+  await enter(page, 'student', '/syllabus/tentative-schedule/');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('link', { name: 'Milestone #4: Personal Benchmark' }).click();
   await page.getByLabel('Preview role').selectOption('student');

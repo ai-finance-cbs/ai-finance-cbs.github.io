@@ -1,0 +1,11 @@
+---
+title: "Syllabus: Tentative Schedule"
+heading: Tentative Schedule
+permalink: /syllabus/tentative-schedule/
+---
+{% for w in site.data.weeks %}{% assign lib = site.data.library | where: 'week', w.number | first %}
+<section class="home-section" id="week-{{ w.number }}" aria-labelledby="week-{{ w.number }}-title">
+  <h2 id="week-{{ w.number }}-title">Week {{ w.number }}: {{ lib.title }}</h2>
+  {% include syllabus-week.html week=w.number %}
+</section>
+{% endfor %}

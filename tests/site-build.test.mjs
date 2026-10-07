@@ -30,7 +30,7 @@ test('material page source contains gates and no real assignment content', () =>
 test('every legacy address redirects and no active page links to Schedule or retired materials tabs', () => {
   for (const slug of ['', ...Array.from({length:6},(_,i)=>`week-${i+1}/`)]) {
     const html=readFileSync(new URL(`schedule/${slug}index.html`,output),'utf8');
-    assert.match(html,new RegExp(`/syllabus/${slug}`)); assert.match(html,/location.replace/);
+    assert.match(html,new RegExp(slug?`/syllabus/tentative-schedule/#${slug.slice(0,-1)}`:'/syllabus/')); assert.match(html,/location.replace/);
   }
   for(const slug of ['upcoming','assignments','lecture-notes','files','submit']) {
     const html=readFileSync(new URL(`materials/${slug}/index.html`,output),'utf8');

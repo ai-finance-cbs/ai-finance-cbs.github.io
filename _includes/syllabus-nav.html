@@ -1,10 +1,8 @@
 <nav class="subnav{{ include.where }}" aria-label="Syllabus sections">
   <ul>
-    <li><a href="{{ '/syllabus/' | relative_url }}"{% if page.url == '/syllabus/' %} aria-current="page"{% endif %}><span class="subnav-label">Course Goals</span></a></li>
-    {% for w in site.data.weeks %}
-    {% capture u %}/syllabus/week-{{ w.number }}/{% endcapture %}
-    {% assign lib = site.data.library | where: 'week', w.number | first %}
-    <li><a href="{{ u | relative_url }}"{% if page.url == u %} aria-current="page"{% endif %}><span class="subnav-kicker">Week {{ w.number }}</span><span class="subnav-label">{{ lib.title }}</span></a></li>
+    {% assign syl = 'Course Goals|/syllabus/,Technology|/syllabus/technology/,Tentative Schedule|/syllabus/tentative-schedule/' | split: ',' %}
+    {% for s in syl %}{% assign p = s | split: '|' %}
+    <li><a href="{{ p[1] | relative_url }}"{% if page.url == p[1] %} aria-current="page"{% endif %}><span class="subnav-label">{{ p[0] }}</span></a></li>
     {% endfor %}
   </ul>
 </nav>
