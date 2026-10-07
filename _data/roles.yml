@@ -1,4 +1,4 @@
-# Milestone #2 role task lists. Source: O*NET 30.1 task statements, trimmed and rewritten as concrete tasks.
+# Milestone #2 worked examples (completed task maps). Source: O*NET 30.1 task statements, trimmed and rewritten as concrete tasks.
 # Each task keeps its O*NET task ID so the edit can be traced back to the original.
 - slug: investment-banking
   title: Investment Banking
@@ -12,45 +12,60 @@
     - name: Capital structure advice
       description: Recommend how much capital the client should raise, from which sources, and when, and stand behind that advice.
       onet_id: 21579
+      label: Own
     - name: Sizing the financing
       description: Estimate how much capital the client will need and how investors are likely to react to different deal structures.
       onet_id: 21592
+      label: Predict
     - name: Restructuring negotiations
       description: Negotiate new terms with lenders on behalf of a client that must restructure or refinance its debt.
       onet_id: 21585
+      label: Persuade
     - name: Distressed company review
       description: Pull debt maturities, covenants, and cash balances out of a struggling company's filings into one summary.
       onet_id: 21580
+      label: Process
     - name: Financial modeling
       description: Forecast revenue, cash flow, and leverage in a three-statement model of the company after the deal.
       onet_id: 21590
+      label: Predict
     - name: Valuation
       description: Estimate what the company is worth using discounted cash flows and trading multiples.
       onet_id: 21597
+      label: Predict
     - name: Pricing an offering
       description: Decide with the client on the final price of a stock or bond offering, the night before it launches.
       onet_id: 21587
+      label: Own
     - name: Comparable company analysis
       description: Collect financials and trading multiples for peer companies into a comps table.
       onet_id: 21591
+      label: Process
     - name: Industry research
       description: Gather and summarize filings, news, and market data on an industry.
       onet_id: 21596
+      label: Process
     - name: Charts and exhibits
       description: Design the charts that make a deal's main point clear at a glance.
       onet_id: 21589
+      label: Persuade
     - name: Pitch books
       description: Draft the presentation that convinces a client to hire the bank.
       onet_id: 21586
+      label: Persuade
     - name: Data room review
       description: Find every contract in the data room with a change-of-control clause and log it.
       onet_id: 21598
+      label: Process
     - name: Client relationships
       description: Be the banker the CEO calls first, and own the relationship over many years.
       onet_id: 21588
+      label: Own
     - name: Coordinating advisors
       description: Keep lawyers, accountants, and PR advisors aligned on the deal message and timeline.
       onet_id: 21582
+      label: Persuade
     - name: Supervising juniors
       description: Review junior bankers' work and take responsibility for everything that leaves the team.
       onet_id: 21604
+      label: Own

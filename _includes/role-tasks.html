@@ -1,19 +1,19 @@
 {% assign role = site.data.roles | where: "slug", include.slug | first %}
 <div class="role-tools"><button class="materials-button role-pdf" type="button" onclick="window.print()">Export to PDF</button></div>
 <p class="role-summary">{{ role.summary }}</p>
-<p class="role-instruct">Label each task with one of the four kinds of financial work from Week 1. Write P1, P2, P3, or P4 in the last column.</p>
+<p class="role-instruct">This is a completed task map for Milestone #2. Each task is one concrete action, and each carries one of the four kinds of financial work from Week 1.</p>
 <dl class="role-legend">
-  <div><dt>P1 · Process</dt><dd>Find, extract, or organize information that already exists.</dd></div>
-  <div><dt>P2 · Predict</dt><dd>Estimate or forecast something that is not yet known.</dd></div>
-  <div><dt>P3 · Persuade</dt><dd>Communicate to change what someone thinks or does.</dd></div>
-  <div><dt>P4 · Position</dt><dd>Decide, sign, or answer for the outcome, including owning a relationship.</dd></div>
+  <div><dt><span class="task-label is-process">Process</span></dt><dd>Find, extract, or organize information that already exists.</dd></div>
+  <div><dt><span class="task-label is-predict">Predict</span></dt><dd>Estimate or forecast something that is not yet known.</dd></div>
+  <div><dt><span class="task-label is-persuade">Persuade</span></dt><dd>Communicate to change what someone thinks or does.</dd></div>
+  <div><dt><span class="task-label is-own">Own</span></dt><dd>Decide, sign, or answer for the outcome, including owning a relationship.</dd></div>
 </dl>
 <table class="role-tasks">
   <colgroup><col class="role-task-num"><col class="role-task-name"><col><col class="role-task-label"></colgroup>
   <thead><tr><th>#</th><th>Task</th><th>Description</th><th>Label</th></tr></thead>
   <tbody>
   {% for t in role.tasks %}
-    <tr><td>{{ forloop.index }}</td><td>{{ t.name }}</td><td>{{ t.description }}</td><td class="role-blank"></td></tr>
+    <tr><td>{{ forloop.index }}</td><td>{{ t.name }}</td><td>{{ t.description }}</td><td class="role-label-cell">{% if t.label %}<span class="task-label is-{{ t.label | downcase }}">{{ t.label }}</span>{% endif %}</td></tr>
   {% endfor %}
   </tbody>
 </table>

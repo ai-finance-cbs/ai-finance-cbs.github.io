@@ -1310,13 +1310,20 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .role-legend dd { margin:0; font-size:13px; line-height:1.45; color:#555; }
 .role-tasks col.role-task-num { width:36px; }
 .role-tasks col.role-task-name { width:26%; }
-.role-tasks col.role-task-label { width:64px; }
+.role-tasks col.role-task-label { width:104px; }
 .role-tasks td:first-child { color:#999; font-variant-numeric:tabular-nums; }
 .role-tasks td:nth-child(2) { font-weight:500; }
-.role-tasks td.role-blank { border-left:1px solid #ECECEC; }
+/* Category tags: one muted colour per kind of work; Own is the strongest. */
+.task-label { display:inline-block; padding:2px 9px; border-radius:999px; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:11.5px; font-weight:600; letter-spacing:.04em; line-height:1.6; white-space:nowrap; }
+.task-label.is-process { background:#EAF1FA; color:#2F5F96; }
+.task-label.is-predict { background:#F1ECF8; color:#5E3E8F; }
+.task-label.is-persuade { background:#FBF0E4; color:#9A5414; }
+.task-label.is-own { background:#B3261E; color:#FFFFFF; }
+.role-legend dt .task-label { letter-spacing:.04em; text-transform:none; }
+@media print { .task-label { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .content p.role-source { font-size:12px; color:#888; margin-top:4px; }
 @media (max-width:720px) { .role-legend { grid-template-columns:1fr 1fr; } .role-legend > div:nth-child(3) { border-left:0; padding-left:0; } .role-legend > div:nth-child(n+3) { border-top:1px solid #ECECEC; } }
-@media (max-width:480px) { .role-tasks col.role-task-name { width:34%; } .role-tasks col.role-task-label { width:48px; } }
+@media (max-width:480px) { .role-tasks col.role-task-name { width:34%; } .role-tasks col.role-task-label { width:84px; } }
 @media print {
   .topbar, .subnav, .page-footer, .role-tools, .skip-link, .kicker .xlink, .kicker-sep { display:none !important; }
   body, main, .content { margin:0 !important; padding:0 !important; max-width:none !important; }
