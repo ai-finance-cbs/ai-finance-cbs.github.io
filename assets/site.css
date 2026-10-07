@@ -1036,7 +1036,7 @@ body.week-page #lecture-notes .week-files li { background:#fff; border:1px solid
 .milestone-title .due-line { border-left:1px solid #e7d3ba; padding-left:12px; }
 .assignment-instructions-link { display:inline-block; font-size:12px; margin:2px 0 6px; }
 .optional-task-label { display:block; color:#737373; font:400 11px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
-#materials-root[data-page="assignments"] { max-width:860px; }
+#materials-root[data-page="assignments"] { max-width:740px; } /* same reading column as Syllabus and Library */
 .assignment-page + .assignment-page { border-top:1px solid #ECECEC; padding-top:22px; margin-top:24px; }
 .assignment-summary { border-top:1px solid #ECECEC; border-bottom:1px solid #ECECEC; padding:10px 0; margin:20px 0; color:#595959; }
 .class-tools #materials-root .assignment-page .assignment-section { padding:14px 0; }
@@ -1301,8 +1301,8 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 
 /* Milestone #2 role task lists */
 .role-tools { display:flex; justify-content:flex-end; margin:-8px 0 8px; }
-.role-summary { max-width:640px; color:#444; }
-.content p.role-instruct { max-width:640px; margin-top:18px; }
+.role-summary { color:#444; }
+.content p.role-instruct { margin-top:18px; }
 .role-legend { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin:14px 0 6px; border-top:1px solid #ECECEC; border-bottom:1px solid #ECECEC; }
 .role-legend > div { padding:12px 14px 12px 0; }
 .role-legend > div + div { padding-left:14px; border-left:1px solid #ECECEC; }
@@ -1343,3 +1343,5 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .class-tools #materials-root .assignment-mode .mode-option { color:#C4C4C4; }
 .class-tools #materials-root .assignment-mode .mode-option + .mode-option { margin-left:14px; }
 .class-tools #materials-root .assignment-mode .mode-option.is-active { color:#1A1A1A; font-weight:600; }
+/* Assignment pages sit exactly where Syllabus and Library pages sit (same left edge and top), not at the grid-page offset. */
+@media (min-width:781px) { body.class-tools:has(#materials-root[data-page="assignments"]) main { padding:calc(var(--topbar) + 40px) 40px 0 56px; } }
