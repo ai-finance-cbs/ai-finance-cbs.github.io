@@ -48,7 +48,7 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
   await page.getByRole('link', { name: 'Milestone #3: Working Setup' }).click(); await ready(page);
   await expect(page).toHaveURL(/week-3\/#milestone-3$/);
-  await expect(page.locator('#outline')).toContainText('Milestone');
+  await expect(page.locator('#outline')).not.toContainText('Milestone');
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
   await page.getByRole('link', { name: 'Final Prototype', exact: true }).click(); await ready(page); await expect(page).toHaveURL(/#final-prototype$/);
   await page.goto('/syllabus/tentative-schedule/'); await ready(page); await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await ready(page);

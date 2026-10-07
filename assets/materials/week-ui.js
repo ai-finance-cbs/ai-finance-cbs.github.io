@@ -47,7 +47,7 @@ export function renderWeek(ctx) {
     root.append(due);
   }
   // Card 2: lecture notes and in-class materials together
-  const materials = block('Lecture notes & materials', 'lecture-notes');
+  const materials = block('Lecture Notes & Materials', 'lecture-notes');
   const weekFiles = data.files.filter(f => f.week === week);
   if (!weekFiles.length) materials.append(el('p', 'Posted after class.', { class: 'upcoming-meta' }));
   for (const isClass of [true, false]) {

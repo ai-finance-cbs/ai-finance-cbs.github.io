@@ -161,7 +161,7 @@ test('Files uploads use the category select, preserving titles and grouping by m
 
 for(const width of [1440,390,320]) test(`section labels and compact CourseWorks links at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await seed(page);await enter(page,'student');
-  await expect(page.locator('#materials-root > .week-block > h2')).toHaveText(['Announcements','Due before class','Lecture notes & materials','Full reading list']);
+  await expect(page.locator('#materials-root > .week-block > h2')).toHaveText(['Announcements','Due before class','Lecture Notes & Materials','Full reading list']);
   const styles=await page.locator('#materials-root > .week-block > h2').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.fontSize,s.fontWeight,s.letterSpacing,s.textTransform,s.color];}));
   expect(styles.every(s=>JSON.stringify(s)===JSON.stringify(styles[0]))).toBe(true);
   expect(styles[0].slice(0,4)).toEqual(['12px','600','0.48px','uppercase']);

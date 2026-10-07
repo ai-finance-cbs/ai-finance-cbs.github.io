@@ -16,7 +16,7 @@ window.matchMedia('(max-width: 819px)').addEventListener('change', () => setMenu
 const outline = document.getElementById('outline');
 let headings = [], links = [];
 function rebuildOutline() {
-  headings = [...document.querySelectorAll('.content h2, .content .prep-section-heading > h3')].filter(h => !h.closest('.page-footer'));
+  headings = [...document.querySelectorAll('.content h2, .content .prep-section-heading > h3')].filter(h => !h.closest('.page-footer') && !h.closest('.week-block .week-block'));  // skip headings of cards nested inside a section (e.g. Milestone under Due before class)
   outline.replaceChildren();
   headings.forEach((h, i) => {
     if (!h.id) h.id = 'section-' + (i + 1);
