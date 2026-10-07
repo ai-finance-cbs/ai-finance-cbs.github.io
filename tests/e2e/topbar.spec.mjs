@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const pages = ['/', '/syllabus/', '/syllabus/technology/', '/syllabus/tentative-schedule/', '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/ai-takes/', '/materials/',
+const pages = ['/', '/syllabus/', '/syllabus/technology/', '/syllabus/tentative-schedule/', '/library/', ...['prelude','economics-of-ai','ai-infrastructure','processing-information','predicting-outcomes','persuading-stakeholders','future-of-finance','coda'].map(slug=>`/library/${slug}/`), '/staff/', '/nota-bene/', '/materials/',
   ...['week-1', 'week-2', 'week-3', 'week-4', 'week-5', 'week-6', 'grades', 'gradebook', 'attendance', 'groups', 'roster', 'settings', 'submit', 'preparation', ...Array.from({length:6},(_,i)=>`preparation/week-${i+1}`), 'speakers', ...Array.from({length:5},(_,i)=>`assignments/milestone-${i+1}`), 'assignments/final-prototype', 'assignments/optional-tasks'].map(name => `/materials/${name}/`)];
 const roles = ['signed-out', 'student', 'grader', 'instructor', 'preview', 'auditor', 'unlisted'];
 const ready = page => expect(page.locator('html')).toHaveAttribute('data-materials-ready', 'true');
