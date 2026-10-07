@@ -1290,4 +1290,4 @@ body.standalone-tool .content { max-width:none; }
 @media (min-width:820px) { .menu-row .topnav a { font-size:15.5px; font-weight:500; line-height:21px; } .menu-row .topnav a[aria-current="page"] { font-weight:600; } .menu-row .topnav ul { gap:0 22px; } }
 @media (min-width:820px) and (max-width:1050px) { .menu-row .topnav a { font-size:14px; line-height:19px; } .menu-row .topnav ul { gap:0 14px; } }
 /* Nota Bene: one note per item, with room between them. */
-.takes-list li { margin-bottom:40px; }
+.takes-list li { margin-bottom:70px; }
