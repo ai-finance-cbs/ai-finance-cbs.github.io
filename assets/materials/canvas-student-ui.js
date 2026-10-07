@@ -37,7 +37,8 @@ export function canvasHealth(data) {
 setInterval(()=>document.querySelectorAll('[data-synced-at]').forEach(updateHealth),60000);
 
 export function courseWorksLink(row, staff=false) {
-  if (!row?.url) return el('span','CourseWorks link unavailable.',{class:'upcoming-meta'});
+  // No mapped Canvas assignment yet: show nothing rather than an error-looking line.
+  if (!row?.url) return null;
   return el('a',staff ? 'Open in CourseWorks →' : 'Submit on CourseWorks →',
     {href:row.url,target:'_blank',rel:'noopener noreferrer',class:'courseworks-link'});
 }
@@ -63,9 +64,11 @@ export function canvasSubmissionBlock({data,canvas,access,path},code,controlsOnl
     const line=el('p',null,{class:'canvas-status','data-milestone-state':'','data-submission-status':'',role:'status'});
     line.append(statusPill(row?.status));section.append(line);
   }
-  const links=el('p',null,{class:'canvas-assignment-links'});
-  if(!controlsOnly)links.append(el('a','Instructions →',{class:'assignment-instructions-link',href:path(`assignments/${assignmentSlug(code)}`)}),' · ');
-  links.append(courseWorksLink(row,access.role!=='student'));section.append(links,canvasHealth(canvas));
+  const parts=[];
+  if(!controlsOnly)parts.push(el('a','Instructions →',{class:'assignment-instructions-link',href:path(`assignments/${assignmentSlug(code)}`)}));
+  const courseWorks=courseWorksLink(row,access.role!=='student');if(courseWorks)parts.push(courseWorks);
+  if(parts.length){const links=el('p',null,{class:'canvas-assignment-links'});parts.forEach((part,i)=>links.append(...(i?[' · ',part]:[part])));section.append(links);}
+  section.append(canvasHealth(canvas));
   return section;
 }
 export function renderCanvasGrades({root,canvas,data}) {
