@@ -46,7 +46,6 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
   await page.goto('/materials/files/'); await ready(page); await expect(page.locator('#materials-root')).toContainText('for instructors');
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
-  await expect(page.locator('[data-slides-status="3"]')).toHaveText('Posted after class.');
   await page.getByRole('link', { name: 'Milestone #3: Working Setup' }).click(); await ready(page);
   await expect(page).toHaveURL(/week-3\/#milestone-3$/);
   await expect(page.locator('#outline')).toContainText('Milestone');

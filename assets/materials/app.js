@@ -145,6 +145,7 @@ function applyMenu(m) {
   document.querySelectorAll('[data-ed-member]').forEach(n => n.hidden = !m.ed);
   document.querySelectorAll('[data-login]').forEach(n => n.hidden = m.signedIn);
   document.querySelectorAll('[data-signout]').forEach(n => n.hidden = !m.signedIn);
+  document.documentElement.toggleAttribute('data-signed-in', !!m.signedIn);
   const badge = document.querySelector('[data-role]');
   badge.hidden = !m.signedIn; badge.textContent = m.role;
 }

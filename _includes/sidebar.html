@@ -61,7 +61,7 @@
       s('[data-materials-member]',m.materials);s('[data-assignments-member]',m.assignments);
       document.querySelectorAll('[data-assignment-nav]').forEach(function(n){n.hidden=!(m.assignmentCodes||[]).some(function(c){return n.dataset.assignmentNav==='optional'?c.indexOf('O')===0:c===n.dataset.assignmentNav;});});s('[data-materials-admin]',m.instructor);s('[data-grading-member]',m.grading);
       s('[data-student-only]',m.student);s('[data-class-member]',m.klass);s('[data-ed-member]',m.ed);
-      s('[data-view-picker]',m.instructor);s('[data-login]',!m.signedIn);s('[data-signout]',m.signedIn);
+      s('[data-view-picker]',m.instructor);s('[data-login]',!m.signedIn);document.documentElement.toggleAttribute('data-signed-in',!!m.signedIn);s('[data-signout]',m.signedIn);
       var b=document.querySelector('[data-role]');if(b){b.hidden=!m.signedIn;b.textContent=m.role;}}catch(e){}};window.b8403Menu();
     </script>
   </div>
