@@ -172,7 +172,7 @@ export function splitAssignmentSections(body) {
 export function joinAssignmentSections(sections) {
   return sections.map(s => s.title ? `## ${s.title}\n\n${s.body}`.trim() : s.body.trim()).filter(Boolean).join('\n\n') + '\n';
 }
-export function renderAssignmentSections({ root, note, backend, editable = false }) {
+export function renderAssignmentSections({ root, note, backend, editable = false, submitAnchor = null }) {
   let sections = splitAssignmentSections(note.body), openIndex = null, draft = '', saving = false;
   // An empty page starts from the four standard sections so the instructor has somewhere to write.
   if (editable && !sections.length) sections = ASSIGNMENT_SECTIONS.map(title => ({ title, body:'' }));
@@ -208,6 +208,8 @@ export function renderAssignmentSections({ root, note, backend, editable = false
         form.append(input, controls); body.append(form);
         panel.append(head, body); wrap.append(panel); input.focus(); return;
       }
+      // Every Deliverable panel points to the submission form at the bottom of the page.
+      if (submitAnchor && section.title === 'Deliverable') head.append(el('a', 'Submission form ↓', { class:'text-action assignment-submit-link', href:`#${submitAnchor}` }));
       if (editable) {
         const edit = button('Edit', () => {
           if (openIndex !== null && draft !== sections[openIndex].body && !confirm('Discard unsaved changes in the other section?')) return;

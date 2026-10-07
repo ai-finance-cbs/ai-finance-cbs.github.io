@@ -27,14 +27,21 @@ export function renderAssignments(ctx, catalog, pages) {
     }
     section.append(access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
-    renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at},
+    const submitAnchor = `submission-${item.code}`;
+    renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, submitAnchor,
       editable:access.role === 'instructor' && canWrite(access),
       backend:{ async saveInstructorNote(_,body) {
         const saved = await backend.saveAssignmentPage(data.term_id,item.code,body);
         return {body:saved.body_md,updated_at:saved.updated_at};
       } },
     });
-    if (access.role !== 'auditor') section.append(canvasSubmissionBlock(ctx,item.code,true));
+    // Submission panel: the target of the Deliverable link. The form itself is built per milestone.
+    const submission = el('section','','assignment-panel assignment-submission'); submission.id = submitAnchor;
+    submission.dataset.assignmentSection = 'Submission';
+    const head = el('div','','assignment-panel-head'); head.append(el('h2','Submission'));
+    submission.append(head, el('p','The submission form will appear here.','assignment-panel-empty'));
+    if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
+    section.querySelector('.assignment-sections')?.append(submission) ?? section.append(submission);
     root.append(section);
   }
 }

@@ -77,9 +77,10 @@ test('instructor edits inline, cancels, saves, reloads, and receives unsaved nav
 test('assignment sections render as separate panels and each saves on its own',async({page})=>{
   await seed(page);await enter(page,'instructor');
   await page.getByRole('button',{name:'Edit introduction'}).click();
-  await page.getByLabel('Introduction text').fill('Intro line.\n\n## AI Policy\n\nPolicy text.\n\n## Grading\n\nTen points.');
+  await page.getByLabel('Introduction text').fill('Intro line.\n\n## AI Policy\n\nPolicy text.\n\n## Deliverable\n\nOne page.\n\n## Grading\n\nTen points.');
   await page.getByRole('button',{name:'Save',exact:true}).click();
-  await expect(page.locator('.assignment-panel')).toHaveCount(3);
+  await expect(page.locator('.assignment-panel:not(.assignment-submission)')).toHaveCount(4);await expect(page.locator('.assignment-submission')).toHaveCount(1);
+  await expect(page.locator('[data-assignment-section="Deliverable"]').getByRole('link',{name:'Submission form ↓'})).toHaveAttribute('href','#submission-M1');
   await expect(page.locator('[data-assignment-section="AI Policy"] .prep-markdown')).toHaveText('Policy text.');
   await page.getByRole('button',{name:'Edit Grading'}).click();await page.getByLabel('Grading text').fill('Twelve points.');
   await page.getByRole('button',{name:'Save',exact:true}).click();

@@ -1361,3 +1361,6 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .text-action:hover { text-decoration:underline; text-underline-offset:3px; }
 .class-tools #materials-root .assignment-panel .prep-controls { display:flex; align-items:center; gap:10px; margin:10px 0 12px; }
 .class-tools #materials-root .assignment-panel .prep-controls .materials-button { margin:0; }
+.assignment-panel-head .assignment-submit-link { margin-left:auto; text-decoration:none; }
+.assignment-panel-head .assignment-submit-link + .text-action { margin-left:14px; }
+.assignment-submission .canvas-assignment { border:0; margin:6px 0 0; padding:0; }
