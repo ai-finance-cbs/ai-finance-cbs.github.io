@@ -50,7 +50,7 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
   await expect(root.getByRole('link',{name:'Reference'})).toHaveAttribute('target','_blank');
   await expect(root.locator('.prep-markdown img,.prep-markdown script')).toHaveCount(0);expect(await page.evaluate(()=>window.assignmentXss)).toBeUndefined();
   await expect(root.locator('.assignment-summary')).toHaveCount(0);
-  await expect(root.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);
+  await expect(root.getByRole('button',{name:/^Edit /})).toHaveCount(0);
   await page.screenshot({path:'evidence/phase-h/assignment-student.png',fullPage:true});
   await expect(page.getByLabel('Submission file')).toHaveCount(0);
   await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
@@ -60,23 +60,37 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
 });
 test('instructor edits inline, cancels, saves, reloads, and receives unsaved navigation and sign-out warnings',async({page})=>{
   await seed(page);await enter(page,'instructor');
-  await page.getByRole('button',{name:'Edit instructions'}).click();const input=page.getByLabel('Milestone #1: Pre-Class Survey instructions');
+  await page.getByRole('button',{name:'Edit introduction'}).click();const input=page.getByLabel('Introduction text');
   await input.fill('# Unsaved');await page.screenshot({path:'evidence/phase-h/assignment-instructor-edit.png',fullPage:true});
   await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(input).toBeHidden();await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
-  await page.getByRole('button',{name:'Edit instructions'}).click();await input.fill('# Saved assignment\n\nNew **instructions**.');
-  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.locator('[data-prep-status]')).toContainText('Saved');await expect(input).toBeHidden();
+  await page.getByRole('button',{name:'Edit introduction'}).click();await input.fill('# Saved assignment\n\nNew **instructions**.');
+  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(input).toBeHidden();await expect(page.locator('.prep-markdown')).toContainText('Saved assignment');
   await page.reload();await ready(page);await expect(page.locator('.prep-markdown')).toContainText('Saved assignment');
-  await page.getByRole('button',{name:'Edit instructions'}).click();await input.fill('Discarded draft');
+  await page.getByRole('button',{name:'Edit introduction'}).click();await input.fill('Discarded draft');
   await page.locator('.topnav').getByRole('link',{name:'Groups',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Unsaved changes');
   await page.getByRole('button',{name:'Keep editing'}).click();await expect(input).toHaveValue('Discarded draft');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Unsaved changes');await page.getByRole('button',{name:'Keep editing'}).click();
   const dialog=page.waitForEvent('dialog');const reload=page.evaluate(()=>{location.reload();});const warning=await dialog;expect(warning.type()).toBe('beforeunload');await warning.dismiss();await reload;
   await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');
-  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('button',{name:'Choose file',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:/^Edit /})).toHaveCount(0);await expect(page.getByRole('button',{name:'Choose file',exact:true})).toHaveCount(0);
+});
+test('assignment sections render as separate panels and each saves on its own',async({page})=>{
+  await seed(page);await enter(page,'instructor');
+  await page.getByRole('button',{name:'Edit introduction'}).click();
+  await page.getByLabel('Introduction text').fill('Intro line.\n\n## AI Policy\n\nPolicy text.\n\n## Grading\n\nTen points.');
+  await page.getByRole('button',{name:'Save',exact:true}).click();
+  await expect(page.locator('.assignment-panel')).toHaveCount(3);
+  await expect(page.locator('[data-assignment-section="AI Policy"] .prep-markdown')).toHaveText('Policy text.');
+  await page.getByRole('button',{name:'Edit Grading'}).click();await page.getByLabel('Grading text').fill('Twelve points.');
+  await page.getByRole('button',{name:'Save',exact:true}).click();
+  await page.reload();await ready(page);
+  await expect(page.locator('[data-assignment-section="Grading"] .prep-markdown')).toHaveText('Twelve points.');
+  await expect(page.locator('[data-assignment-section="AI Policy"] .prep-markdown')).toHaveText('Policy text.');
+  await expect(page.locator('[data-assignment-section="Introduction"] .prep-markdown')).toHaveText('Intro line.');
 });
 test('grader is read-only, auditors see only shared pages, and menu visibility follows sharing',async({page})=>{
   await seed(page);await enter(page,'grader');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
-  await expect(page.getByRole('button',{name:'Edit instructions'})).toHaveCount(0);await expect(page.getByRole('link',{name:'Open in CourseWorks →'})).toBeVisible();
+  await expect(page.getByRole('button',{name:/^Edit /})).toHaveCount(0);await expect(page.getByRole('link',{name:'Open in CourseWorks →'})).toBeVisible();
   const reject=()=>page.evaluate(async()=>{try{await (await import('/assets/materials/demo.js')).createDemo().saveAssignmentPage('spring-2027','M1','Forbidden');return false;}catch{return true;}});
   expect(await reject()).toBe(true);
   await enter(page,'auditor');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');await expect(page.locator('.submission-box')).toHaveCount(0);expect(await reject()).toBe(true);
@@ -92,7 +106,7 @@ test('assignment landing preserves old anchors; all optional tasks have separate
     await page.goto(`/materials/assignments/?fakeauth=student${anchor}`);await ready(page);expect(new URL(page.url()).pathname).toBe(`/materials/assignments/${slug}/`);expect(new URL(page.url()).hash).toBe(anchor);
   }
   await enter(page,'instructor','assignments/optional-tasks');await expect(page.locator('.assignment-page')).toHaveCount(3);
-  const second=page.locator('#optional-task-2');await second.getByRole('button',{name:'Edit instructions'}).click();await second.locator('textarea').fill('Second optional draft');
+  const second=page.locator('#optional-task-2');await second.getByRole('button',{name:'Edit introduction'}).click();await second.locator('textarea').fill('Second optional draft');
   await page.locator('.topnav').getByRole('link',{name:'Groups',exact:true}).click();await expect(second.getByRole('alert')).toContainText('Unsaved changes');await second.getByRole('button',{name:'Keep editing'}).click();
   await second.getByRole('button',{name:'Save',exact:true}).click();await page.reload();await ready(page);await expect(second.locator('.prep-markdown')).toHaveText('Second optional draft');await expect(page.locator('#optional-task-1 .prep-markdown')).toContainText('Synthetic instructions');
 });

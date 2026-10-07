@@ -1,6 +1,6 @@
 import { itemName } from './assignment-core.js';
 import { dueLine } from './due-ui.js';
-import { renderPreparation } from './prep-ui.js';
+import { renderAssignmentSections } from './prep-ui.js';
 import { canvasSubmissionBlock, canvasDue } from './canvas-student-ui.js';
 import { canWrite } from './class-core.js';
 
@@ -27,8 +27,8 @@ export function renderAssignments(ctx, catalog, pages) {
     }
     section.append(access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
-    renderPreparation({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, assignment:true,
-      labelText:`${itemName(item)} instructions`, editable:access.role === 'instructor' && canWrite(access),
+    renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at},
+      editable:access.role === 'instructor' && canWrite(access),
       backend:{ async saveInstructorNote(_,body) {
         const saved = await backend.saveAssignmentPage(data.term_id,item.code,body);
         return {body:saved.body_md,updated_at:saved.updated_at};

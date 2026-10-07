@@ -1345,3 +1345,15 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .class-tools #materials-root .assignment-mode .mode-option.is-active { color:#1A1A1A; font-weight:600; }
 /* Assignment pages sit exactly where Syllabus and Library pages sit (same left edge and top), not at the grid-page offset. */
 @media (min-width:781px) { body.class-tools:has(#materials-root[data-page="assignments"]) main { padding:calc(var(--topbar) + 40px) 40px 0 56px; } }
+/* Assignment pages: one hairline panel per section, each with its own Edit button. */
+.assignment-sections { display:flex; flex-direction:column; gap:14px; margin:20px 0 8px; }
+.assignment-panel { border:1px solid #ECECEC; border-radius:6px; padding:18px 22px 6px; background:#FFFFFF; }
+.assignment-panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.class-tools #materials-root .assignment-panel-head h2 { margin:0 0 10px; font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#1A1A1A; }
+.assignment-panel-edit { font-size:12.5px; }
+.assignment-panel:not([data-assignment-section="Introduction"]) .assignment-panel-head + .prep-markdown { margin-top:0; }
+.class-tools #materials-root .assignment-panel .prep-markdown h3 { font-size:16px; margin:20px 0 8px; }
+.class-tools #materials-root .assignment-panel textarea { width:100%; box-sizing:border-box; font:14px/1.55 ui-monospace,Menlo,monospace; }
+.class-tools #materials-root p.assignment-panel-empty { color:#999; font-style:normal; }
+@media (max-width:480px) { .assignment-panel { padding:14px 14px 4px; } }
+.assignment-panel .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }

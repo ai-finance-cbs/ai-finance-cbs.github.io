@@ -155,3 +155,72 @@ export function renderSpeakers({ root, rows, weeks, backend, confirmInline }) {
   }
   draw();
 }
+
+// Assignment pages: each "## Heading" section of the stored Markdown lives in its own panel with its
+// own Edit button. Storage is unchanged: the page is still one Markdown document, rebuilt on save.
+export const ASSIGNMENT_SECTIONS = ['AI Policy','Instructions','Deliverable','Grading'];
+export function splitAssignmentSections(body) {
+  const sections = []; let current = { title:'', lines:[] };
+  for (const line of String(body || '').replace(/\r\n?/g, '\n').split('\n')) {
+    const heading = /^##\s+(.+?)\s*$/.exec(line);
+    if (heading) { sections.push(current); current = { title:heading[1], lines:[] }; }
+    else current.lines.push(line);
+  }
+  sections.push(current);
+  return sections.map(s => ({ title:s.title, body:s.lines.join('\n').trim() })).filter(s => s.title || s.body);
+}
+export function joinAssignmentSections(sections) {
+  return sections.map(s => s.title ? `## ${s.title}\n\n${s.body}`.trim() : s.body.trim()).filter(Boolean).join('\n\n') + '\n';
+}
+export function renderAssignmentSections({ root, note, backend, editable = false }) {
+  let sections = splitAssignmentSections(note.body), openIndex = null, draft = '', saving = false;
+  // An empty page starts from the four standard sections so the instructor has somewhere to write.
+  if (editable && !sections.length) sections = ASSIGNMENT_SECTIONS.map(title => ({ title, body:'' }));
+  const wrap = el('div', null, { class:'assignment-sections' });
+  root.append(wrap);
+  if (editable) trackPreparationEditor(wrap, () => openIndex !== null && draft !== sections[openIndex].body);
+  function draw() {
+    wrap.replaceChildren();
+    sections.forEach((section, index) => {
+      const panel = el('section', null, { class:'assignment-panel', 'data-assignment-section':section.title || 'Introduction' });
+      const head = el('div', null, { class:'assignment-panel-head' });
+      if (section.title) head.append(el('h2', section.title));
+      const body = el('div', null, { class:'prep-markdown', 'data-prep-markdown':'' });
+      if (openIndex === index) {
+        const form = el('form', null, { class:'admin-form prep-form' });
+        const input = el('textarea', null, { maxlength:'50000', 'aria-label':`${section.title || 'Introduction'} text`, rows:String(Math.min(24, Math.max(6, draft.split('\n').length + 2))) });
+        input.value = draft;
+        const status = el('span', '', { role:'status', 'data-prep-status':'' });
+        const save = button('Save', () => {}); save.type = 'submit'; save.disabled = draft === section.body;
+        const cancel = button('Cancel', () => { openIndex = null; draw(); });
+        input.addEventListener('input', () => { draft = input.value; save.disabled = saving || draft === section.body; status.textContent = draft !== section.body ? 'Unsaved changes' : ''; });
+        form.addEventListener('submit', async event => {
+          event.preventDefault(); if (saving) return;
+          const next = sections.map((s, i) => i === index ? { ...s, body:draft.trim() } : s);
+          saving = true; save.disabled = true; cancel.disabled = true; input.disabled = true; status.textContent = 'Saving…';
+          try {
+            const row = await backend.saveInstructorNote(note.week, joinAssignmentSections(next));
+            sections = splitAssignmentSections(row.body); note.updated_at = row.updated_at; openIndex = null; draw();
+          } catch (error) { status.textContent = error.message; save.disabled = false; cancel.disabled = false; input.disabled = false; }
+          finally { saving = false; }
+        });
+        const controls = el('div', null, { class:'prep-controls' }); controls.append(save, cancel, status);
+        form.append(input, controls); body.append(form);
+        panel.append(head, body); wrap.append(panel); input.focus(); return;
+      }
+      if (editable) {
+        const edit = button('Edit', () => {
+          if (openIndex !== null && draft !== sections[openIndex].body && !confirm('Discard unsaved changes in the other section?')) return;
+          openIndex = index; draft = section.body; draw();
+        });
+        edit.setAttribute('aria-label', `Edit ${section.title || 'introduction'}`); edit.className = 'assignment-panel-edit';
+        head.append(edit);
+      }
+      // prepMarkdown emits only escaped text and a small, tested list of elements.
+      body.innerHTML = section.body ? prepMarkdown(section.body, { newTab:true }) : (editable ? '<p class="assignment-panel-empty">Empty. Click Edit to add text.</p>' : '');
+      if (!section.body && !editable) return;
+      panel.append(head, body); wrap.append(panel);
+    });
+  }
+  draw();
+}
