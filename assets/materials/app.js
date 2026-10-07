@@ -196,7 +196,7 @@ async function renderMaterials(version) {
     root.onclick=null;root.replaceChildren();
   }
   try {
-    if (location.pathname === `${config.base}/` || root?.dataset.page === 'landing') {
+    if (root?.dataset.page === 'landing') {  // Course Materials lands on the current week; Home stays Home
       const sessions = await state.backend.sessions();
       if (version !== state.version) return;
       sessionStorage.removeItem('b8403-return');
