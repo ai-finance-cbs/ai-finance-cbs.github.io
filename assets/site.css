@@ -1298,3 +1298,12 @@ body.standalone-tool .content { max-width:none; }
 html[data-signed-in] [data-protected-link]::after { display:none; }
 /* Required tag in red so it stands apart from Recommended (blue) and Optional (gray). */
 .badge-required:not(.badge-recommended):not(.badge-optional) { color:#B42318; background:#FEF3F2; border-color:#F4B8B2; }
+
+/* Milestone #2 role task lists */
+.role-summary { max-width:640px; color:#444; }
+.role-tasks col.role-task-num { width:36px; }
+.role-tasks col.role-task-name { width:30%; }
+.role-tasks td:first-child { color:#999; font-variant-numeric:tabular-nums; }
+.role-tasks td:nth-child(2) { font-weight:500; }
+.content p.role-source { font-size:12px; color:#888; margin-top:4px; }
+@media (max-width:480px) { .role-tasks col.role-task-name { width:38%; } }
