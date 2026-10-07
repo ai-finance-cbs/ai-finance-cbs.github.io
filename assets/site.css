@@ -1286,3 +1286,6 @@ body.standalone-tool .content { max-width:none; }
 .canvas-roster .roster-match { font:400 11px/1.4 Inter,Arial,sans-serif; color:#777; }
 .canvas-roster .roster-match-warning { display:inline-block; padding:2px 6px; border-radius:999px; color:#852f4a; background:#faedf2; }
 .canvas-roster .roster-needs-match > th, .canvas-roster .roster-needs-match > td { background:#fdf8fa; }
+/* Top menu reads larger than the sub-menu below it: 17px on desktop, 15px on narrow laptops. */
+@media (min-width:820px) { .menu-row .topnav a { font-size:17px; font-weight:500; line-height:22px; } .menu-row .topnav a[aria-current="page"] { font-weight:600; } .menu-row .topnav ul { gap:0 22px; } }
+@media (min-width:820px) and (max-width:1050px) { .menu-row .topnav a { font-size:15px; line-height:20px; } .menu-row .topnav ul { gap:0 16px; } }
