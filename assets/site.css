@@ -1339,3 +1339,7 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .class-tools #materials-root[data-page="assignments"] :is(.assignment-mode, .due-line) { font-size:15px; }
 /* Nota Bene subtitle and date line. */
 .content .nb-subtitle { margin:-8px 0 26px; font-size:17px; color:var(--muted); }
+/* Individual / Group: the applicable mode is dark, the other is greyed out. */
+.class-tools #materials-root .assignment-mode .mode-option { color:#C4C4C4; }
+.class-tools #materials-root .assignment-mode .mode-option + .mode-option { margin-left:14px; }
+.class-tools #materials-root .assignment-mode .mode-option.is-active { color:#1A1A1A; font-weight:600; }

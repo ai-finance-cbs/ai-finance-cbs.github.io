@@ -44,7 +44,7 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
   await seed(page);await enter(page,'student');
   await expect(page.locator('.page-heading h1')).toHaveText('Milestone #1: Pre-Class Survey');
   const root=page.locator('#materials-root');await expect(root.locator('.due-line')).toContainText('3 days 4 hrs remaining');
-  await expect(root.locator('.assignment-mode')).toHaveText('Individual');
+  await expect(root.locator('.assignment-mode .mode-option.is-active')).toHaveText('Individual');
   await expect(root.locator('.prep-markdown strong')).toHaveText('Demo');await expect(root.locator('.prep-markdown em')).toHaveText('example');
   await expect(root.locator('.prep-markdown li')).toHaveText(['First step','Second step']);
   await expect(root.getByRole('link',{name:'Reference'})).toHaveAttribute('target','_blank');

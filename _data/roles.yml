@@ -69,3 +69,110 @@
       description: Review junior bankers' work and take responsibility for everything that leaves the team.
       onet_id: 21604
       label: Own
+- slug: management-consulting
+  title: Management Consulting
+  onet_code: "13-1111.00"
+  onet_title: Management Analysts
+  summary: >-
+    Management consultants help companies solve business problems, from cutting costs to entering
+    new markets. Junior consultants gather and analyze data, build the slides, and keep the client
+    team moving toward a decision.
+  tasks:
+    - name: Interview synthesis
+      description: Turn notes from fifteen client and expert interviews into a summary of the main themes.
+      onet_id: 7281
+      label: Process
+    - name: Data collection
+      description: Collect the client's sales and cost data from several systems and clean it into one workbook.
+      onet_id: 7276
+      label: Process
+    - name: Benchmarking
+      description: Compare the client's costs with those of five peer companies using public filings and industry reports.
+      onet_id: 7280
+      label: Process
+    - name: Market sizing
+      description: Estimate the size of the client's addressable market from public data and stated assumptions.
+      onet_id: 7277
+      label: Predict
+    - name: Business case
+      description: Forecast the savings from a proposed change in the client's operations over the next three years.
+      onet_id: 7277
+      label: Predict
+    - name: Storyline
+      description: Write the one-sentence headline for each slide of the steering committee deck.
+      onet_id: 7282
+      label: Persuade
+    - name: Slide production
+      description: Turn the analysis into slides that lead the client step by step to the recommendation.
+      onet_id: 7282
+      label: Persuade
+    - name: Client workshop
+      description: Run a workshop that gets the client's managers to agree on the new process.
+      onet_id: 7278
+      label: Persuade
+    - name: Choosing the recommendation
+      description: Decide which of three options the team recommends, and defend that choice to the partner.
+      label: Own
+    - name: Day-to-day client contact
+      description: Be the person on the team the client's project lead trusts and calls first.
+      label: Own
+    - name: Implementation follow-through
+      description: Answer for whether the new process actually works once the client launches it.
+      onet_id: 7278
+      label: Own
+- slug: corporate-finance
+  title: Corporate Finance (FP&A)
+  onet_code: "13-2031.00 and 11-3031.01"
+  onet_title: Budget Analysts; Treasurers and Controllers
+  summary: >-
+    Financial planning and analysis (FP&A) teams sit inside a company's finance function. They build
+    the budget, track results against it, forecast the rest of the year, and help the CFO decide
+    where money goes.
+  tasks:
+    - name: Budget-versus-actual report
+      description: Pull monthly actuals from the accounting system into the budget-versus-actual report.
+      onet_id: 3394
+      label: Process
+    - name: Variance explanations
+      description: Find the cause of every line where spending missed budget by more than 5%, using department records.
+      onet_id: 3394
+      label: Process
+    - name: Budget consolidation
+      description: Combine department budget submissions into one company budget and check them for errors.
+      onet_id: 3402
+      label: Process
+    - name: Rolling forecast
+      description: Update the full-year revenue, profit, and cash forecast each quarter.
+      onet_id: 8856
+      label: Predict
+    - name: Capital request review
+      description: Estimate the payback period and net present value of a department's request for new equipment.
+      onet_id: 3403
+      label: Predict
+    - name: Scenario planning
+      description: Model how earnings change if prices fall 10% or the largest customer leaves.
+      onet_id: 8867
+      label: Predict
+    - name: Board presentation
+      description: Prepare the CFO's slides on quarterly results and outlook for the board.
+      onet_id: 8856
+      label: Persuade
+    - name: Budget negotiations
+      description: Get department heads to bring their budget requests in line with company targets.
+      onet_id: 3396
+      label: Persuade
+    - name: Earnings call preparation
+      description: Draft the talking points and likely analyst questions for the earnings call.
+      label: Persuade
+    - name: Funding approvals
+      description: Recommend approval or rejection of each funding request, and answer for the call.
+      onet_id: 3399
+      label: Own
+    - name: Bank and auditor relationships
+      description: Own the company's day-to-day relationships with its banks and outside auditors.
+      onet_id: 8864
+      label: Own
+    - name: Financing decision
+      description: Decide with the CFO whether to fund an expansion from cash on hand or new debt.
+      onet_id: 8870
+      label: Own

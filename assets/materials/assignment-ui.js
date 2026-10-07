@@ -16,7 +16,16 @@ export function renderAssignments(ctx, catalog, pages) {
   for (const item of items) {
     const section = el('section', '', 'assignment-page'); section.id = item.code.startsWith('O') ? `optional-task-${item.code[1]}` : item.code === 'FP' ? 'final-prototype' : `milestone-${item.code[1]}`;
     if (code === 'optional') section.append(el('h2',itemName(item)),el('span','Optional task','optional-task-label'));
-    section.append(access.role === 'auditor' ? dueLine(item.due_at) : canvasDue(canvas?.items.find(row=>row.site_key===item.code)), el('p',item.mode === 'group' ? 'Group' : 'Individual','assignment-mode'));
+    // Canvas due date when the item is mapped; otherwise the site's own due date, so the line is never blank.
+    const canvasRow = canvas?.items.find(row=>row.site_key===item.code);
+    // Show both modes; the one that applies is dark, the other greyed out.
+    const mode = el('p','','assignment-mode');
+    for (const [key, label] of [['individual','Individual'],['group','Group']]) {
+      const option = el('span',label,`mode-option${(item.mode === 'group') === (key === 'group') ? ' is-active' : ''}`);
+      if (!option.classList.contains('is-active')) option.setAttribute('aria-hidden','true');
+      mode.append(option);
+    }
+    section.append(access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
     renderPreparation({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, assignment:true,
       labelText:`${itemName(item)} instructions`, editable:access.role === 'instructor' && canWrite(access),
