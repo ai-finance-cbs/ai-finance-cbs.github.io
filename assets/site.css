@@ -1367,3 +1367,10 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 /* Submission panel stands out from the reading panels: light action-blue tint, blue heading. */
 .assignment-panel.assignment-submission { background:#F3F7FC; border-color:#CFDDF0; }
 .class-tools #materials-root .assignment-submission .assignment-panel-head h2 { color:#2F6FB8; }
+/* Equal space above the heading and below the last line in every panel. */
+.assignment-panel, .assignment-panel.assignment-submission { padding:20px 22px; }
+.class-tools #materials-root .assignment-panel :is(.prep-markdown, .canvas-assignment) > :last-child,
+.class-tools #materials-root .assignment-panel > :last-child,
+.class-tools #materials-root .assignment-panel .prep-markdown > :last-child > li:last-child { margin-bottom:0; }
+@media (max-width:480px) { .assignment-panel, .assignment-panel.assignment-submission { padding:16px 14px; } }
+.class-tools #materials-root .assignment-submission .canvas-assignment { padding-bottom:0; }
