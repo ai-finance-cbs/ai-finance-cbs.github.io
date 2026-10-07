@@ -1,0 +1,76 @@
+---
+title: "Syllabus: Setup Guide"
+heading: "Setup Guide"
+kicker: "Syllabus"
+xlink_url: "/syllabus/technology/"
+xlink_label: "Back to Technology"
+permalink: /syllabus/setup/
+---
+<section class="home-section" aria-labelledby="before">
+  <h2 id="before">Before You Start</h2>
+  <p>This takes about 30 minutes. You need a Mac or Windows laptop and a paid plan for one of two AI coding assistants. Pick one; you do not need both.</p>
+  <ul>
+    <li><strong>Claude Code</strong> (from Anthropic) comes with a Claude Pro plan, about $20 a month, at <a href="https://claude.ai">claude.ai</a>.</li>
+    <li><strong>Codex</strong> (from OpenAI) comes with a ChatGPT Plus plan, about $20 a month, at <a href="https://chatgpt.com">chatgpt.com</a>.</li>
+  </ul>
+  <p>When you finish, you will paste two short results into the <a href="{{ '/materials/assignments/milestone-1/' | relative_url }}">Milestone #1 survey</a>. If you get stuck, do as much as you can and describe the problem in the survey. We will fix the rest together in Week 1.</p>
+</section>
+<section class="home-section" aria-labelledby="step-1">
+  <h2 id="step-1">Step 1: Install VS Code</h2>
+  <p>Download Visual Studio Code from <a href="https://code.visualstudio.com/">code.visualstudio.com</a>, install it, and open it.</p>
+</section>
+<section class="home-section" aria-labelledby="step-2">
+  <h2 id="step-2">Step 2: Open the Terminal</h2>
+  <p>In VS Code, choose <strong>Terminal → New Terminal</strong> from the menu bar. A panel opens at the bottom of the window. This is where you type the commands below: paste a command, then press Enter.</p>
+</section>
+<section class="home-section" aria-labelledby="step-3">
+  <h2 id="step-3">Step 3: Install Your Assistant</h2>
+  <p>Paste the one command that matches your assistant and your laptop. Click a command to copy it.</p>
+  <table class="setup-commands">
+    <colgroup><col class="sc-who"><col></colgroup>
+    <tbody>
+      <tr><td>Claude Code, Mac</td><td><code class="setup-code">curl -fsSL https://claude.ai/install.sh | bash</code></td></tr>
+      <tr><td>Claude Code, Windows</td><td><code class="setup-code">irm https://claude.ai/install.ps1 | iex</code></td></tr>
+      <tr><td>Codex, Mac</td><td><code class="setup-code">curl -fsSL https://chatgpt.com/codex/install.sh | sh</code></td></tr>
+      <tr><td>Codex, Windows</td><td><code class="setup-code">powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"</code></td></tr>
+    </tbody>
+  </table>
+  <p>When it finishes, close the terminal (the trash-can icon in the terminal panel) and open a new one, so that the new command is recognized.</p>
+  <p>On Windows with Claude Code, also install <a href="https://git-scm.com/downloads/win">Git for Windows</a> with its default options.</p>
+</section>
+<section class="home-section" aria-labelledby="step-4">
+  <h2 id="step-4">Step 4: Sign In</h2>
+  <p>Type <code>claude</code> (or <code>codex</code>) in the terminal and press Enter. Follow the prompts to sign in with the account that has your paid plan. A browser window opens for the sign-in. For Codex, choose <strong>Sign in with ChatGPT</strong>.</p>
+</section>
+<section class="home-section" aria-labelledby="step-5">
+  <h2 id="step-5">Step 5: Add the VS Code Extension</h2>
+  <p>The extension puts the assistant in a chat panel inside VS Code. Open the Extensions view (<strong>Cmd+Shift+X</strong> on Mac, <strong>Ctrl+Shift+X</strong> on Windows), search for <strong>Claude Code</strong> (by Anthropic) or <strong>Codex</strong> (by OpenAI), and click <strong>Install</strong>. If it does not appear, restart VS Code.</p>
+</section>
+<section class="home-section" aria-labelledby="step-6">
+  <h2 id="step-6">Step 6: Check That It Works</h2>
+  <p>You will paste both results into the survey.</p>
+  <ol>
+    <li>In a new terminal, run <code class="setup-code">claude --version</code> (or <code class="setup-code">codex --version</code>). Copy the line it prints.</li>
+    <li>Start the assistant by typing <code>claude</code> (or <code>codex</code>), then send this request, replacing YOUR-UNI with your own UNI: <code class="setup-code">Write a haiku about finance that includes the word YOUR-UNI.</code> Copy the haiku.</li>
+  </ol>
+</section>
+<section class="home-section" aria-labelledby="github">
+  <h2 id="github">Optional Now: A GitHub Account</h2>
+  <p>Milestone #3 uses GitHub to put your group's website online. If you do not have an account, create a free one at <a href="https://github.com/signup">github.com/signup</a>. Any email works.</p>
+</section>
+<section class="home-section" aria-labelledby="trouble">
+  <h2 id="trouble">If Something Goes Wrong</h2>
+  <ul>
+    <li><strong>"command not found" or "not recognized":</strong> close the terminal, open a new one, and try again. If that fails, restart VS Code.</li>
+    <li><strong>The install command shows an error:</strong> copy the full error message, paste it into ChatGPT or Claude in your browser, and ask what to do.</li>
+    <li><strong>Still stuck:</strong> describe what happened in the survey. That counts as a complete answer, and we will sort it out in Week 1.</li>
+  </ul>
+</section>
+<script>
+// Click any command to copy it; a short "Copied" note confirms.
+document.querySelectorAll('.setup-code').forEach(node => {
+  node.title = 'Click to copy'; node.tabIndex = 0;
+  const copy = async () => { try { await navigator.clipboard.writeText(node.textContent); node.dataset.copied = '1'; setTimeout(() => delete node.dataset.copied, 1200); } catch (e) {} };
+  node.addEventListener('click', copy); node.addEventListener('keydown', e => { if (e.key === 'Enter') copy(); });
+});
+</script>

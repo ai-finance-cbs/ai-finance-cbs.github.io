@@ -1480,3 +1480,12 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .class-tools #materials-root .assignment-mode .mode-option + .mode-option { margin-left:0; border-left:1px solid #D5D5D5; }
 .class-tools #materials-root .assignment-mode .mode-option.is-active { background:#2F6FB8; color:#FFFFFF; font-weight:600; }
 .class-tools #materials-root .assignment-mode .mode-option.is-active + .mode-option, .class-tools #materials-root .assignment-mode .mode-option + .mode-option.is-active { border-left-color:#2F6FB8; }
+
+/* Setup Guide: copyable commands */
+.content code { font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; background:#F5F5F5; border:1px solid #ECECEC; border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
+.setup-commands col.sc-who { width:24%; }
+.setup-commands td:first-child { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:13.5px; font-weight:600; vertical-align:top; padding-top:12px; }
+.content code.setup-code { cursor:copy; position:relative; }
+.content code.setup-code:hover { border-color:#2F6FB8; }
+.content code.setup-code[data-copied]::after { content:"Copied"; position:absolute; left:100%; top:0; margin-left:8px; font:600 11px/1.9 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#2F6FB8; background:#fff; white-space:nowrap; }
+@media (max-width:600px) { .setup-commands col.sc-who { width:34%; } }
