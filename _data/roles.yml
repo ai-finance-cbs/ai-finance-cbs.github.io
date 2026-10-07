@@ -198,9 +198,9 @@
       onet_id: 5664
       label: Process
     - name: Picking research ideas
-      description: Estimate which of several research ideas is most likely to produce a clear, publishable result.
+      description: Choose which of several research ideas is worth two years of work, a call of taste with no right answer.
       onet_id: 5681
-      label: Predict
+      label: Own
     - name: Empirical estimation
       description: Estimate from data how much investor demand moves asset prices, a number nobody knows in advance.
       onet_id: 5681
