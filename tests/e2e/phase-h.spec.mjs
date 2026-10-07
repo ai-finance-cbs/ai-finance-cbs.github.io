@@ -80,7 +80,7 @@ test('grader is read-only, auditors see only shared pages, and menu visibility f
   const reject=()=>page.evaluate(async()=>{try{await (await import('/assets/materials/demo.js')).createDemo().saveAssignmentPage('spring-2027','M1','Forbidden');return false;}catch{return true;}});
   expect(await reject()).toBe(true);
   await enter(page,'auditor');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');await expect(page.locator('.submission-box')).toHaveCount(0);expect(await reject()).toBe(true);
-  await expect(page.locator('.subnav-top.assignment-nav a:visible')).toHaveText(['Milestone #1']);
+  await expect(page.locator('.subnav-top.assignment-nav a:visible .subnav-label')).toHaveText(['Milestone #1']);
   for(const slug of ['milestone-2','final-prototype','optional-tasks']){await enter(page,'auditor',`assignments/${slug}`);await expect(page.locator('#materials-root')).toHaveText('This assignment is not available for your role.');}
   await enter(page,'instructor');await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();const row=(await b.assignments()).find(a=>a.id===1);await b.saveAssignment({...row,auditor_visible:false});});
   await enter(page,'auditor');await expect(page.locator('.topnav').getByRole('link',{name:'Assignments',exact:true})).toBeHidden();await expect(page.locator('.prep-markdown')).toHaveCount(0);
