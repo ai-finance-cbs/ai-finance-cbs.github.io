@@ -3,11 +3,12 @@ import { dueLine } from './due-ui.js';
 import { renderAssignmentSections } from './prep-ui.js';
 import { canvasSubmissionBlock, canvasDue } from './canvas-student-ui.js';
 import { canWrite } from './class-core.js';
+import { renderTaskMap } from './task-map-ui.js';
 
 const el = (tag, text, className = '') => {
   const node = document.createElement(tag); node.textContent = text; node.className = className; return node;
 };
-export function renderAssignments(ctx, catalog, pages) {
+export async function renderAssignments(ctx, catalog, pages) {
   const { root, data, access, backend, canvas } = ctx;
   const code = root.dataset.assignmentCode;
   const items = catalog.filter(i => code === 'optional' ? i.code.startsWith('O') : i.code === code);
@@ -21,11 +22,11 @@ export function renderAssignments(ctx, catalog, pages) {
     // Show both modes; the one that applies is dark, the other greyed out.
     const mode = el('p','','assignment-mode');
     for (const [key, label] of [['individual','Individual'],['group','Group']]) {
-      const option = el('span',label,`mode-option${(item.mode === 'group') === (key === 'group') ? ' is-active' : ''}`);
+      const option = el('span',label,`mode-option${(item.code !== 'M2' && item.mode === 'group') === (key === 'group') ? ' is-active' : ''}`);
       if (!option.classList.contains('is-active')) option.setAttribute('aria-hidden','true');
       mode.append(option);
     }
-    section.append(access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
+    section.append(item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
     const submitAnchor = `submission-${item.code}`;
     renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, submitAnchor,
@@ -39,9 +40,16 @@ export function renderAssignments(ctx, catalog, pages) {
     const submission = el('section','','assignment-panel assignment-submission'); submission.id = submitAnchor;
     submission.dataset.assignmentSection = 'Submission';
     const head = el('div','','assignment-panel-head'); head.append(el('h2','Submission'));
-    submission.append(head, el('p','The submission form will appear here.','assignment-panel-empty'));
-    if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
-    section.querySelector('.assignment-sections')?.append(submission) ?? section.append(submission);
+    submission.append(head);
+    if (item.code !== 'M2') {
+      submission.append(el('p','The submission form will appear here.','assignment-panel-empty'));
+      if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
+    }
+    if (item.code !== 'M2' || ['student','instructor','grader'].includes(access.role)) {
+      // Instruction saves replace their section container. Keep the form outside it.
+      section.append(submission);
+    }
     root.append(section);
+    if (item.code === 'M2') await renderTaskMap(submission,ctx);
   }
 }

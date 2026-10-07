@@ -1,4 +1,5 @@
 import { extendAssignments } from './assignment-demo.js';
+import { extendTaskMaps } from './task-map-demo.js';
 import { extendCanvas } from './canvas-demo.js';
 import { extendProfiles } from './profile-demo.js';
 import { extendPrep } from './prep-demo.js';
@@ -13,6 +14,8 @@ const SESSION = 'b8403-demo-user-v1';
 function seed() {
   return {
     ...classSeed(),
+    // A synthetic M2 deadline makes the local form usable without production settings.
+    items: classSeed().items.map(i => i.id === 2 ? {...i,mode:'individual',due_at:'2027-01-26T14:00:00Z'} : i),
     roster: [{ uni: 'ab1234', name: 'Demo Student' }, { uni: 'cd5678', name: 'Second Student' }, { uni: 'ef9012', name: 'Third Student' }],
     allowlist: [{ email: OWNER, role: 'instructor' }, { email: 'grader@columbia.edu', role: 'grader' }, { email: 'auditor@columbia.edu', role: 'auditor' }],
     assignments: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, title: i === 5 ? 'Demo final prototype' : `Demo milestone ${i + 1}`, due: `Before Week ${i + 1}`, points: i === 5 ? 25 : 10, description: 'Synthetic local example. Real assignment instructions load only from Supabase.', deliverable: 'Demo submission.', grading: 'Demo criteria.', auditor_visible: i === 0 })),
@@ -50,6 +53,7 @@ export function createDemo() {
     ...extendPrep({ readAll, saveAll, access }),
     ...extendProfiles({ readAll, saveAll, access }),
     ...extendAssignments({ read, save, access }),
+    ...extendTaskMaps({ readAll, saveAll, access }),
     ...extendDemo({ read, save, user, access, saveUser: u => sessionStorage.setItem(SESSION, JSON.stringify(u)) }),
     ...extendSubmissions({ read, save, access, allTerms: () => readAll().terms }),
     demo: true,

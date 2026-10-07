@@ -37,6 +37,9 @@ export async function createBackend(config) {
     async saveCanvasMapping(term, row) { return rpc('save_canvas_mapping', {p_term:term,p_key:row.site_key,p_assignment:row.canvas_assignment_id||null,p_kind:row.kind,p_week:row.week}); },
     async syncCanvas(term) { return fileAction({term_id:term}, 'canvas-sync'); },
     async assignmentCatalog(term) { return rpc('assignment_catalog', { p_term:term }); },
+    async myTaskMap(term) { return rpc('my_task_map', {p_term:term}); },
+    async taskMapClass(term) { return rpc('task_map_class', {p_term:term}); },
+    async saveTaskMap(term, payload, submit) { return rpc('save_task_map', {p_term:term,p_payload:payload,p_submit:submit}); },
     async assignmentPages(term, codes) {
       return checked(await client.from('assignment_pages').select('term_id,code,body_md,updated_at').eq('term_id',term).in('code',codes));
     },

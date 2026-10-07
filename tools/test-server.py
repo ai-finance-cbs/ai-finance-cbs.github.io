@@ -1,6 +1,7 @@
 """Serve the built site locally during the browser tests."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import os
 
 
 class TestServer(ThreadingHTTPServer):
@@ -14,5 +15,5 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    with TestServer(('127.0.0.1', 4173), partial(Handler, directory='_site')) as server:
+    with TestServer(('127.0.0.1', int(os.environ.get('B8403_TEST_PORT', '4173'))), partial(Handler, directory='_site')) as server:
         server.serve_forever()
