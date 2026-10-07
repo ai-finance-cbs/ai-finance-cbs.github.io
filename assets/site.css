@@ -1464,3 +1464,10 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
   .task-map-print-target th:last-child { width:80px; }
   .task-map-print-target tr { break-inside:avoid; }
 }
+/* Syllabus > Deliverables overview table */
+.deliverables-table col.dl-item { width:24%; } .deliverables-table col.dl-due { width:17%; } .deliverables-table col.dl-mode { width:12%; } .deliverables-table col.dl-pts { width:8%; }
+.deliverables-table td:first-child { font-weight:600; }
+.deliverables-table td:last-child, .deliverables-table th:last-child { text-align:right; }
+.deliverables-table .dl-date { color:var(--muted); font-size:13px; }
+@media (max-width:600px) { .deliverables-table col.dl-item { width:30%; } .deliverables-table col.dl-mode, .deliverables-table td:nth-child(4), .deliverables-table th:nth-child(4) { display:none; } }
+.deliverables-table td:nth-child(3) { white-space:nowrap; }
