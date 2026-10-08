@@ -1,6 +1,6 @@
 - number: 1
   short_date: "Wed, Jan 27 · 9:00 AM"
-  date: "Wednesday, January 27, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, January 27, 2027, 9:00 AM–12:15 PM"
   title: AI Economics
   goal: Learn key frameworks for the economics of AI and how its core features interact with finance.
   topics: ["Economic Frameworks for AI", "Bulls vs. Skeptics", "Nature of Financial Work"]
@@ -11,7 +11,7 @@
   milestone: "Milestone #1: Survey and Setup"
 - number: 2
   short_date: "Wed, Feb 3 · 9:00 AM"
-  date: "Wednesday, February 3, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, February 3, 2027, 9:00 AM–12:15 PM"
   title: AI Infrastructure
   goal: Learn where AI answers come from and discuss the basics of AI infrastructure.
   topics: ["Compute", "Models", "Data and Context", "Tools and Agents"]
@@ -19,7 +19,7 @@
   milestone: "Milestone #2: Task Map"
 - number: 3
   short_date: "Wed, Feb 10 · 9:00 AM"
-  date: "Wednesday, February 10, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, February 10, 2027, 9:00 AM–12:15 PM"
   title: Processing Information with AI
   goal: Extract structured data from financial documents and learn how to verify AI outputs.
   topics: ["Text Sources", "Non-Text Sources", "Data Preparation", "Retrieval and Analysis", "Verification"]
@@ -27,7 +27,7 @@
   milestone: "Milestone #3: Working Setup"
 - number: 4
   short_date: "Wed, Feb 17 · 9:00 AM"
-  date: "Wednesday, February 17, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, February 17, 2027, 9:00 AM–12:15 PM"
   title: Predicting Outcomes with AI
   goal: Understand what AI can and cannot predict and learn to evaluate AI predictions honestly.
   topics: ["Prediction Basics", "Predicting Fundamentals", "Predicting People", "Contamination and Cutoffs", "Confidence and Instability"]
@@ -35,7 +35,7 @@
   milestone: "Milestone #4: Personal Benchmark"
 - number: 5
   short_date: "Wed, Feb 24 · 9:00 AM"
-  date: "Wednesday, February 24, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, February 24, 2027, 9:00 AM–12:15 PM"
   title: Persuading Stakeholders with AI
   goal: Produce written memos, slides, and presentations with AI, and defend them.
   topics: ["Choosing the Format", "Drafting with AI", "Spotting AI Writing", "Writing for Machine Readers", "Handing Over the Work", "Defending the Analysis"]
@@ -43,7 +43,7 @@
   milestone: "Milestone #5: Pitch It"
 - number: 6
   short_date: "Wed, Mar 3 · 9:00 AM"
-  date: "Wednesday, March 3, 2027, 9:00 AM–12:20 PM"
+  date: "Wednesday, March 3, 2027, 9:00 AM–12:15 PM"
   title: The Future of Finance with AI
   goal: Think through what will happen to the financial sector and its jobs.
   topics: ["Markets", "People", "Firms", "Own", "Risks"]
