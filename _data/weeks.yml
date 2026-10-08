@@ -8,7 +8,7 @@
   # Preparation page: class plan in running order, then an appendix.
   prep_plan: ["Introduction", "Economic Frameworks for AI", "Quiz (3 questions)", "10x Richer", "Bulls vs. Skeptics", "Nature of Financial Work", "Sort the Work"]
   prep_appendix: ["Three Answers"]
-  milestone: "Milestone #1: Pre-Class Survey"
+  milestone: "Milestone #1: Survey and Setup"
 - number: 2
   short_date: "Wed, Feb 3 · 9:00 AM"
   date: "Wednesday, February 3, 2027, 9:00 AM–12:20 PM"
@@ -16,7 +16,7 @@
   goal: Learn where AI answers come from and discuss the basics of AI infrastructure.
   topics: ["Compute", "Models", "Data and Context", "Tools and Agents"]
   exercises: ["Rebuild the Chart", "Four Formats", "The Bill"]
-  milestone: "Milestone #2: Proposal and Task Map"
+  milestone: "Milestone #2: Task Map"
 - number: 3
   short_date: "Wed, Feb 10 · 9:00 AM"
   date: "Wednesday, February 10, 2027, 9:00 AM–12:20 PM"
