@@ -18,6 +18,12 @@ Base: Gallery Minimal ("one white wall"). Content supplies the hierarchy; contro
 - Red #8C2F39 only for staff-only controls (Tools) and warnings.
 - Extra colours only where they encode data (task-map labels, status pills).
 
+## 3b. Emphasis in reading text
+- Bold (weight 600) marks a key term the reader should carry away, usually on its first mention.
+- At most three bold phrases per paragraph; never whole sentences.
+- No colour for emphasis: blue means "clickable", and other colours carry data (labels, status).
+- No italics, no underlines except links, no ALL CAPS except the small panel labels.
+
 ## 4. Buttons: three kinds only
 | Kind | Look | Use for |
 |---|---|---|
