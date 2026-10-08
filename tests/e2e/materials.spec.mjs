@@ -24,7 +24,7 @@ async function upload(page, title, shared = false) {
 test('signed-out syllabus links open one modal and retain their intended milestone', async ({ page }) => {
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
   await expect(page.getByRole('link', { name: 'Course Materials', exact: true })).toBeHidden();
-  await page.getByRole('link', { name: 'Milestone #2: Proposal and Task Map' }).click();
+  await page.getByRole('link', { name: 'Milestone #2: Task Map' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue with Columbia Google' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/week-2/#milestone-2');
