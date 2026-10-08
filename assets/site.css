@@ -1492,3 +1492,7 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .deliverables-table td:nth-child(2) { font-weight:400; }
 .optional-table col.dl-item { width:26%; }
 .deliverables-table.optional-table td:nth-child(3) { white-space:nowrap; text-align:right; }
+
+/* Milestones table: balanced columns, Name no wider than its longest entry needs. */
+.milestones-table col.ms-num { width:21%; } .milestones-table col.ms-name { width:29%; } .milestones-table col.ms-due { width:21%; } .milestones-table col.ms-mode { width:17%; } .milestones-table col.ms-pts { width:12%; }
+@media (max-width:600px) { .milestones-table col.ms-num { width:30%; } .milestones-table col.ms-name { width:36%; } .milestones-table td:nth-child(4), .milestones-table th:nth-child(4) { display:none; } }
