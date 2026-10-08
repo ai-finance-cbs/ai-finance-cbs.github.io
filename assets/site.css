@@ -1496,3 +1496,9 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 /* Milestones table: balanced columns, Name no wider than its longest entry needs. */
 .milestones-table col.ms-num { width:21%; } .milestones-table col.ms-name { width:29%; } .milestones-table col.ms-due { width:21%; } .milestones-table col.ms-mode { width:17%; } .milestones-table col.ms-pts { width:12%; }
 @media (max-width:600px) { .milestones-table col.ms-num { width:30%; } .milestones-table col.ms-name { width:36%; } .milestones-table td:nth-child(4), .milestones-table th:nth-child(4) { display:none; } }
+
+/* Logistics > Grading: one simple points table */
+.grading-table col.gr-pts { width:22%; }
+.grading-table td:last-child, .grading-table th:last-child { text-align:right; white-space:nowrap; }
+.grading-table tr.gr-total td { font-weight:600; border-top:1px solid #1A1A1A; }
+.grading-table tr.gr-extra td { color:var(--muted); }
