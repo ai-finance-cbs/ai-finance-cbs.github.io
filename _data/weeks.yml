@@ -24,7 +24,7 @@
   goal: Extract structured data from financial documents and learn how to verify AI outputs.
   topics: ["Text Sources", "Non-Text Sources", "Data Preparation", "Retrieval and Analysis", "Verification"]
   exercises: ["Unparsed", "Page 700", "Write the Checks"]
-  milestone: "Milestone #3: Working Setup"
+  milestone: "Milestone #3: Ship It"
 - number: 4
   short_date: "Wed, Feb 17 · 9:00 AM"
   date: "Wednesday, February 17, 2027, 9:00 AM–12:15 PM"
