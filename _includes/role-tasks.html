@@ -1,7 +1,7 @@
 {% assign role = site.data.roles | where: "slug", include.slug | first %}
 <div class="role-tools"><button class="materials-button role-pdf" type="button" onclick="window.print()">Export to PDF</button></div>
 <p class="role-summary">{{ role.summary }}</p>
-<p class="role-instruct">This is a completed task map for Milestone #2. Each task is one concrete action, and each carries one of the four kinds of financial work from Week 1.</p>
+<p class="role-instruct">This is a completed task map for <a data-protected-link href="{{ '/materials/assignments/milestone-2/' | relative_url }}">Milestone #2</a>. Each task is one concrete action, and each carries one of the four kinds of financial work from Week 1.</p>
 <dl class="role-legend">
   <div><dt><span class="task-label is-process">Process</span></dt><dd>Find, extract, or organize information that already exists.</dd></div>
   <div><dt><span class="task-label is-predict">Predict</span></dt><dd>Estimate or forecast something that is not yet known.</dd></div>
