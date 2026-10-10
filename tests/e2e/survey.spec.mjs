@@ -24,7 +24,7 @@ test.beforeEach(async({page})=>{
 test('exact question wording, no Why notes, signed-in prefill, and Setup Guide link',async({page})=>{
   await enter(page);const f=form(page);await expect(f.locator('.survey-opening')).toHaveText(SURVEY_OPENING);
   for(const question of Object.values(QUESTIONS))await expect(f).toContainText(question);
-  await expect(f.getByRole('textbox',{name:'S3. Paste the haiku your assistant wrote for: "Summarize the contents of this folder into a short haiku. Include the word YOUR-UNI."',exact:true})).toBeEditable();
+  await expect(f.getByRole('textbox',{name:'S3. Paste the haiku your assistant wrote for: "Summarize the contents of this folder into a short haiku."',exact:true})).toBeEditable();
   await expect(f).not.toContainText('Why:');await expect(f.getByLabel('Full name',{exact:true})).toHaveValue('Demo Student');
   await expect(f.getByLabel('UNI',{exact:true})).toHaveValue('ab1234');await expect(f.getByLabel('UNI',{exact:true})).toHaveAttribute('readonly','');
   await expect(f.locator('.survey-section').last().getByRole('link',{name:'Setup Guide',exact:true})).toHaveAttribute('href','/syllabus/setup/');
@@ -33,6 +33,8 @@ test('exact question wording, no Why notes, signed-in prefill, and Setup Guide l
   await expect(f.getByLabel(QUESTIONS.q2,{exact:true})).toBeVisible();
   await expect(f).not.toContainText('Name to use in class');
   await expect(f.getByRole('checkbox')).toHaveCount(8);await expect(f.getByRole('button',{name:'Export CSV'})).toHaveCount(0);
+  await f.getByRole('link',{name:'Setup Guide',exact:true}).click();
+  await expect(page.locator('section[aria-labelledby="step-6"] .prompt-text')).toHaveText('Summarize the contents of this folder into a short haiku.');
 });
 test('student draft reload submit resubmit and failed-save recovery preserve every answer',async({page})=>{
   await page.route('**/assets/materials/survey-demo.js',async route=>{const response=await route.fetch();await route.fulfill({response,body:(await response.text()).replace('async saveSurvey(term,payload,submit) {',
