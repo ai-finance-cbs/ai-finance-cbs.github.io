@@ -27,6 +27,14 @@ test('identity comes from the session, name remains editable, and draft/submit/r
   const audit=await h.rows("select * from audit_log where table_name='m1_survey_responses'");assert.equal(audit.length,3);assert.ok(audit.every(r=>r.actor_email==='aa1001@columbia.edu'));
   await h.as('a');assert.equal((await save(emptySurvey(),false)).submitted_at,null);
 });
+test('S3 preserves free text through draft, submit and read without requiring prompt-specific content',async()=>{
+  await h.as('a');const value=surveyFixture();
+  value.answers.setup_haiku='An ordinary sentence, not a poem.\nA second line with "quotes" and café.';
+  for(const submit of [false,true]){
+    const response=await save(value,submit);assert.equal(response.answers.setup_haiku,value.answers.setup_haiku);
+    assert.equal((await h.rpc('my_m1_survey',TERM)).submission.answers.setup_haiku,value.answers.setup_haiku);
+  }
+});
 for(const role of ['a','b','teacher','grader','auditor','outside','anon'])test(`${role}: raw table and RPC permissions`,async()=>{
   await h.as(role);for(const sql of ['select * from m1_survey_responses','insert into m1_survey_responses default values','update m1_survey_responses set uni=uni','delete from m1_survey_responses'])await deny(()=>h.rows(sql),/permission denied/);
   if(['a','b'].includes(role)){await save();await h.rpc('my_m1_survey',TERM);}else{await deny(()=>save());await deny(()=>h.rpc('my_m1_survey',TERM));}

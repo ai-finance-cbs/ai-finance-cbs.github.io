@@ -24,6 +24,7 @@ test.beforeEach(async({page})=>{
 test('exact question wording, no Why notes, signed-in prefill, and Setup Guide link',async({page})=>{
   await enter(page);const f=form(page);await expect(f.locator('.survey-opening')).toHaveText(SURVEY_OPENING);
   for(const question of Object.values(QUESTIONS))await expect(f).toContainText(question);
+  await expect(f.getByRole('textbox',{name:'S3. Paste the haiku your assistant wrote for: "Write a haiku about finance that includes the word YOUR-UNI."',exact:true})).toBeEditable();
   await expect(f).not.toContainText('Why:');await expect(f.getByLabel('Full name',{exact:true})).toHaveValue('Demo Student');
   await expect(f.getByLabel('UNI',{exact:true})).toHaveValue('ab1234');await expect(f.getByLabel('UNI',{exact:true})).toHaveAttribute('readonly','');
   await expect(f.locator('.survey-section').last().getByRole('link',{name:'Setup Guide',exact:true})).toHaveAttribute('href','/syllabus/setup/');
