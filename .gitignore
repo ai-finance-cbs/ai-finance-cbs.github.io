@@ -17,7 +17,7 @@ tools/*
 README.md
 
 # Local tests and private database seed never go into the public repository.
-node_modules/
+node_modules
 test-results/
 playwright-report/
 supabase/private/
