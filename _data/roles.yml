@@ -198,11 +198,11 @@
       onet_id: 5664
       label: Process
     - name: Picking research ideas
-      description: Choose which of several research ideas is worth two years of work, a call of taste with no right answer.
+      description: Choose which of several research ideas is worth two years of work.
       onet_id: 5681
       label: Own
     - name: Empirical estimation
-      description: Estimate from data how much investor demand moves asset prices, a number nobody knows in advance.
+      description: Estimate from data how much investor demand moves asset prices.
       onet_id: 5681
       label: Predict
     - name: Anticipating referees
@@ -216,7 +216,7 @@
     - name: Seminar presentations
       description: Present research at other universities and conferences, and defend it against questions.
       onet_id: 5670
-      label: Persuade
+      label: Own
     - name: Lecturing
       description: Teach a class session that changes how students think about a topic.
       onet_id: 5662
