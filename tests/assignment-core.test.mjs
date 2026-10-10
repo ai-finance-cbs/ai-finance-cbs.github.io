@@ -5,7 +5,7 @@ import {prepMarkdown} from '../assets/materials/prep-core.js';
 test('student names use assignment titles while quizzes and optional tasks keep their names',()=>{
   assert.equal(itemName({code:'M1',title:'Milestone #1'},[{id:1,title:'Pre-Class Survey'}]),'Milestone #1: Pre-Class Survey');
   assert.equal(itemName({code:'M2',title:'Milestone #2: Proposal and Task Map'}),'Milestone #2: Proposal and Task Map');
-  assert.equal(itemName({code:'FP',title:'Final Prototype'}),'Final Prototype');
+  assert.equal(itemName({code:'FP',title:'Final Project'}),'Final Project');
   assert.equal(itemName({code:'O1',title:'Confidently Wrong'}),'Confidently Wrong');
   assert.equal(itemName({code:'Q1',title:'In-class quiz 1'}),'In-class quiz 1');
 });

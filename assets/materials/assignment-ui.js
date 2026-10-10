@@ -17,7 +17,6 @@ export async function renderAssignments(ctx, catalog, pages) {
   if (code !== 'optional') document.querySelector('.page-heading h1').textContent = itemName(items[0]);
   for (const item of items) {
     const section = el('section', '', 'assignment-page'); section.id = item.code.startsWith('O') ? `optional-task-${item.code[1]}` : item.code === 'FP' ? 'final-prototype' : `milestone-${item.code[1]}`;
-    if (code === 'optional') section.append(el('h2',itemName(item)),el('span','Optional task','optional-task-label'));
     // Canvas due date when the item is mapped; otherwise the site's own due date, so the line is never blank.
     const canvasRow = canvas?.items.find(row=>row.site_key===item.code);
     // Show both modes; the one that applies is dark, the other greyed out.
@@ -29,7 +28,9 @@ export async function renderAssignments(ctx, catalog, pages) {
     }
     section.append(item.code === 'M1' && access.role !== 'auditor' ? canvasDue(canvasRow) : item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
-    const submitAnchor = `submission-${item.code}`;
+    // Share Your Setup is presented in class, so it has no submission form.
+    const inClass = item.code === 'O4';
+    const submitAnchor = inClass ? null : `submission-${item.code}`;
     renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, submitAnchor,
       editable:access.role === 'instructor' && canWrite(access),
       backend:{ async saveInstructorNote(_,body) {
@@ -46,7 +47,7 @@ export async function renderAssignments(ctx, catalog, pages) {
       submission.append(el('p','The submission form will appear here.','assignment-panel-empty'));
       if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
     }
-    if (!['M1','M2'].includes(item.code) || ['student','instructor','grader'].includes(access.role)) {
+    if (!inClass && (!['M1','M2'].includes(item.code) || ['student','instructor','grader'].includes(access.role))) {
       // Instruction saves replace their section container. Keep the form outside it.
       section.append(submission);
     }
@@ -54,4 +55,28 @@ export async function renderAssignments(ctx, catalog, pages) {
     if (item.code === 'M2') await renderTaskMap(submission,ctx);
     if (item.code === 'M1') await renderSurvey(submission,ctx);
   }
+  if (code === 'optional') optionalTabs(root, items);
+}
+
+// Optional tasks: one tab per task across the top; only the selected task is shown.
+function optionalTabs(root, items) {
+  const sections = [...root.querySelectorAll(':scope > .assignment-page')];
+  const bar = el('div','','optional-tabs'); bar.setAttribute('role','tablist');
+  const tabs = sections.map((section, i) => {
+    const tab = el('button', itemName(items[i]), 'optional-tab');
+    tab.type = 'button'; tab.id = `${section.id}-tab`;
+    tab.setAttribute('role','tab'); tab.setAttribute('aria-controls', section.id);
+    section.setAttribute('role','tabpanel'); section.setAttribute('aria-labelledby', tab.id);
+    tab.addEventListener('click', () => { select(i); history.replaceState(null, '', `#${section.id}`); });
+    bar.append(tab); return tab;
+  });
+  const select = active => sections.forEach((section, i) => {
+    section.hidden = i !== active;
+    tabs[i].setAttribute('aria-selected', String(i === active));
+    tabs[i].tabIndex = i === active ? 0 : -1;
+  });
+  root.prepend(bar);
+  // Open the task named in the link (#optional-task-3), or the first one.
+  const fromHash = sections.findIndex(section => `#${section.id}` === location.hash);
+  select(fromHash < 0 ? 0 : fromHash);
 }

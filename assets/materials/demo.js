@@ -19,7 +19,7 @@ function seed() {
     items: classSeed().items.map(i => i.id === 2 ? {...i,mode:'individual',due_at:'2027-01-26T14:00:00Z'} : i),
     roster: [{ uni: 'ab1234', name: 'Demo Student' }, { uni: 'cd5678', name: 'Second Student' }, { uni: 'ef9012', name: 'Third Student' }],
     allowlist: [{ email: OWNER, role: 'instructor' }, { email: 'grader@columbia.edu', role: 'grader' }, { email: 'auditor@columbia.edu', role: 'auditor' }],
-    assignments: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, title: i === 5 ? 'Demo final prototype' : `Demo milestone ${i + 1}`, due: `Before Week ${i + 1}`, points: i === 5 ? 25 : 10, description: 'Synthetic local example. Real assignment instructions load only from Supabase.', deliverable: 'Demo submission.', grading: 'Demo criteria.', auditor_visible: i === 0 })),
+    assignments: Array.from({ length: 6 }, (_, i) => ({ id: i + 1, title: i === 5 ? 'Demo final project' : `Demo milestone ${i + 1}`, due: `Before Week ${i + 1}`, points: i === 5 ? 25 : 10, description: 'Synthetic local example. Real assignment instructions load only from Supabase.', deliverable: 'Demo submission.', grading: 'Demo criteria.', auditor_visible: i === 0 })),
     files: [], student_accounts: [], announcements: [],
   };
 }

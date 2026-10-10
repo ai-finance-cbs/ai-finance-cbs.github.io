@@ -1,12 +1,12 @@
 import { gradeCode } from './class-core.js';
 
-export const ASSIGNMENT_CODES = ['M1','M2','M3','M4','M5','FP','O1','O2','O3'];
+export const ASSIGNMENT_CODES = ['M1','M2','M3','M4','M5','FP','O1','O2','O3','O4'];
 export function assignmentSlug(code) {
   return code === 'FP' ? 'final-prototype' : /^M[1-5]$/.test(code) ? `milestone-${code[1]}` : 'optional-tasks';
 }
 export function itemName(item, assignments = []) {
   const code = gradeCode(item), week = code === 'FP' ? 6 : /^M[1-5]$/.test(code) ? Number(code[1]) : null;
-  if (code === 'FP') return 'Final Prototype';
+  if (code === 'FP') return 'Final Project';
   const title = (assignments.find(a => a.id === week)?.title || item.title || '').replace(/^Milestone\s*#?\d+\s*:?\s*/i,'');
   return /^M[1-5]$/.test(code) ? `Milestone #${week}${title ? `: ${title}` : ''}` : item.title;
 }

@@ -11,7 +11,7 @@ afterEach(async()=>h?.db.close());
 test('instructor saves bounded term-scoped Markdown with an audit and no direct browser writes',async()=>{
   const row=await h.rpc('save_assignment_page',TERM,'M1','# Updated');assert.equal(row.body_md,'# Updated');assert.ok(row.updated_at);
   assert.equal((await h.rows('select body_md from assignment_pages where code=\'M1\''))[0].body_md,'# Updated');
-  for(const code of ['M6','O4','PA','Q1'])await assert.rejects(h.rpc('save_assignment_page',TERM,code,'bad'),/check constraint/);
+  for(const code of ['M6','O5','PA','Q1'])await assert.rejects(h.rpc('save_assignment_page',TERM,code,'bad'),/check constraint/);
   await assert.rejects(h.rpc('save_assignment_page',TERM,'M1','x'.repeat(50001)),/check constraint/);
   await h.rpc('save_assignment_page',TERM,'M1','🌐'.repeat(50000));
   await assert.rejects(h.rows("update assignment_pages set body_md='bypass'"),/permission denied/);
@@ -27,7 +27,7 @@ for(const who of ['grader','a','auditor','outside','anon'])test(`${who}: assignm
   if(['anon','outside'].includes(who))await assert.rejects(h.rpc('assignment_catalog',TERM));
   else {
     const catalog=await h.rpc('assignment_catalog',TERM);
-    assert.equal(catalog.length,who==='auditor'?1:9);
+    assert.equal(catalog.length,who==='auditor'?1:10);
     assert.ok(catalog.every(i=>Object.keys(i).sort().join(',')==='code,due_at,id,kind,mode,title'));
     assert.doesNotMatch(JSON.stringify(catalog),/Private instructions|body_md|score|graded|submission/);
   }

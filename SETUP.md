@@ -532,7 +532,7 @@ Week boxes keep the title, deadline, status chip, group information, Instruction
 Descriptions, Deliverable, and Graded on move to Assignments pages.
 Deadlines use New York time and update every minute without refreshing or resetting a chosen upload.
 
-The new class-zone Assignments tab has five milestone pages, Final Prototype, and Optional Tasks.
+The new class-zone Assignments tab has five milestone pages, Final Project, and Optional Tasks.
 The landing URL redirects to Milestone #1; old milestone/week/final-prototype hashes keep their destinations.
 Pages render protected Markdown, the short assignment summary, and the same upload component used by weeks.
 Markdown supports escaped HTML, headings, lists, bold, italic, safe links in new tabs, and simple pipe tables.
@@ -542,7 +542,7 @@ Graders and students can read instructions. Auditors receive only shared assignm
 
 Migration `016_assignment_pages.sql` adds `assignment_pages`, keyed by term and code, with a 50,000-character limit.
 Reads require term access and the linked item's visibility. Students must have access through that term's roster.
-Milestones and Final Prototype use the existing `assignments.auditor_visible` flag.
+Milestones and Final Project use the existing `assignments.auditor_visible` flag.
 Optional tasks use the new `grade_items.auditor_visible` flag, false by default; staff SQL can configure it.
 Score release does not grant auditor access. The menu catalog contains metadata, never instructions or student records.
 Only `save_assignment_page` writes instructions, with instructor checks, preview protection, and an active-term lock.

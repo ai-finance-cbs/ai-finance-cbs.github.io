@@ -20,7 +20,7 @@ async function seed(page){
     await b.syncCanvas('spring-2027');
     const key='b8403-demo-state-v3',d=JSON.parse(sessionStorage.getItem(key));d.canvas['spring-2027'].submissions.find(s=>s.assignment_id==='100'&&s.user_id==='1').cached_due_at='2027-01-27T14:00:00Z';sessionStorage.setItem(key,JSON.stringify(d));
     const rows=await b.assignments();await b.saveAssignment({...rows.find(a=>a.id===1),title:'Pre-Class Survey'});
-    for(const code of ['M1','M2','M3','M4','M5','FP','O1','O2','O3'])await b.saveAssignmentPage('spring-2027',code,'# Synthetic instructions\n\n**Demo** and *example*\n\n- First step\n- Second step\n\n[Reference](https://example.test/)\n\n<script>window.assignmentXss=1</script>\n<img src=x onerror=alert(1)>\n[Unsafe](javascript:alert)');
+    for(const code of ['M1','M2','M3','M4','M5','FP','O1','O2','O3','O4'])await b.saveAssignmentPage('spring-2027',code,'# Synthetic instructions\n\n**Demo** and *example*\n\n- First step\n- Second step\n\n[Reference](https://example.test/)\n\n<script>window.assignmentXss=1</script>\n<img src=x onerror=alert(1)>\n[Unsafe](javascript:alert)');
   });
 }
 test('week milestone uses the full name, trimmed content, instructions link, and a minute-updating deadline',async({page})=>{
@@ -56,7 +56,7 @@ test('student instructions render safe Markdown above the course-site survey',as
   await expect(root.locator('.survey-editor')).toBeVisible();
   await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toHaveCount(0);
   await enter(page,'student','grades');await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
-  await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
+  await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Project');
   await expect(root.locator('[data-grade-code^=O]')).toHaveCount(4);
 });
 test('instructor edits inline, cancels, saves, reloads, and receives unsaved navigation and sign-out warnings',async({page})=>{
@@ -107,10 +107,10 @@ test('assignment landing preserves old anchors; all optional tasks have separate
   for(const [anchor,slug] of [['','milestone-1'],['#milestone-3','milestone-3'],['#week-5','milestone-5'],['#milestone-6','final-prototype'],['#final-prototype','final-prototype']]){
     await page.goto(`/materials/assignments/?fakeauth=student${anchor}`);await ready(page);expect(new URL(page.url()).pathname).toBe(`/materials/assignments/${slug}/`);expect(new URL(page.url()).hash).toBe(anchor);
   }
-  await enter(page,'instructor','assignments/optional-tasks');await expect(page.locator('.assignment-page')).toHaveCount(3);
-  const second=page.locator('#optional-task-2');await second.getByRole('button',{name:'Edit introduction'}).click();await second.locator('textarea').fill('Second optional draft');
+  await enter(page,'instructor','assignments/optional-tasks');await expect(page.locator('.assignment-page')).toHaveCount(4);await expect(page.locator('#optional-task-4 .assignment-submission')).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveText(['Confidently Wrong','Right for the Wrong Reason','In the Wild','Share Your Setup']);await expect(page.locator('#optional-task-2')).toBeHidden();await page.getByRole('tab',{name:'Right for the Wrong Reason'}).click();expect(new URL(page.url()).hash).toBe('#optional-task-2');const second=page.locator('#optional-task-2');await second.getByRole('button',{name:'Edit introduction'}).click();await second.locator('textarea').fill('Second optional draft');
   await page.locator('.topnav').getByRole('link',{name:'Groups',exact:true}).click();await expect(second.getByRole('alert')).toContainText('Unsaved changes');await second.getByRole('button',{name:'Keep editing'}).click();
-  await second.getByRole('button',{name:'Save',exact:true}).click();await page.reload();await ready(page);await expect(second.locator('.prep-markdown')).toHaveText('Second optional draft');await expect(page.locator('#optional-task-1 .prep-markdown')).toContainText('Synthetic instructions');
+  await second.getByRole('button',{name:'Save',exact:true}).click();await page.reload();await ready(page);await expect(second.locator('.prep-markdown')).toHaveText('Second optional draft');await page.getByRole('tab',{name:'Confidently Wrong'}).click();await expect(page.locator('#optional-task-1 .prep-markdown')).toContainText('Synthetic instructions');
 });
 for(const width of [1280,390,320])test(`student assignment pages fit at ${width}px`,async({page})=>{
   await seed(page);await page.setViewportSize({width,height:1000});

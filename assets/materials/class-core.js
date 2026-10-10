@@ -6,7 +6,7 @@ export const GRADE_ITEMS = [
     title: `Milestone #${i + 1}`,
     max_points: 10,
   })),
-  { id: 6, title: 'Final Prototype', max_points: 25 },
+  { id: 6, title: 'Final Project', max_points: 25 },
   ...Array.from({ length: 5 }, (_, i) => ({
     id: i + 7,
     title: `In-class quiz ${i + 1}`,

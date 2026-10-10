@@ -524,7 +524,7 @@ function renderAssignmentAdmin(rows) {
   s.append(el('p', 'Plain text only. Line breaks are preserved.'));
   if (!rows.length) s.append(el('p', 'No assignments found. Load the private seed in Supabase using SETUP.md.'));
   for (const row of rows) {
-    const details = el('details'); details.append(el('summary', `${row.id === 6 ? 'Final Prototype' : `Milestone #${row.id}`} · ${row.title}`));
+    const details = el('details'); details.append(el('summary', `${row.id === 6 ? 'Final Project' : `Milestone #${row.id}`} · ${row.title}`));
     const form = newForm(`assignment-${row.id}`);
     const title = field(form, 'Title', 'title', row.title); title.required = true; title.maxLength = 200;
     const due = field(form, 'Due', 'due', row.due); due.required = true; due.maxLength = 100;
