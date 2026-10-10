@@ -64,7 +64,7 @@ function editor(root,ctx,result) {
   text(question(logistics,'q13','accessibility needs, a planned absence, a topic you want covered, a speaker you would love to hear from',true),'other_info',true);
   const setup=section('Setup check (M1 = survey + VS Code setup)'),guide=el('a','Setup Guide');guide.href='/syllabus/setup/';setup.append(guide);
   choices(question(setup,'s1'),'setup_assistant',ASSISTANTS);text(question(setup,'s2'),'setup_version');
-  text(question(setup,'s3'),'setup_haiku',true);text(question(setup,'s4','',true),'setup_problems',true);
+  text(question(setup,'s3'),'setup_haiku',true);
   const message=el('p','','survey-message');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
   const draftWarning=el('p','','survey-hint'),actions=el('div','','survey-actions');
   const submit=button('Submit',()=>persist(true),'materials-button survey-primary');

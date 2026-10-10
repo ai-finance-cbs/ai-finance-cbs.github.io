@@ -11,7 +11,6 @@ export const QUESTIONS = {
   q12:'Q12. Have you used any of these?', q13:'Q13. Anything else I should know?',
   s1:'S1. Which assistant did you set up?', s2:'S2. Paste the output of claude --version (or codex --version).',
   s3:'S3. Paste the haiku your assistant wrote for: "Summarize the contents of this folder into a short haiku."',
-  s4:'S4. Any setup problems?',
 };
 export const PROGRAMS = ['MBA 2027','MBA 2028','EMBA','MS','PhD','Other'];
 export const SECTORS = ['Investment banking','Sales and trading','Asset management / hedge funds','Private equity / VC / private credit','Corporate finance','Consulting','Fintech / tech','Entrepreneurship','Other'];
@@ -19,7 +18,7 @@ export const FREQUENCIES = ['Never','Tried it','Monthly','Weekly','Daily'];
 export const AI_TOOLS = [['chatgpt','ChatGPT'],['claude','Claude'],['gemini','Gemini'],['copilot','Microsoft Copilot'],['perplexity','Perplexity'],['other','Other (name it)']];
 export const EXPERIENCE = ['Never','A little','Comfortable'];
 export const SETUP_TOOLS = [['vscode','VS Code'],['github','GitHub'],['terminal','A terminal / command line'],['python_r','Python or R'],['excel','Excel formulas']];
-export const ASSISTANTS = ['Claude Code','Codex','I could not finish setup.'];
+export const ASSISTANTS = ['Claude Code','Codex'];
 // These identifiers stay stable for the later Week 6 comparison.
 export const VIEWS = [
   ['change_work','AI will change most of the work in finance within five years.'],
@@ -32,7 +31,7 @@ export const VIEWS = [
   ['unsure','I am not sure yet.'],
 ];
 export const TEXT_LIMITS = {full_name:120,preferred_name:120,job:3000,career_examples:500,other_tool:120,
-  ai_use:1500,wish:600,worries:1000,other_info:2000,setup_version:500,setup_haiku:2000,setup_problems:2000};
+  ai_use:1500,wish:600,worries:1000,other_info:2000,setup_version:500,setup_haiku:2000};
 const REQUIRED_TEXT = {full_name:'Q1',preferred_name:'Q2',job:'Q4',career_examples:'Q5',ai_use:'Q7',wish:'Q8',setup_version:'S2',setup_haiku:'S3'};
 export function emptySurvey(name = '') {
   return {answers:{...Object.fromEntries(Object.keys(TEXT_LIMITS).map(k=>[k,''])),full_name:name,program:'',sector:'',setup_assistant:'',
@@ -81,12 +80,12 @@ const csvCell = value => {
 export function surveyCSV(students) {
   const headers=['UNI','Roster name','Status','Submitted at','Updated at','Q1 Full name','Q2 Preferred name','Q3 Program','Q4 Job','Q5 Sector','Q5 Example firms or roles',
     ...AI_TOOLS.map(([,name])=>`Q6 ${name}`),'Q6 Other tool name','Q7 AI use','Q8 Future task',...VIEWS.map(([,label])=>`Q9 ${label}`),'Q10 Percent','Q11 Worries',
-    ...SETUP_TOOLS.map(([,name])=>`Q12 ${name}`),'Q13 Other information','S1 Assistant','S2 Version','S3 Haiku','S4 Problems'];
+    ...SETUP_TOOLS.map(([,name])=>`Q12 ${name}`),'Q13 Other information','S1 Assistant','S2 Version','S3 Haiku'];
   const rows=students.map(student=>{
     const s=student.submission,a=s?.answers;
     return [student.uni,student.name,s?.status||'not_started',s?.submitted_at,s?.updated_at,a?.full_name,a?.preferred_name,a?.program,a?.job,a?.sector,a?.career_examples,
       ...AI_TOOLS.map(([id])=>a?.ai_frequency[id]),a?.other_tool,a?.ai_use,a?.wish,...VIEWS.map(([id])=>s?Number(s.q9.includes(id)):''),s?.q10,a?.worries,
-      ...SETUP_TOOLS.map(([id])=>a?.experience[id]),a?.other_info,a?.setup_assistant,a?.setup_version,a?.setup_haiku,a?.setup_problems];
+      ...SETUP_TOOLS.map(([id])=>a?.experience[id]),a?.other_info,a?.setup_assistant,a?.setup_version,a?.setup_haiku];
   });
   return [headers,...rows].map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n';
 }

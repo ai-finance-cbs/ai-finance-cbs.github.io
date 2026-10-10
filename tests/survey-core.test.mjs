@@ -8,7 +8,7 @@ test('drafts accept blanks; submit requires every required question and preserve
   for(const key of ['full_name','preferred_name','job','career_examples','ai_use','wish','setup_version','setup_haiku','program','sector','setup_assistant']) {
     const value=surveyFixture();value.answers[key]='';assert.throws(()=>validateSurvey(value,true),/Complete/);
   }
-  v.answers.setup_assistant='I could not finish setup.';v.answers.setup_version='Not installed';v.answers.setup_haiku='Not available';validateSurvey(v,true);
+  v.answers.setup_assistant='Codex';v.answers.setup_version='codex-cli 1.0';v.answers.setup_haiku='Desktop of PDFs';validateSurvey(v,true);
   v.q9=[];assert.throws(()=>validateSurvey(v,true),/Q9/);v.q9=['unsure'];v.q10=null;assert.throws(()=>validateSurvey(v,true),/Q10/);
 });
 test('grids are exact, Other tool naming is conditional, and choices cannot smuggle extra fields',()=>{
@@ -31,7 +31,7 @@ test('CSV has every answer and student, quotes commas and newlines, and blocks s
   const v=surveyFixture();v.answers.full_name='=1+1';v.answers.job='A "quoted", multiline\njob';v.q10=0;
   const csv=surveyCSV([{uni:'aa1001',name:'+formula',submission:{...v,status:'submitted'}},{uni:'bb1002',name:'No response',submission:null}]);
   assert.ok(csv.includes('"\'=1+1"'));assert.ok(csv.includes('"\'+formula"'));assert.ok(csv.includes('"A ""quoted"", multiline\njob"'));
-  for(const name of ['Q9 AI will change','Q10 Percent','Q6 Other tool name','S4 Problems','bb1002','not_started'])assert.ok(csv.includes(name),name);
+  for(const name of ['Q9 AI will change','Q10 Percent','Q6 Other tool name','bb1002','not_started'])assert.ok(csv.includes(name),name);
   for(const prefix of ['\t=','\n@','  +','-']){v.answers.other_info=prefix+'value';assert.ok(surveyCSV([{uni:'aa1',name:'A',submission:v}]).includes('"\''+prefix+'value"'));}
 });
 test('deadline closes at the cutoff and fails closed when Canvas has no valid date',()=>{

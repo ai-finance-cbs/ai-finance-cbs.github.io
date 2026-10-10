@@ -101,7 +101,7 @@ for(const role of ['instructor','grader'])test(`${role} sees submitted-only summ
   const item=staff.locator('.survey-response').filter({has:page.locator('summary').filter({hasText:'ab1234'})});await item.locator('summary').click();await expect(item.getByLabel('Full name',{exact:true})).toHaveValue('=1+1');await expect(item.getByLabel('Full name',{exact:true})).toBeDisabled();
   await expect(item.getByRole('button',{name:'Submit',exact:true})).toHaveCount(0);
   const downloadEvent=page.waitForEvent('download');await staff.getByRole('button',{name:'Export CSV'}).click();const download=await downloadEvent;await download.saveAs(`evidence/survey/${role}.csv`);
-  const csv=readFileSync(await download.path(),'utf8');for(const text of ['ab1234','cd5678','ef9012','test1','Q10 Percent','S4 Problems','not_started'])expect(csv).toContain(text);
+  const csv=readFileSync(await download.path(),'utf8');for(const text of ['ab1234','cd5678','ef9012','test1','Q10 Percent','not_started'])expect(csv).toContain(text);
   expect(csv).toContain('"\'=1+1"');expect(csv).toContain('"A ""quoted"", multiline\njob"');expect(csv).toContain(surveyFixture().answers.setup_haiku);
 });
 test('preview shows the selected response read-only and denies writes and class/CSV data',async({page})=>{
