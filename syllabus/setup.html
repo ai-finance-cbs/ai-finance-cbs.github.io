@@ -50,9 +50,12 @@ permalink: /syllabus/setup/
   <h2 id="step-6">Step 6: Check That It Works</h2>
   <p>You will paste both results into the survey.</p>
   <ol>
-    <li>In a new terminal, run <code class="setup-code">claude --version</code> (or <code class="setup-code">codex --version</code>). Copy the line it prints.</li>
-    <li>Start the assistant by typing <code>claude</code> (or <code>codex</code>), then send this request, replacing YOUR-UNI with your own UNI: <code class="setup-code">Write a haiku about finance that includes the word YOUR-UNI.</code> Copy the haiku.</li>
+    <li>In VS Code, choose <strong>File → Open Folder</strong> and open your <strong>Desktop</strong> (or any folder you like). Then open a new terminal (<strong>Terminal → New Terminal</strong>). It starts inside that folder.</li>
+    <li>Run <code class="setup-code">claude --version</code> (or <code class="setup-code">codex --version</code>). Copy the line it prints.</li>
+    <li>Start the assistant by typing <code>claude</code> (or <code>codex</code>), then send this prompt, replacing YOUR-UNI with your own UNI. If it asks for permission to read the folder, allow it. Copy the haiku.
+{% include prompt-box.html text="Summarize the contents of this folder into a short haiku. Include the word YOUR-UNI." %}</li>
   </ol>
+  <p>The assistant reads the file names in that folder and may open a few files, and it sends what it reads to Anthropic or OpenAI. Pick a folder you are comfortable sharing.</p>
 </section>
 <section class="home-section" aria-labelledby="github">
   <h2 id="github">Optional Now: A GitHub Account</h2>

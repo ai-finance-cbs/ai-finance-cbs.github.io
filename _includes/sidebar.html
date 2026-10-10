@@ -14,6 +14,7 @@
     <div class="brand-heading"><a class="course-brand" href="{{ '/' | relative_url }}"><span class="brand-title">B8403: Finance in the Age of AI</span><span class="brand-term">Spring 2027</span></a><span class="demo-tag" data-demo-tag hidden>Local demo · synthetic data</span></div>
       <div class="auth-controls" aria-label="Course account">
         <button type="button" class="auth-login" data-login><span class="auth-long">Sign in with Columbia UNI</span><span class="auth-short">Sign in</span></button>
+        <span class="greeting" data-greeting hidden></span>
         <span class="role-badge" data-role hidden></span>
         <!-- Staff tools live in one dropdown beside the role badge, so the main menu stays short. -->
         {% assign staff_current = false %}{% assign staff_all = 'Gradebook,Attendance,Roster,Settings,Preparation,Speakers' | split: ',' %}{% for tab in staff_all %}{% capture u %}/materials/{{ tab | downcase }}/{% endcapture %}{% if page.url == u %}{% assign staff_current = true %}{% endif %}{% endfor %}{% if page.preparation_week %}{% assign staff_current = true %}{% endif %}
@@ -62,7 +63,7 @@
       document.querySelectorAll('[data-assignment-nav]').forEach(function(n){n.hidden=!(m.assignmentCodes||[]).some(function(c){return n.dataset.assignmentNav==='optional'?c.indexOf('O')===0:c===n.dataset.assignmentNav;});});s('[data-materials-admin]',m.instructor);s('[data-grading-member]',m.grading);
       s('[data-student-only]',m.student);s('[data-class-member]',m.klass);s('[data-ed-member]',m.ed);
       s('[data-view-picker]',m.instructor);s('[data-login]',!m.signedIn);document.documentElement.toggleAttribute('data-signed-in',!!m.signedIn);s('[data-signout]',m.signedIn);
-      var b=document.querySelector('[data-role]');if(b){b.hidden=!m.signedIn;b.textContent=m.role;}}catch(e){}};window.b8403Menu();
+      var b=document.querySelector('[data-role]');if(b){b.hidden=!m.signedIn;b.textContent=m.role;}var g=document.querySelector('[data-greeting]');if(g){g.hidden=!m.signedIn;g.textContent=m.signedIn?(m.firstName?'Welcome back, '+m.firstName+'!':'Welcome back!'):'';}}catch(e){}};window.b8403Menu();
     </script>
   </div>
   <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="topnav"><span>Menu</span><span class="menu-icon" aria-hidden="true"></span></button>

@@ -67,3 +67,8 @@ if (staffMenu) {
   document.addEventListener('click', e => { if (staffMenu.open && !staffMenu.contains(e.target)) staffMenu.open = false; });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && staffMenu.open) { staffMenu.open = false; staffMenu.querySelector('summary').focus(); } });
 }
+
+// Prompt boxes: the Copy button copies the prompt text and briefly says "Copied".
+document.querySelectorAll('.prompt-box .prompt-copy').forEach(btn => btn.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(btn.parentElement.querySelector('.prompt-text').textContent.trim()); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1200); } catch (e) {}
+}));
