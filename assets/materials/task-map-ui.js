@@ -6,8 +6,7 @@ const el = (tag, text = '', className = '') => {
 };
 const date = value => value ? new Date(value).toLocaleString('en-US', {timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) + ' ET' : '';
 const JOB_QUESTIONS = [['firm_type','What kind of firm did you work at?'],['role','What was your role?'],['duration','How long were you there?']];
-const AHEAD_TASK = 'Which task is not part of this job today but will become part of it as AI spreads?';
-const AHEAD_DESCRIPTION = 'Describe that task in one sentence.';
+const AHEAD_TASK = 'Which task is not part of this job today but will become part of it as AI spreads? Describe it in a sentence or two.';
 const REASON_QUESTION = 'Why do you think so? (three to five sentences)';
 const chip = (label, suffix = '') => el('span', label + suffix, `task-label is-${label.toLowerCase()}`);
 const action = (text, handler, style = 'text-action') => {
@@ -29,7 +28,7 @@ function printMap(value, title) {
     const row = el('tr'), label = el('td'); if (t.label) label.append(chip(t.label));
     row.append(el('td',String(i+1)),el('td',t.name),el('td',t.description),label); body.append(row);
   });
-  table.append(head,body); paper.append(el('h2','Tasks'),table,el('h2','Look ahead'),el('h3',value.look_ahead.name),el('p',value.look_ahead.description));
+  table.append(head,body); paper.append(el('h2','Tasks'),table,el('h2','Look ahead'),el('h3',AHEAD_TASK),el('p',value.look_ahead.description));
   paper.append(el('h3',REASON_QUESTION),el('p',value.look_ahead.reasoning));
   document.body.append(paper);
   window.addEventListener('afterprint', () => paper.remove(), {once:true});
@@ -49,30 +48,35 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
   status.append(pill,savedTime); form.append(status);
   const banner = el('p','','task-map-warning'); banner.setAttribute('role','status'); form.append(banner);
   const controls = [], writableActions = [];
+  // Each block shows its own Saving…/Saved! note, for the blocks edited since the last save.
+  let currentNote = null; const editedNotes = new Set(), savedNotes = new Set();
+  const touch = note => { if (note) editedNotes.add(note); };
   function input(label, target, key, max, textarea = false) {
     const field = el(textarea ? 'textarea' : 'input'); field.setAttribute('aria-label',label); field.maxLength = max;
     if (textarea) field.rows = 1; else field.type = 'text';
-    field.value = target[key]; controls.push(field);
-    field.addEventListener('input', () => { target[key] = field.value; if (textarea) grow(field); update(); });
+    field.value = target[key]; controls.push(field); const note = currentNote;
+    field.addEventListener('input', () => { target[key] = field.value; if (textarea) grow(field); touch(note); update(); });
     return field;
   }
   function select(label, target) {
     const field = el('select','','task-label'); field.setAttribute('aria-label',label);
     for (const name of ['',...TASK_LABELS]) { const option = el('option',name || 'Choose…'); option.value = name; field.append(option); }
-    field.value = target.label || ''; controls.push(field);
+    field.value = target.label || ''; controls.push(field); const note = currentNote;
     const color = () => { field.className = `task-label${field.value ? ' is-'+field.value.toLowerCase() : ''}`; };
-    field.addEventListener('change', () => { target.label = field.value || null; color(); update(); }); color(); return field;
+    field.addEventListener('change', () => { target.label = field.value || null; color(); touch(note); update(); }); color(); return field;
   }
   function field(label, control) { const wrap = el('label',label,'task-map-field'); wrap.append(control); return wrap; }
   function panel(heading, hint = '') {
-    const box = el('section','','task-map-panel'); box.append(el('h3',heading));
+    const box = el('section','','task-map-panel'), head = el('div','','task-map-panel-head');
+    currentNote = el('span','','task-map-panel-note'); currentNote.setAttribute('aria-live','polite');
+    head.append(el('h3',heading),currentNote); box.append(head);
     if (hint) box.append(el('p',hint,'task-map-hint')); form.append(box); return box;
   }
   const job = panel('1 · The job');
   const jobFields = el('div','','task-map-job');
   for (const [key,label] of JOB_QUESTIONS) jobFields.append(field(label,input(label,value.job,key,120,true)));
   job.append(jobFields);
-  const tasks = panel('2 · Tasks');
+  const tasks = panel('2 · Tasks'); const tasksNote = currentNote;
   const table = el('table','','task-map-tasks'), head = el('thead'), hr = el('tr'), body = el('tbody');
   for (const label of ['#','Task','Description','Label','']) hr.append(el('th',label)); head.append(hr); table.append(head,body);
   const add = action('+ Add task', () => { if (readOnly() || busy || value.tasks.length >= 12) return; value.tasks.push(emptyTask()); rows(); update(); });
@@ -80,7 +84,7 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
   const tally = el('div','','task-map-tally'), nudge = el('span','','task-map-nudge');
   tasks.append(table,add,tally);
   function rows() {
-    body.replaceChildren();
+    currentNote = tasksNote; body.replaceChildren();
     value.tasks.forEach((task,i) => {
       const tr = el('tr'), name = el('td'), description = el('td'), label = el('td'), remove = el('td');
       const taskName = input(`Task ${i+1}`,task,'name',80,true), taskDescription = input(`Description ${i+1}`,task,'description',400,true);
@@ -97,8 +101,8 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
   rows();
   const ahead = panel('3 · Look ahead');
   const aheadFields = el('div','','task-map-ahead');
-  aheadFields.append(field(AHEAD_TASK,input(AHEAD_TASK,value.look_ahead,'name',80,true)),
-    field(AHEAD_DESCRIPTION,input(AHEAD_DESCRIPTION,value.look_ahead,'description',400,true)));
+  const aheadAnswer = input(AHEAD_TASK,value.look_ahead,'description',400,true); aheadAnswer.classList.add('task-map-ahead-answer');
+  aheadFields.append(field(AHEAD_TASK,aheadAnswer));
   const reason = input(REASON_QUESTION,value.look_ahead,'reasoning',2000,true), words = el('p','','task-map-words');
   reason.rows = 6; reason.classList.add('task-map-reason');
   ahead.append(aheadFields,field(REASON_QUESTION,reason),words);
@@ -114,7 +118,9 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
   function update() {
     const locked = readOnly(), dirty = JSON.stringify(value) !== saved;
     pill.textContent = stored?.status === 'submitted' ? `Submitted ${date(stored.submitted_at)}` : 'Draft';
-    if (!busy) savedTime.textContent = dirty ? 'Saving…' : justSaved ? 'Saved!' : stored?.updated_at ? `Saved ${date(stored.updated_at)}` : '';
+    if (!busy) savedTime.textContent = stored?.updated_at && !dirty ? `Last saved ${date(stored.updated_at)}` : '';
+    for (const n of editedNotes) n.textContent = 'Saving…';
+    for (const n of savedNotes) if (!editedNotes.has(n)) n.textContent = justSaved ? 'Saved!' : '';
     if (dirty && !locked && !permanentLock) scheduleSave();
     banner.textContent = permanentLock ? 'Read-only view' : taskMapClosed(result.due_at) ? result.due_at ? `Submissions closed ${date(result.due_at)}` : 'Submission deadline unavailable.' : '';
     banner.hidden = !banner.textContent;
@@ -136,10 +142,13 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
     if (stored?.status === 'submitted') { try { validateTaskMap(value,true); keepSubmitted = true; } catch { keepSubmitted = false; } }
     const snapshot = structuredClone(value);
     try {
-      validateTaskMap(snapshot,false); busy = true; savedTime.textContent = 'Saving…';
+      validateTaskMap(snapshot,false); busy = true; const saving = new Set(editedNotes);
       stored = await ctx.backend.saveTaskMap(ctx.data.term_id,snapshot,keepSubmitted);
       saved = JSON.stringify(snapshot); justSaved = true;
-      setTimeout(() => { justSaved = false; if (form.isConnected) update(); }, 2500);
+      // Only blocks unchanged since this save move to Saved!; newer edits keep showing Saving….
+      for (const n of saving) if (JSON.stringify(value) === saved || !editedNotes.has(n)) { editedNotes.delete(n); savedNotes.add(n); }
+      if (JSON.stringify(value) === saved) { for (const n of editedNotes) savedNotes.add(n); editedNotes.clear(); }
+      setTimeout(() => { justSaved = false; for (const n of savedNotes) n.textContent = ''; savedNotes.clear(); if (form.isConnected) update(); }, 2500);
     } catch (error) { message.textContent = error.message; }
     finally { busy = false; update(); }
   }
@@ -153,6 +162,7 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
       const snapshot = structuredClone(value);
       stored = await ctx.backend.saveTaskMap(ctx.data.term_id,snapshot,asSubmit);
       saved = JSON.stringify(snapshot); message.textContent = asSubmit ? 'Task map submitted.' : 'Draft saved.';
+      for (const n of editedNotes) n.textContent = ''; editedNotes.clear();
       if (asSubmit) everSubmitted = true;
     } catch (error) { message.textContent = error.message; }
     finally { busy = false; update(); }
