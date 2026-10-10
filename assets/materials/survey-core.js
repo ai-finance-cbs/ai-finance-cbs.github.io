@@ -1,4 +1,4 @@
-// Question wording follows M1 survey design, draft v20261009. No teaching-team notes belong here.
+// Question wording follows M1 survey design, with S3 from Addendum 5 (2026-10-10). No teaching-team notes belong here.
 export const SURVEY_OPENING = 'This survey is really for you. Tell me a little about yourself and your background, so that I can make this course about the people in the room. There are no right answers, and nothing here is graded except completion. Only I see the individual responses. In class I may show anonymous summaries (for example, "40% of you think..."). -Simon';
 export const QUESTIONS = {
   q1:'Q1. Full name and UNI.', q2:'Q2. What name should I call you in class?', q3:'Q3. Program and year.',
@@ -10,7 +10,7 @@ export const QUESTIONS = {
   q11:'Q11. What worries you most about going into a finance role in a world where AI capabilities are expanding rapidly?',
   q12:'Q12. Have you used any of these?', q13:'Q13. Anything else I should know?',
   s1:'S1. Which assistant did you set up?', s2:'S2. Paste the output of claude --version (or codex --version).',
-  s3:'S3. Paste the haiku your assistant wrote for: "Write a haiku about finance that includes the word YOUR-UNI."',
+  s3:'S3. Paste the haiku your assistant wrote for: "Summarize the contents of this folder into a short haiku. Include the word YOUR-UNI."',
   s4:'S4. Any setup problems?',
 };
 export const PROGRAMS = ['MBA 2027','MBA 2028','EMBA','MS','PhD','Other'];
