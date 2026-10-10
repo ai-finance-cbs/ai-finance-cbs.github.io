@@ -54,7 +54,7 @@ for (const width of [1440, 1180, 1024, 390, 320]) {
           const account = document.querySelector('.auth-controls');
           const nav = document.querySelector('.topnav');
           const sub = document.querySelector('.topbar-main > .subnav-top');
-          const controls = [...document.querySelectorAll('.auth-controls > *, [data-demo-tag]')].filter(n => !n.hidden);
+          const controls = [...document.querySelectorAll('.auth-controls > *, [data-demo-tag]')].filter(n => !n.hidden && getComputedStyle(n).display !== 'none');
           return {
             height: rect(bar).height,
             titleTop: rect(title).top,

@@ -538,6 +538,9 @@ caption { margin-bottom:6px; }
 .auth-controls { display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink:0; font:13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
 .auth-controls button { background:white; border:0; padding:5px 0; cursor:pointer; color:#2F6FB8; white-space:nowrap; }
 .role-badge { color:#555; white-space:nowrap; }
+/* Header greeting before the role badge ("Welcome back, Jane!"); hidden below 1180px where the bar is tight. */
+.auth-controls .greeting { font:600 13px/1.3 "Helvetica Neue", Helvetica, Arial, sans-serif; color:#1a1a1a; margin-right:4px; white-space:nowrap; }
+@media (max-width:1180px) { .auth-controls .greeting { display:none; } }
 .materials-button { display:inline-block; background:white; border:1px solid #d8d8d8; border-radius:3px; padding:9px 14px; cursor:pointer; color:#1a1a1a; font:14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
 .materials-button:hover { background:#fafafa; border-color:#2F6FB8; }
 .materials-button.primary { background:#2F6FB8; color:white; border-color:#2F6FB8; }
@@ -1487,6 +1490,12 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .content code.setup-code { cursor:copy; position:relative; }
 .content code.setup-code:hover { border-color:#2F6FB8; }
 .content code.setup-code[data-copied]::after { content:"Copied"; position:absolute; left:100%; top:0; margin-left:8px; font:600 11px/1.9 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#2F6FB8; background:#fff; white-space:nowrap; }
+/* Prompt box: one consistent look for every prompt students send to their assistant. */
+.content .prompt-box { position:relative; margin:10px 0 14px; padding:14px 76px 14px 16px; border:1px solid #CFDDF0; border-radius:8px; background:#F3F7FC; }
+.content .prompt-box .prompt-label { display:block; font:600 10.5px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing:.14em; text-transform:uppercase; color:#2F6FB8; margin-bottom:8px; }
+.content .prompt-box .prompt-text { margin:0; font:14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color:#1a1a1a; }
+.content .prompt-box .prompt-copy { position:absolute; top:12px; right:12px; font:600 12px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; color:#2F6FB8; background:#fff; border:1px solid #CFDDF0; border-radius:6px; padding:6px 10px; cursor:pointer; }
+.content .prompt-box .prompt-copy:hover { border-color:#2F6FB8; }
 @media (max-width:600px) { .setup-commands col.sc-who { width:34%; } }
 .deliverables-table td:nth-child(2) { font-weight:400; }
 .optional-table col.dl-item { width:26%; }

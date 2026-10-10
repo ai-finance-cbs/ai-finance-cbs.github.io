@@ -99,7 +99,8 @@ export async function createBackend(config) {
       // The database decides who is allowed: Columbia accounts plus a short private list of test accounts.
       const result = await client.rpc('get_access');
       if (result.error) { if (!isColumbiaEmail(user.email || '')) await refuse(); throw result.error; }
-      access = result.data; return access;
+      const meta = user.user_metadata || {};
+      access = { ...result.data, first_name: meta.given_name || (meta.full_name || meta.name || '').trim().split(/\s+/)[0] || '' }; return access;
     },
     async signIn(redirectTo) { checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } })); },
     // Google's own sign-in window (shows the course site's name) hands back an ID token.

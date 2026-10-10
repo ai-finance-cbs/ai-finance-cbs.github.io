@@ -37,7 +37,8 @@ export function createDemo() {
     const uni = linkedUni || u.uni;
     const own = data.terms.filter(t => t.status !== 'closed' && data.roster.some(r => r.term_id === t.id && r.uni === uni));
     const term_id = preview ? u.preview_term || active?.id : role !== 'student' || data.test_accounts.some(t => t.email === u.email) ? active?.id : own.find(t => t.status === 'active')?.id || own.at(-1)?.id;
-    return { email: u.email, uni: preview?.uni || uni, role, actor_role, view_as: preview, term_id, read_only: !!preview || data.terms.find(t => t.id === term_id)?.status !== 'active' };
+    const first_name = (data.roster.find(r => r.uni === uni)?.name || '').trim().split(/\s+/)[0] || '';
+    return { email: u.email, uni: preview?.uni || uni, first_name, role, actor_role, view_as: preview, term_id, read_only: !!preview || data.terms.find(t => t.id === term_id)?.status !== 'active' };
   };
   const read = term => termData(readAll(), access(), term);
   const save = data => saveAll(mergeTerm(readAll(), data, access().term_id));

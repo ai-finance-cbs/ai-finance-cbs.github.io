@@ -148,6 +148,9 @@ function applyMenu(m) {
   document.documentElement.toggleAttribute('data-signed-in', !!m.signedIn);
   const badge = document.querySelector('[data-role]');
   badge.hidden = !m.signedIn; badge.textContent = m.role;
+  // Greeting before the role badge: "Welcome back, Jane!" (first name from Google sign-in, or the previewed student).
+  const greeting = document.querySelector('[data-greeting]');
+  if (greeting) { greeting.hidden = !m.signedIn; greeting.textContent = m.signedIn ? (m.firstName ? `Welcome back, ${m.firstName}!` : 'Welcome back!') : ''; }
 }
 async function refresh() {
   const version = ++state.version;
@@ -163,7 +166,8 @@ async function renderMaterials(version) {
   const visible = zones(state.access);
   const roleMenu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
     student: state.access?.role === 'student', klass: visible.class || visible.grading, ed: visible.class || visible.grading,
-    signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '' };
+    signedIn: !!state.access, role: ROLE_LABELS[state.access?.role] || '',
+    firstName: (state.access?.view_as?.name || state.access?.first_name || '').trim().split(/\s+/)[0] || '' };
   // Show the role's menu as soon as sign-in resolves; the Assignments tab waits for its list.
   let cached = null; try { cached = JSON.parse(localStorage.getItem('b8403-menu') || 'null'); } catch {}
   applyMenu({ ...roleMenu, assignments: !!(visible.materials && cached?.assignments), assignmentCodes: visible.materials ? cached?.assignmentCodes || [] : [] });
