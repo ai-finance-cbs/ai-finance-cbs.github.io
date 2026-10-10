@@ -99,7 +99,7 @@ test('Supabase default privileges reproduce the inherited anon EXECUTE gap and 0
   const functions = await rows(
     "select p.oid,p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'",
   );
-  assert.equal(functions.length, 54);
+  assert.equal(functions.length, 57);
   for (const name of ['save_task_map','my_task_map','task_map_class']) assert.ok(functions.some(f => f.proname === name));
   for (const f of functions) {
     assert.equal(

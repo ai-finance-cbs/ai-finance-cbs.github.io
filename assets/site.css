@@ -1383,6 +1383,66 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .logo-icons { display:inline-flex; gap:7px; margin-left:6px; vertical-align:-2px; }
 .logo-icons a { color:#8a939d; text-decoration:none; display:inline-flex; }
 .logo-icons a:hover { color:var(--accent); }
+/* M1 survey: keep these scoped rules beside M2, away from unrelated page additions. */
+.survey-editor, .survey-staff { min-width:0; font:13px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.survey-status { display:flex; flex-wrap:wrap; align-items:center; gap:10px; color:#777; margin:0 0 14px; }
+.survey-state { padding:3px 9px; border:1px solid #DDD; border-radius:999px; background:#FFF; color:#444; }
+.class-tools #materials-root :is(.survey-editor,.survey-staff) :is(p,li,td,dd,dt) { font:13px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.class-tools #materials-root :is(.survey-editor,.survey-staff) h3 { font:600 14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:0 0 14px; }
+.class-tools #materials-root p.survey-opening { font-size:14px; line-height:1.6; margin:14px 0 20px; }
+.survey-section { min-width:0; padding:16px; margin:14px 0; border:1px solid #ECECEC; border-radius:6px; background:#FFF; }
+.survey-question { min-inline-size:0; min-width:0; margin:0 0 24px; padding:0; border:0; }
+.survey-question:last-child { margin-bottom:0; }
+.survey-question legend { width:100%; padding:0; margin:0 0 10px; font:500 14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#1A1A1A; }
+.survey-optional { color:#777; font-size:12px; font-weight:400; }
+.class-tools #materials-root p.survey-hint { color:#777; font-size:12px; margin:6px 0 10px; }
+.survey-field { display:flex; flex-direction:column; gap:5px; min-width:0; font:12px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#666; margin:8px 0; }
+.survey-identity { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px; }
+.class-tools #materials-root .survey-editor :is(input:not([type=radio]):not([type=checkbox]),textarea,select) { width:100%; min-width:0; max-width:100%; box-sizing:border-box; padding:8px; border:1px solid #DDD; border-radius:4px; background:#FFF; color:#1A1A1A; font:13px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:0; box-shadow:none; }
+.class-tools #materials-root .survey-editor textarea { resize:vertical; min-height:80px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.survey-editor input[type=number] { max-width:150px !important; }
+.survey-editor :is(input,textarea,select):focus-visible { outline:2px solid #2F6FB8; outline-offset:2px; }
+.class-tools #materials-root .survey-editor :is(input,textarea,select):disabled, .class-tools #materials-root .survey-editor input[readonly] { opacity:1; background:#FAFAFA; color:#555; -webkit-text-fill-color:currentColor; }
+.survey-choices { display:flex; flex-direction:column; gap:8px; }
+.survey-choices label { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+.survey-editor input:is([type=radio],[type=checkbox]) { width:16px; height:16px; min-width:16px; margin:2px 0 0; accent-color:#2F6FB8; }
+.survey-grid { width:100%; table-layout:fixed; border-collapse:collapse; margin:8px 0 12px; }
+.survey-grid > thead > tr > th:first-child { width:28%; }
+.class-tools #materials-root .survey-grid :is(th,td) { padding:8px 4px; border-bottom:1px solid #ECECEC; vertical-align:middle; text-align:center; overflow-wrap:anywhere; }
+.class-tools #materials-root .survey-grid th { font:500 12px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; text-transform:none; letter-spacing:0; }
+.class-tools #materials-root .survey-grid tbody th { text-align:left; }
+.survey-grid label { display:flex; justify-content:center; padding:3px; cursor:pointer; }
+.survey-grid label span { display:none; }
+.survey-section > a { display:inline-block; margin:0 0 16px; color:#2F6FB8; }
+.survey-warning { color:#8C2F39; }
+.survey-message:empty, .survey-hint:empty { display:none; }
+.survey-actions { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+.class-tools #materials-root :is(.survey-editor,.survey-staff) .materials-button { margin:0; border-radius:4px; padding:8px 14px; font:500 13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.class-tools #materials-root .materials-button.survey-secondary { background:#FFF; color:#444; border:1px solid #CCC; }
+.class-tools #materials-root .materials-button.survey-primary { background:#2F6FB8; color:#FFF; border:1px solid #2F6FB8; }
+.survey-editor [hidden] { display:none !important; }
+.survey-editor button:disabled { opacity:.45; cursor:default; }
+.survey-summary { margin:20px 0; border-bottom:1px solid #ECECEC; padding-bottom:12px; }
+.survey-summary dl { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 20px; margin:0; }
+.survey-summary dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+.survey-response { padding:12px 0; border-top:1px solid #ECECEC; }
+.survey-response > summary { display:flex; align-items:center; gap:12px; font-size:13px; }
+.survey-response > summary > span:first-child { flex:1; min-width:0; }
+.survey-response small { display:block; color:#777; font-size:11px; }
+.survey-response .survey-editor { margin-top:16px; }
+@media (max-width:600px) {
+  .survey-section { padding:12px; }
+  .survey-identity { grid-template-columns:1fr; gap:0; }
+  .survey-grid, .survey-grid tbody { display:block; }
+  .survey-grid thead { display:none; }
+  .survey-grid tr { display:flex; flex-wrap:wrap; gap:8px 0; padding:10px 0; border-bottom:1px solid #ECECEC; }
+  .class-tools #materials-root .survey-grid tbody th { flex-basis:100%; padding:0; border:0; }
+  .class-tools #materials-root .survey-grid td { width:33.333%; box-sizing:border-box; border:0; padding:0 4px 0 0; }
+  .survey-grid label { justify-content:flex-start; align-items:center; gap:6px; padding:2px 0; font-size:12px; }
+  .survey-grid label span { display:inline; }
+  .survey-response > summary { flex-wrap:wrap; }
+  .survey-response > summary > span:first-child { flex-basis:100%; }
+}
 /* M2 task maps use the same small UI type as other submission controls. */
 .task-map-editor, .task-map-staff { min-width:0; font:13px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
 .task-map-status { display:flex; flex-wrap:wrap; align-items:center; gap:10px; color:#777; margin:0 0 16px; }

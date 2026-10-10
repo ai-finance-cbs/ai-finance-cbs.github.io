@@ -46,7 +46,7 @@ test('student sees materials, linked milestones, empty weeks, and no admin contr
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
   await page.goto('/materials/files/'); await ready(page); await expect(page.locator('#materials-root')).toContainText('for instructors');
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
-  await page.getByRole('link', { name: 'Milestone #3: Working Setup' }).click(); await ready(page);
+  await page.getByRole('link', { name: 'Milestone #3: Ship It' }).click(); await ready(page);
   await expect(page).toHaveURL(/week-3\/#milestone-3$/);
   await expect(page.locator('#outline')).not.toContainText('Milestone');
   await page.goto('/syllabus/tentative-schedule/'); await ready(page);
@@ -96,10 +96,10 @@ test('sign-out immediately removes rendered private material', async ({ page }) 
   await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(1);
   await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.locator('.assignment-section')).toHaveCount(0); await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.');
 });
-test('fakeauth query and stored demo session are inert on the live hostname', async ({ page }) => {
+test('fakeauth query and stored demo session are inert on the live hostname', async ({ page, baseURL }) => {
   await page.route('https://ai-finance-cbs.github.io/**', async route => {
     const u = new URL(route.request().url());
-    const response = await page.request.get(`http://127.0.0.1:4173${u.pathname}`);
+    const response = await page.request.get(new URL(u.pathname, baseURL).href);
     await route.fulfill({ response });
   });
   await page.addInitScript(() => { sessionStorage.setItem('b8403-demo-enabled', '1'); sessionStorage.setItem('b8403-demo-user-v1', JSON.stringify({ email: 'oh@gsb.columbia.edu' })); });

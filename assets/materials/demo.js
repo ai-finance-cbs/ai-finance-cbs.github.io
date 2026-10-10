@@ -1,5 +1,6 @@
 import { extendAssignments } from './assignment-demo.js';
 import { extendTaskMaps } from './task-map-demo.js';
+import { extendSurveys } from './survey-demo.js';
 import { extendCanvas } from './canvas-demo.js';
 import { extendProfiles } from './profile-demo.js';
 import { extendPrep } from './prep-demo.js';
@@ -48,8 +49,10 @@ export function createDemo() {
     return a;
   };
   const visible = row => { const a = requireRole(); return (a.role !== 'auditor' || row.auditor_visible) && (!('storage_path' in row) || ['instructor','grader'].includes(a.role) || row.released || (row.release_at && new Date(row.release_at).getTime() <= Date.now())); };
+  const canvas = extendCanvas({ readAll, saveAll, access });
   return {
-    ...extendCanvas({ readAll, saveAll, access }),
+    ...canvas,
+    ...extendSurveys({ readAll, saveAll, access, canvas }),
     ...extendTerms({ readAll, saveAll, access }),
     ...extendPrep({ readAll, saveAll, access }),
     ...extendProfiles({ readAll, saveAll, access }),
