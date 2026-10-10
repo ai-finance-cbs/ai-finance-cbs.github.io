@@ -8,7 +8,8 @@ test('drafts retain incomplete rows; submission needs eight complete tasks and b
   const value=taskMapFixture(); validateTaskMap(value,true);
   value.tasks[0].label=null; assert.throws(()=>validateTaskMap(value,true),/8 tasks/);
   value.tasks[0].label='Process'; value.look_ahead.reasoning=' \n'; assert.throws(()=>validateTaskMap(value,true),/look-ahead/);
-  value.look_ahead.reasoning='Reason'; value.ai_use='\t'; assert.throws(()=>validateTaskMap(value,true),/AI use/);
+  // The look-ahead task needs no label and AI use is no longer required.
+  value.look_ahead.reasoning='Reason'; value.look_ahead.label=null; value.ai_use=''; assert.doesNotThrow(()=>validateTaskMap(value,true));
 });
 test('all text caps, fixed label names, task limits, JSON types, and nested keys validate',()=>{
   const cases=[v=>v.tasks.push(...Array(5).fill(v.tasks[0])),v=>v.tasks[0].label='process',v=>delete v.tasks[0].label,

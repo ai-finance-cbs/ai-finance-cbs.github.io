@@ -37,7 +37,7 @@ test('database validates completeness, types, all text caps, labels, and maximum
     v=>delete v.tasks[0].label,v=>v.tasks[0].name='x'.repeat(81),v=>v.tasks[0].description='x'.repeat(401),
     v=>v.look_ahead.name='x'.repeat(81),v=>v.look_ahead.description='x'.repeat(401),v=>v.look_ahead.reasoning='x'.repeat(2001),
     v=>v.ai_use='x'.repeat(601),v=>v.job.role='x'.repeat(121),v=>v.job.firm_type='x'.repeat(121),v=>v.job.duration='x'.repeat(121),
-    v=>v.tasks[0].name=' \n',v=>v.look_ahead.label=null,v=>v.look_ahead.reasoning='\n\t',v=>v.ai_use='\n\t',v=>v.ai_use=12,
+    v=>v.tasks[0].name=' \n',v=>v.look_ahead.reasoning='\n\t',v=>v.ai_use=12,
     v=>v.job=[],v=>v.tasks=[null],v=>v.look_ahead=null,v=>v.tasks[0].reasoning='Extra',v=>v.job.other='extra'];
   for(const change of cases){const value=taskMapFixture();change(value);await deny(()=>save(value));}
   await deny(()=>save(taskMapFixture(),null));

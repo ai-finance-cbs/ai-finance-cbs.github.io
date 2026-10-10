@@ -5,6 +5,10 @@ const el = (tag, text = '', className = '') => {
   const node = document.createElement(tag); node.textContent = text; node.className = className; return node;
 };
 const date = value => value ? new Date(value).toLocaleString('en-US', {timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) + ' ET' : '';
+const JOB_QUESTIONS = [['firm_type','What kind of firm did you work at?'],['role','What was your role?'],['duration','How long were you there?']];
+const AHEAD_TASK = 'Which task is not part of this job today but will become part of it as AI spreads?';
+const AHEAD_DESCRIPTION = 'Describe that task in one sentence.';
+const REASON_QUESTION = 'Why do you think so? (three to five sentences)';
 const chip = (label, suffix = '') => el('span', label + suffix, `task-label is-${label.toLowerCase()}`);
 const action = (text, handler, style = 'text-action') => {
   const b = el('button', text, style); b.type = 'button'; b.addEventListener('click', handler); return b;
@@ -16,7 +20,7 @@ function printMap(value, title) {
   document.querySelector('.task-map-print-target')?.remove();
   const paper = el('article', '', 'task-map-print-target'); paper.append(el('h1', title));
   paper.append(el('h2', 'The job'));
-  for (const [key, label] of [['firm_type','Firm type'],['role','Your role'],['duration','How long']]) paper.append(el('p', `${label}: ${value.job[key]}`));
+  for (const [key, label] of JOB_QUESTIONS) paper.append(el('h3', label), el('p', value.job[key]));
   const table = el('table'), head = el('thead'), hr = el('tr'), body = el('tbody');
   for (const label of ['#','Task','Description','Label']) hr.append(el('th',label));
   head.append(hr);
@@ -26,8 +30,7 @@ function printMap(value, title) {
     row.append(el('td',String(i+1)),el('td',t.name),el('td',t.description),label); body.append(row);
   });
   table.append(head,body); paper.append(el('h2','Tasks'),table,el('h2','Look ahead'),el('h3',value.look_ahead.name),el('p',value.look_ahead.description));
-  if (value.look_ahead.label) paper.append(chip(value.look_ahead.label));
-  paper.append(el('p',value.look_ahead.reasoning),el('h2','AI use'),el('p',value.ai_use));
+  paper.append(el('h3',REASON_QUESTION),el('p',value.look_ahead.reasoning));
   document.body.append(paper);
   window.addEventListener('afterprint', () => paper.remove(), {once:true});
   window.print();
@@ -65,11 +68,11 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
     const box = el('section','','task-map-panel'); box.append(el('h3',heading));
     if (hint) box.append(el('p',hint,'task-map-hint')); form.append(box); return box;
   }
-  const job = panel('1 · The job','The internship or job from your pre-class survey. No client or deal names.');
+  const job = panel('1 · The job');
   const jobFields = el('div','','task-map-job');
-  for (const [key,label] of [['firm_type','Firm type'],['role','Your role'],['duration','How long']]) jobFields.append(field(label,input(label,value.job,key,120)));
+  for (const [key,label] of JOB_QUESTIONS) jobFields.append(field(label,input(label,value.job,key,120,true)));
   job.append(jobFields);
-  const tasks = panel('2 · Tasks','About ten (8 to 12). One concrete action per row. If a task fits two labels, split it.');
+  const tasks = panel('2 · Tasks');
   const table = el('table','','task-map-tasks'), head = el('thead'), hr = el('tr'), body = el('tbody');
   for (const label of ['#','Task','Description','Label','']) hr.append(el('th',label)); head.append(hr); table.append(head,body);
   const add = action('+ Add task', () => { if (readOnly() || busy || value.tasks.length >= 12) return; value.tasks.push(emptyTask()); rows(); update(); });
@@ -80,7 +83,7 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
     body.replaceChildren();
     value.tasks.forEach((task,i) => {
       const tr = el('tr'), name = el('td'), description = el('td'), label = el('td'), remove = el('td');
-      const taskName = input(`Task ${i+1}`,task,'name',80), taskDescription = input(`Description ${i+1}`,task,'description',400,true);
+      const taskName = input(`Task ${i+1}`,task,'name',80,true), taskDescription = input(`Description ${i+1}`,task,'description',400,true);
       taskName.placeholder = 'Task'; taskDescription.placeholder = 'Description';
       name.append(taskName); description.append(taskDescription);
       label.append(select(`Label ${i+1}`,task));
@@ -92,27 +95,27 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
     requestAnimationFrame(() => { if (form.isConnected) body.querySelectorAll('textarea').forEach(grow); });
   }
   rows();
-  const ahead = panel('3 · Look ahead','One task that is not part of this job today but will be as AI spreads.');
+  const ahead = panel('3 · Look ahead');
   const aheadFields = el('div','','task-map-ahead');
-  aheadFields.append(field('Task',input('Look-ahead task',value.look_ahead,'name',80)),
-    field('Description',input('Look-ahead description',value.look_ahead,'description',400,true)),field('Label',select('Look-ahead label',value.look_ahead)));
-  const reason = input('Your reasoning',value.look_ahead,'reasoning',2000,true), words = el('p','','task-map-words');
-  ahead.append(aheadFields,field('Your reasoning (three to five sentences)',reason),words);
-  const ai = panel('4 · AI use','One or two lines on which tools you used and how'); ai.append(input('AI use',value,'ai_use',600,true));
+  aheadFields.append(field(AHEAD_TASK,input(AHEAD_TASK,value.look_ahead,'name',80,true)),
+    field(AHEAD_DESCRIPTION,input(AHEAD_DESCRIPTION,value.look_ahead,'description',400,true)));
+  const reason = input(REASON_QUESTION,value.look_ahead,'reasoning',2000,true), words = el('p','','task-map-words');
+  reason.rows = 6; reason.classList.add('task-map-reason');
+  ahead.append(aheadFields,field(REASON_QUESTION,reason),words);
   const message = el('p','','task-map-message'); message.setAttribute('role','status'); message.setAttribute('aria-live','polite');
   const draftWarning = el('p','','task-map-hint');
   const actions = el('div','','task-map-actions');
-  const draft = action('Save draft',() => persist(false),'materials-button task-map-secondary');
   const submit = action('Submit',() => persist(true),'materials-button task-map-primary');
   const print = action('Export to PDF',() => printMap(value,title)); print.classList.add('task-map-export');
-  writableActions.push(draft,submit); actions.append(draft,submit,print);
+  writableActions.push(submit); actions.append(submit,print);
   form.append(message,draftWarning,actions);
-  if (!permanentLock) form.append(el('p',`You can edit and resubmit until ${date(result.due_at) || 'the deadline is set'}. Your answers are visible only to you and the teaching team.`,'task-map-hint'));
+  if (!permanentLock) form.append(el('p',`Your answers save automatically as you type. You can edit and resubmit until ${date(result.due_at) || 'the deadline is set'}. Your answers are visible only to you and the teaching team.`,'task-map-hint'));
   form.addEventListener('submit',event => { event.preventDefault(); persist(true); });
   function update() {
     const locked = readOnly(), dirty = JSON.stringify(value) !== saved;
     pill.textContent = stored?.status === 'submitted' ? `Submitted ${date(stored.submitted_at)}` : 'Draft';
-    savedTime.textContent = dirty ? 'Unsaved changes' : stored?.updated_at ? `Saved ${date(stored.updated_at)}` : '';
+    if (!busy) savedTime.textContent = dirty ? 'Saving…' : justSaved ? 'Saved!' : stored?.updated_at ? `Saved ${date(stored.updated_at)}` : '';
+    if (dirty && !locked && !permanentLock) scheduleSave();
     banner.textContent = permanentLock ? 'Read-only view' : taskMapClosed(result.due_at) ? result.due_at ? `Submissions closed ${date(result.due_at)}` : 'Submission deadline unavailable.' : '';
     banner.hidden = !banner.textContent;
     for (const c of controls) c.disabled = locked || busy;
@@ -121,19 +124,43 @@ function studentForm(root, ctx, result, title = 'Milestone #2: Task map') {
     const counts = taskTally(value.tasks), total = Object.values(counts).reduce((a,b) => a+b,0);
     tally.replaceChildren(el('span',`${total} of 8–12 tasks labelled`),...TASK_LABELS.map(l => chip(l,` ${counts[l]}`)));
     nudge.textContent = 'No Own tasks yet. Who signed off?'; if (!counts.Own && total >= 1) tally.append(nudge);
-    draftWarning.textContent = !locked && stored?.status === 'submitted' ? 'Saving a draft replaces your submitted version. Submit again before the deadline.' : '';
+    draftWarning.textContent = !locked && everSubmitted && stored?.status !== 'submitted' ? 'Your changes are saved, but your submission is no longer complete. Submit again before the deadline.' : '';
   }
+  // Autosave: one second after the last edit. A submitted map stays submitted while it is still complete.
+  let timer = null, justSaved = false;
+  function scheduleSave() { clearTimeout(timer); timer = setTimeout(autosave, 1000); }
+  async function autosave() {
+    if (busy) { scheduleSave(); return; }
+    if (readOnly() || JSON.stringify(value) === saved) return;
+    let keepSubmitted = false;
+    if (stored?.status === 'submitted') { try { validateTaskMap(value,true); keepSubmitted = true; } catch { keepSubmitted = false; } }
+    const snapshot = structuredClone(value);
+    try {
+      validateTaskMap(snapshot,false); busy = true; savedTime.textContent = 'Saving…';
+      stored = await ctx.backend.saveTaskMap(ctx.data.term_id,snapshot,keepSubmitted);
+      saved = JSON.stringify(snapshot); justSaved = true;
+      setTimeout(() => { justSaved = false; if (form.isConnected) update(); }, 2500);
+    } catch (error) { message.textContent = error.message; }
+    finally { busy = false; update(); }
+  }
+  // Once a map has been submitted, warn if later edits leave it incomplete (saved only as a draft).
+  let everSubmitted = stored?.status === 'submitted';
   async function persist(asSubmit) {
+    clearTimeout(timer);
     if (busy || readOnly()) { update(); return; }
     try {
       validateTaskMap(value,asSubmit); busy = true; update(); message.textContent = asSubmit ? 'Submitting…' : 'Saving…';
       const snapshot = structuredClone(value);
       stored = await ctx.backend.saveTaskMap(ctx.data.term_id,snapshot,asSubmit);
       saved = JSON.stringify(snapshot); message.textContent = asSubmit ? 'Task map submitted.' : 'Draft saved.';
+      if (asSubmit) everSubmitted = true;
     } catch (error) { message.textContent = error.message; }
     finally { busy = false; update(); }
   }
-  root.append(form); update();
+  root.append(form);
+  const panelHead = root.querySelector(':scope > .assignment-panel-head');
+  if (panelHead) { status.classList.add('in-panel-head'); panelHead.append(status); }
+  update();
   if (!permanentLock) trackPreparationEditor(form,() => busy || JSON.stringify(value) !== saved);
   requestAnimationFrame(() => { if (form.isConnected) form.querySelectorAll('textarea').forEach(grow); });
   // Reflow saved descriptions when a phone rotates or a staff row is expanded again.
@@ -162,7 +189,7 @@ function staffView(root, ctx, result) {
   staff.append(el('h3','Labels across submitted tasks'),distribution);
   function anonymous(title, tasks) {
     staff.append(el('h3',title)); const list = el('ul','','task-map-anonymous');
-    for (const t of tasks) { const li = el('li'); li.append(chip(t.label),el('strong',t.name),el('span',t.description)); list.append(li); }
+    for (const t of tasks) { const li = el('li'); if (t.label) li.append(chip(t.label)); li.append(el('strong',t.name),el('span',t.description)); list.append(li); }
     staff.append(list.childElementCount ? list : el('p','No submitted tasks yet.','task-map-hint'));
   }
   anonymous('Own tasks · anonymous',summary.own); anonymous('Look-ahead tasks · anonymous',summary.lookAhead);

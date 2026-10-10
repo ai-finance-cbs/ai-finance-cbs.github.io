@@ -2,38 +2,40 @@ import {test,expect} from '@playwright/test';
 import {taskMapFixture} from '../fixtures/task-map.mjs';
 const URL='/materials/assignments/milestone-2/';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
+const AHEAD_TASK='Which task is not part of this job today but will become part of it as AI spreads?',AHEAD_DESC='Describe that task in one sentence.',REASON='Why do you think so? (three to five sentences)';
+const autosaved=f=>expect(f.page().locator('#submission-M2 .task-map-status')).toContainText(/Saved/,{timeout:8000});
 const form=page=>page.locator('#submission-M2 .task-map-editor');
 const enter=async(page,role='student')=>{await page.goto(`${URL}?fakeauth=${role}`);await ready(page);};
 async function fill(page) {
   const value=taskMapFixture(),f=form(page);
-  for(const [label,key] of [['Firm type','firm_type'],['Your role','role'],['How long','duration']])await f.getByLabel(label,{exact:true}).fill(value.job[key]);
+  for(const [label,key] of [['What kind of firm did you work at?','firm_type'],['What was your role?','role'],['How long were you there?','duration']])await f.getByLabel(label,{exact:true}).fill(value.job[key]);
   for(let i=0;i<8;i++){
     await f.getByLabel(`Task ${i+1}`,{exact:true}).fill(value.tasks[i].name);
     await f.getByLabel(`Description ${i+1}`,{exact:true}).fill(value.tasks[i].description);
     await f.getByLabel(`Label ${i+1}`,{exact:true}).selectOption(value.tasks[i].label);
   }
-  await f.getByLabel('Look-ahead task',{exact:true}).fill(value.look_ahead.name);
-  await f.getByLabel('Look-ahead description',{exact:true}).fill(value.look_ahead.description);
-  await f.getByLabel('Look-ahead label',{exact:true}).selectOption(value.look_ahead.label);
-  await f.getByLabel('Your reasoning',{exact:true}).fill(value.look_ahead.reasoning);
-  await f.getByLabel('AI use',{exact:true}).fill(value.ai_use);
+  await f.getByLabel(AHEAD_TASK,{exact:true}).fill(value.look_ahead.name);
+  await f.getByLabel(AHEAD_DESC,{exact:true}).fill(value.look_ahead.description);
+  await f.getByLabel(REASON,{exact:true}).fill(value.look_ahead.reasoning);
 }
 test.beforeEach(async({page})=>{
   await page.addInitScript(()=>Object.defineProperty(window,'COURSE_MATERIALS',{get:()=>({base:'',url:'',key:''}),set:()=>{}}));
   await page.clock.setFixedTime(new Date('2027-01-20T14:00:00Z'));
 });
-test('student draft survives reload, submits, resubmits, and keeps edits when saving fails',async({page})=>{
+test('student draft autosaves and survives reload, submits, resubmits, and keeps edits when saving fails',async({page})=>{
   await enter(page);await expect(form(page).locator('.task-map-tasks tbody tr')).toHaveCount(10);
   await form(page).getByLabel('Task 1',{exact:true}).fill('First draft');
-  await form(page).getByRole('button',{name:'Save draft',exact:true}).click();await expect(form(page).locator('.task-map-message')).toHaveText('Draft saved.');
+  await autosaved(form(page));
   await page.reload();await ready(page);await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('First draft');
-  await fill(page);await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(form(page).locator('.task-map-state')).toContainText('Submitted Jan 20');
+  await fill(page);await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(page.locator('#submission-M2 .task-map-state')).toContainText('Submitted Jan 20');
   await page.clock.setFixedTime(new Date('2027-01-21T14:00:00Z'));
   await form(page).getByLabel('Task 1',{exact:true}).fill('Revised action');
-  await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='b8403-demo-state-v3'){Storage.prototype.setItem=set;throw Error('Save failed for test.');}return set.call(this,k,v);};});
+  // Every save fails until the test restores storage, so autosave and Submit both hit the failure.
+  await page.evaluate(()=>{window.realSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='b8403-demo-state-v3')throw Error('Save failed for test.');return window.realSetItem.call(this,k,v);};});
   await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(form(page).locator('.task-map-message')).toHaveText('Save failed for test.');
-  await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('Revised action');await expect(form(page).locator('.task-map-status')).toContainText('Unsaved changes');
-  await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(form(page).locator('.task-map-state')).toContainText('Submitted Jan 21');
+  await page.evaluate(()=>{Storage.prototype.setItem=window.realSetItem;});
+  await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('Revised action');
+  await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(page.locator('#submission-M2 .task-map-state')).toContainText('Submitted Jan 21');
   await page.reload();await ready(page);await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('Revised action');
 });
 test('validation, exact label order, Own nudge, word count, and add/remove bounds',async({page})=>{
@@ -41,16 +43,15 @@ test('validation, exact label order, Own nudge, word count, and add/remove bound
   expect(await f.getByLabel('Label 1',{exact:true}).locator('option').allTextContents()).toEqual(['Choose…','Process','Predict','Persuade','Own']);
   await f.getByLabel('Label 1',{exact:true}).selectOption('Process');await expect(f.locator('.task-map-nudge')).toHaveText('No Own tasks yet. Who signed off?');
   await f.getByLabel('Label 2',{exact:true}).selectOption('Own');await expect(f.locator('.task-map-nudge')).toHaveCount(0);
-  await f.getByLabel('Your reasoning',{exact:true}).fill('  People sign off.  ');await expect(f.locator('.task-map-words')).toHaveText('3 words');
-  await fill(page);await f.getByLabel('Your reasoning',{exact:true}).fill('');
+  await f.getByLabel(REASON,{exact:true}).fill('  People sign off.  ');await expect(f.locator('.task-map-words')).toHaveText('3 words');
+  await fill(page);await f.getByLabel(REASON,{exact:true}).fill('');
   await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.task-map-message')).toContainText('Complete the look-ahead');
-  await f.getByLabel('Your reasoning',{exact:true}).fill('A reason');await f.getByLabel('AI use',{exact:true}).fill('');
-  await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.task-map-message')).toContainText('Describe your AI use');
+  await f.getByLabel(REASON,{exact:true}).fill('A reason');
   await f.getByRole('button',{name:'+ Add task',exact:true}).click();await f.getByRole('button',{name:'+ Add task',exact:true}).click();
   await expect(f.getByRole('button',{name:'+ Add task',exact:true})).toBeDisabled();
   for(let i=12;i>1;i--)await f.getByRole('button',{name:`Remove task ${i}`,exact:true}).click();
   await expect(f.getByRole('button',{name:'Remove task 1',exact:true})).toBeDisabled();
-  await f.getByRole('button',{name:'Save draft',exact:true}).click();await page.reload();await ready(page);await expect(form(page).locator('.task-map-tasks tbody tr')).toHaveCount(1);
+  await autosaved(f);await page.reload();await ready(page);await expect(form(page).locator('.task-map-tasks tbody tr')).toHaveCount(1);
 });
 test('deadline closes the saved form and denies direct draft and submit calls',async({page})=>{
   await enter(page);await fill(page);await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(form(page).locator('.task-map-message')).toHaveText('Task map submitted.');
@@ -71,7 +72,7 @@ for(const role of ['instructor','grader'])test(`${role} sees accurate counts, an
   await expect(form(page).getByLabel('Task 1',{exact:true})).toBeDisabled();await expect(form(page).getByRole('button',{name:'Submit',exact:true})).toHaveCount(0);
 });
 test('instructor preview shows selected student only, read-only, and denies backend writes',async({page})=>{
-  await enter(page);await fill(page);await form(page).getByRole('button',{name:'Save draft',exact:true}).click();await expect(form(page).locator('.task-map-message')).toHaveText('Draft saved.');
+  await enter(page);await fill(page);await autosaved(form(page));
   await enter(page,'instructor');await page.getByLabel('View as student',{exact:true}).selectOption('ab1234');await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('Task 1');
   await expect(form(page).getByLabel('Task 1',{exact:true})).toBeDisabled();
   expect(await page.evaluate(async value=>{try{await(await import('/assets/materials/demo.js')).createDemo().saveTaskMap('spring-2027',value,true);return 'allowed';}catch(e){return e.message;}},taskMapFixture())).toContain('read-only');
@@ -99,7 +100,7 @@ test('PDF print media includes complete text and colored labels and hides chrome
   await page.evaluate(()=>{window.print=()=>{window.printCalled=true;};});await form(page).getByRole('button',{name:'Export to PDF'}).click();
   expect(await page.evaluate(()=>window.printCalled)).toBe(true);await expect(page.locator('.task-map-print-target')).toBeHidden();
   await page.emulateMedia({media:'print'});const paper=page.locator('.task-map-print-target');await expect(paper).toBeVisible();await expect(paper).toContainText(long);
-  await expect(paper).toContainText('Summer analyst');await expect(paper).toContainText('Used AI to check the task labels.');
+  await expect(paper).toContainText('Summer analyst');await expect(paper).not.toContainText('AI use');
   await expect(page.locator('.topbar')).toBeHidden();await expect(form(page)).toBeHidden();expect(await paper.locator('input,textarea,button,select').count()).toBe(0);
   expect(await paper.locator('.is-own').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(179, 38, 30)');
   await page.pdf({path:'evidence/task-map/task-map.pdf',printBackground:true});

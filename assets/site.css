@@ -1501,3 +1501,10 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .grading-table td:last-child, .grading-table th:last-child { text-align:right; white-space:nowrap; }
 .grading-table tr.gr-total td { font-weight:600; border-top:1px solid #1A1A1A; }
 .grading-table tr.gr-extra td { color:var(--muted); }
+/* M2 form: one question per row; status pill beside the SUBMISSION heading; taller reasoning box. */
+.task-map-job { grid-template-columns:1fr; gap:14px; }
+.task-map-ahead { grid-template-columns:1fr; gap:14px; }
+.task-map-field { font-size:13.5px; color:#333; }
+.assignment-submission > .assignment-panel-head { justify-content:flex-start; align-items:center; gap:12px; }
+.task-map-status.in-panel-head { margin:0 0 10px; }
+.class-tools #materials-root .task-map-editor textarea.task-map-reason { min-height:140px; }

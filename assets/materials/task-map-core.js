@@ -32,8 +32,8 @@ export function validateTaskMap(payload, submit = false) {
   fields(payload.look_ahead, {name:80, description:400, reasoning:2000}, true);
   if (typeof payload.ai_use !== 'string' || [...payload.ai_use].length > 600) throw new Error('AI use must be at most 600 characters.');
   if (submit && payload.tasks.filter(completeTask).length < 8) throw new Error('Complete at least 8 tasks with a name, description, and label before submitting.');
-  if (submit && (!completeTask(payload.look_ahead) || !present(payload.look_ahead.reasoning))) throw new Error('Complete the look-ahead task, label, and reasoning before submitting.');
-  if (submit && !present(payload.ai_use)) throw new Error('Describe your AI use before submitting.');
+  // The look-ahead task needs a name, a description, and reasoning; it carries no label.
+  if (submit && (!present(payload.look_ahead.name) || !present(payload.look_ahead.description) || !present(payload.look_ahead.reasoning))) throw new Error('Complete the look-ahead task and your reasoning before submitting.');
   return payload;
 }
 export function taskMapSummary(students) {
