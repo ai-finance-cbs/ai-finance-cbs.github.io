@@ -40,7 +40,7 @@ test('week milestone uses the full name, trimmed content, instructions link, and
   await page.clock.setFixedTime(new Date('2027-01-27T14:00:00Z'));await page.clock.runFor(60000);
   await expect(box.locator('.due-line')).toContainText('Past due');await expect(box.locator('.due-line')).toHaveClass(/past-due/);
 });
-test('student instructions render safe Markdown and summary beside CourseWorks links',async({page})=>{
+test('student instructions render safe Markdown above the course-site survey',async({page})=>{
   await seed(page);await enter(page,'student');
   await expect(page.locator('.page-heading h1')).toHaveText('Milestone #1: Pre-Class Survey');
   const root=page.locator('#materials-root');await expect(root.locator('.due-line')).toContainText('3 days 4 hrs remaining');
@@ -53,7 +53,8 @@ test('student instructions render safe Markdown and summary beside CourseWorks l
   await expect(root.getByRole('button',{name:/^Edit /})).toHaveCount(0);
   await page.screenshot({path:'evidence/phase-h/assignment-student.png',fullPage:true});
   await expect(page.getByLabel('Submission file')).toHaveCount(0);
-  await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toBeVisible();
+  await expect(root.locator('.survey-editor')).toBeVisible();
+  await expect(root.getByRole('link',{name:'Submit on CourseWorks →'})).toHaveCount(0);
   await enter(page,'student','grades');await expect(root).not.toContainText(/\b(?:M[1-5]|FP|O[1-4]|Q[1-5]|PA)\b/);
   await expect(root).toContainText('Milestone #1: Pre-Class Survey');await expect(root).toContainText('Final Prototype');
   await expect(root.locator('[data-grade-code^=O]')).toHaveCount(4);
@@ -91,7 +92,7 @@ test('assignment sections render as separate panels and each saves on its own',a
 });
 test('grader is read-only, auditors see only shared pages, and menu visibility follows sharing',async({page})=>{
   await seed(page);await enter(page,'grader');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');
-  await expect(page.getByRole('button',{name:/^Edit /})).toHaveCount(0);await expect(page.getByRole('link',{name:'Open in CourseWorks →'})).toBeVisible();
+  await expect(page.getByRole('button',{name:/^Edit /})).toHaveCount(0);await expect(page.locator('.survey-staff')).toBeVisible();
   const reject=()=>page.evaluate(async()=>{try{await (await import('/assets/materials/demo.js')).createDemo().saveAssignmentPage('spring-2027','M1','Forbidden');return false;}catch{return true;}});
   expect(await reject()).toBe(true);
   await enter(page,'auditor');await expect(page.locator('.prep-markdown')).toContainText('Synthetic instructions');await expect(page.locator('.submission-box')).toHaveCount(0);expect(await reject()).toBe(true);
@@ -115,6 +116,8 @@ for(const width of [1280,390,320])test(`student assignment pages fit at ${width}
   await seed(page);await page.setViewportSize({width,height:1000});
   for(const slug of ['week-1','assignments/milestone-1','assignments/optional-tasks','submit','grades']){
     await enter(page,'student',slug);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await expect(page.locator('#materials-root')).not.toContainText(/\b(?:M[1-5]|FP|O[1-4])\b/);
+    // The survey must keep the source's explicit “M1 = survey + VS Code setup” heading.
+    const text=await page.locator('#materials-root').evaluate(node=>{const copy=node.cloneNode(true);copy.querySelector('#submission-M1')?.remove();return copy.textContent;});
+    expect(text).not.toMatch(/\b(?:M[1-5]|FP|O[1-4])\b/);
   }
 });

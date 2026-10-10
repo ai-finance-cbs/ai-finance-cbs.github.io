@@ -111,7 +111,7 @@ for(const role of ['auditor','unlisted'])test(`${role} has no M2 submission data
   expect(await page.evaluate(async()=>{const b=(await import('/assets/materials/demo.js')).createDemo();let denied=0;for(const call of [()=>b.myTaskMap('spring-2027'),()=>b.taskMapClass('spring-2027')])try{await call();}catch{denied++;}return denied;})).toBe(2);
 });
 test('other milestones retain their submission placeholder',async({page})=>{
-  await page.goto('/materials/assignments/milestone-1/?fakeauth=student');await ready(page);await expect(page.locator('#submission-M1')).toContainText('The submission form will appear here.');
+  await page.goto('/materials/assignments/milestone-3/?fakeauth=student');await ready(page);await expect(page.locator('#submission-M3')).toContainText('The submission form will appear here.');
 });
 test('editing M2 instructions preserves the staff summary and its expanded student',async({page})=>{
   await enter(page,'instructor');const panel=page.locator('#submission-M2'),student=panel.getByRole('button',{name:'Demo Student ab1234'});

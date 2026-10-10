@@ -38,6 +38,9 @@ export async function createBackend(config) {
     async syncCanvas(term) { return fileAction({term_id:term}, 'canvas-sync'); },
     async assignmentCatalog(term) { return rpc('assignment_catalog', { p_term:term }); },
     async myTaskMap(term) { return rpc('my_task_map', {p_term:term}); },
+    async mySurvey(term) { return rpc('my_m1_survey', {p_term:term}); },
+    async surveyClass(term) { return rpc('m1_survey_class', {p_term:term}); },
+    async saveSurvey(term, payload, submit) { return rpc('save_m1_survey', {p_term:term,p_payload:payload,p_submit:submit}); },
     async taskMapClass(term) { return rpc('task_map_class', {p_term:term}); },
     async saveTaskMap(term, payload, submit) { return rpc('save_task_map', {p_term:term,p_payload:payload,p_submit:submit}); },
     async assignmentPages(term, codes) {

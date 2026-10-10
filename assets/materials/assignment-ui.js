@@ -4,6 +4,7 @@ import { renderAssignmentSections } from './prep-ui.js';
 import { canvasSubmissionBlock, canvasDue } from './canvas-student-ui.js';
 import { canWrite } from './class-core.js';
 import { renderTaskMap } from './task-map-ui.js';
+import { renderSurvey } from './survey-ui.js';
 
 const el = (tag, text, className = '') => {
   const node = document.createElement(tag); node.textContent = text; node.className = className; return node;
@@ -26,7 +27,7 @@ export async function renderAssignments(ctx, catalog, pages) {
       if (!option.classList.contains('is-active')) option.setAttribute('aria-hidden','true');
       mode.append(option);
     }
-    section.append(item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
+    section.append(item.code === 'M1' && access.role !== 'auditor' ? canvasDue(canvasRow) : item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
     const submitAnchor = `submission-${item.code}`;
     renderAssignmentSections({ root:section, note:{body:row.body_md,updated_at:row.updated_at}, submitAnchor,
@@ -41,15 +42,16 @@ export async function renderAssignments(ctx, catalog, pages) {
     submission.dataset.assignmentSection = 'Submission';
     const head = el('div','','assignment-panel-head'); head.append(el('h2','Submission'));
     submission.append(head);
-    if (item.code !== 'M2') {
+    if (!['M1','M2'].includes(item.code)) {
       submission.append(el('p','The submission form will appear here.','assignment-panel-empty'));
       if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
     }
-    if (item.code !== 'M2' || ['student','instructor','grader'].includes(access.role)) {
+    if (!['M1','M2'].includes(item.code) || ['student','instructor','grader'].includes(access.role)) {
       // Instruction saves replace their section container. Keep the form outside it.
       section.append(submission);
     }
     root.append(section);
     if (item.code === 'M2') await renderTaskMap(submission,ctx);
+    if (item.code === 'M1') await renderSurvey(submission,ctx);
   }
 }

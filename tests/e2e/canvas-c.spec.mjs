@@ -58,7 +58,7 @@ test('student polish uses one shared pill, inline due text, linked grade titles 
   await expect(block.locator('.milestone-title')).toHaveText('Milestone #1: Pre-Class Survey · Due Wed, Jan 27, 9:00 AM · 3 days 4 hrs');
   await expect(block.locator('.canvas-status-pill')).toHaveText('Submitted ✓');
   await expect(block.locator('.canvas-sync-note')).toHaveCSS('font-size','11px');await expect(block.locator('.canvas-sync-note')).toHaveCSS('color','rgb(119, 119, 119)');await expect(block.locator('.canvas-assignment-links a')).toHaveText(['Instructions →','Submit on CourseWorks →']);
-  await enter(page,'student','assignments/milestone-1');await expect(page.locator('.canvas-status-pill')).toHaveText('Submitted ✓');await expect(page.locator('.prep-markdown')).toContainText('Survey instructions');
+  await enter(page,'student','assignments/milestone-1');await expect(page.locator('.survey-state')).toHaveText('Draft');await expect(page.locator('.prep-markdown')).toContainText('Survey instructions');
   await enter(page,'student','grades');await expect(page.locator('#my-grades thead th')).toHaveText(['Item','Status','Score']);
   await expect(page.locator('.canvas-grade-group h2')).toHaveText(['Milestones','Quizzes','Participation','Optional tasks']);
   await expect(page.locator('[data-grade-code=M1] .grade-score')).toHaveText('0 / 10');await expect(page.locator('[data-grade-code=M1] a')).toHaveText('Milestone #1: Pre-Class Survey');
