@@ -2,8 +2,8 @@ import {test,expect} from '@playwright/test';
 import {taskMapFixture} from '../fixtures/task-map.mjs';
 const URL='/materials/assignments/milestone-2/';
 const ready=page=>expect(page.locator('html')).toHaveAttribute('data-materials-ready','true');
-const AHEAD_TASK='Which task is not part of this job today but will become part of it as AI spreads?',AHEAD_DESC='Describe that task in one sentence.',REASON='Why do you think so? (three to five sentences)';
-const autosaved=f=>expect(f.page().locator('#submission-M2 .task-map-status')).toContainText(/Saved/,{timeout:8000});
+const AHEAD_TASK='Which task is not part of this job today but will become part of it as AI spreads? Describe it in a sentence or two.',REASON='Why do you think so? (three to five sentences)';
+const autosaved=f=>expect(f.page().locator('#submission-M2 .task-map-status')).toContainText('Last saved',{timeout:8000});
 const form=page=>page.locator('#submission-M2 .task-map-editor');
 const enter=async(page,role='student')=>{await page.goto(`${URL}?fakeauth=${role}`);await ready(page);};
 async function fill(page) {
@@ -14,8 +14,7 @@ async function fill(page) {
     await f.getByLabel(`Description ${i+1}`,{exact:true}).fill(value.tasks[i].description);
     await f.getByLabel(`Label ${i+1}`,{exact:true}).selectOption(value.tasks[i].label);
   }
-  await f.getByLabel(AHEAD_TASK,{exact:true}).fill(value.look_ahead.name);
-  await f.getByLabel(AHEAD_DESC,{exact:true}).fill(value.look_ahead.description);
+  await f.getByLabel(AHEAD_TASK,{exact:true}).fill(value.look_ahead.description);
   await f.getByLabel(REASON,{exact:true}).fill(value.look_ahead.reasoning);
 }
 test.beforeEach(async({page})=>{
@@ -25,6 +24,8 @@ test.beforeEach(async({page})=>{
 test('student draft autosaves and survives reload, submits, resubmits, and keeps edits when saving fails',async({page})=>{
   await enter(page);await expect(form(page).locator('.task-map-tasks tbody tr')).toHaveCount(10);
   await form(page).getByLabel('Task 1',{exact:true}).fill('First draft');
+  await expect(form(page).locator('.task-map-panel').nth(1).locator('.task-map-panel-note')).toHaveText(/Saving…|Saved!/);
+  await expect(form(page).locator('.task-map-panel').first().locator('.task-map-panel-note')).toHaveText('');
   await autosaved(form(page));
   await page.reload();await ready(page);await expect(form(page).getByLabel('Task 1',{exact:true})).toHaveValue('First draft');
   await fill(page);await form(page).getByRole('button',{name:'Submit',exact:true}).click();await expect(page.locator('#submission-M2 .task-map-state')).toContainText('Submitted Jan 20');

@@ -1568,3 +1568,8 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
 .assignment-submission > .assignment-panel-head { justify-content:flex-start; align-items:center; gap:12px; }
 .task-map-status.in-panel-head { margin:0 0 10px; }
 .class-tools #materials-root .task-map-editor textarea.task-map-reason { min-height:140px; }
+
+/* M2 form: per-block save note beside each block heading; taller look-ahead answer. */
+.task-map-panel-head { display:flex; align-items:baseline; gap:10px; }
+.task-map-panel-note { font-size:12px; color:#2F6FB8; }
+.class-tools #materials-root .task-map-editor textarea.task-map-ahead-answer { min-height:76px; }
