@@ -44,6 +44,9 @@
 - {week: 1, topic: "Nature of Financial Work", level: optional, kind: Writing, title: "Our AI Midwife", length: "8 min", author: "Drew Housman", year: 2026, url: "https://www.astralcodexten.com/p/our-ai-midwife"}
 - {week: 0, topic: "Where Do AI Answers Come From?", level: optional, kind: Writing, title: "What Actually Happens When You Press ‘Send’ to ChatGPT", length: "15 min", author: "ByteByteGo", year: 2025, url: "https://blog.bytebytego.com/p/what-actually-happens-when-you-press"}
 - {week: 0, topic: "Where Do AI Answers Come From?", level: recommended, kind: Writing, title: "How an AI Token Travels Through a Data Center", length: "25 min", author: "Chris Zeoli", year: 2026, url: "https://www.datagravity.dev/p/how-an-ai-token-travels-through-a"}
+- {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "The Bitter Lesson", length: "5 min", author: "Rich Sutton", year: 2019, url: "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"}
+- {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "Scaling Laws for Neural Language Models", length: "paper", author: "Jared Kaplan et al.", year: 2020, url: "https://arxiv.org/abs/2001.08361"}
+- {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "The Scaling Hypothesis", length: "long essay", author: "Gwern Branwen", year: 2020, url: "https://gwern.net/scaling-hypothesis"}
 
 # ---- Week 2: AI Infrastructure (Compute -> Models -> Data and Context -> Tools and Agents) ----
 - {week: 2, topic: Compute, level: required, kind: Writing, title: "The Plunging Price of Thought", length: "40 min", author: "Epoch AI", year: 2026, url: "https://epoch.ai/publications/the-plunging-price-of-thought"}
