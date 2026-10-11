@@ -8,8 +8,8 @@
 </div>
 {% for topic in s.topics %}
 {% assign items = site.data.materials | where: 'week', s.week | where: 'topic', topic %}
-{% assign req = items | where: 'level', 'required' %}{% assign rec = items | where: 'level', 'recommended' %}{% assign core = req.size | plus: rec.size %}
-{% comment %}sort_natural compares years as text, so undated (n.d.) items sort last instead of breaking the build{% endcomment %}{% assign opt = items | where: 'level', 'optional' | sort_natural: 'year' %}
+{% assign req = items | where: 'level', 'required' | sort_natural: 'year' %}{% assign rec = items | where: 'level', 'recommended' | sort_natural: 'year' %}{% assign core = req.size | plus: rec.size %}
+{% comment %}Each level (required, recommended, optional) is listed oldest first. sort_natural compares years as text, so undated (n.d.) items sort last instead of breaking the build{% endcomment %}{% assign opt = items | where: 'level', 'optional' | sort_natural: 'year' %}
 <section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
   <h2 id="topic-{{ forloop.index }}">{{ topic }}</h2>
   {% if items.size > 0 %}
