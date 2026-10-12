@@ -1530,6 +1530,31 @@ html[data-signed-in] [data-protected-link]::after { display:none; }
   .task-map-print-target th:last-child { width:80px; }
   .task-map-print-target tr { break-inside:avoid; }
 }
+/* M3 shares the Submission panel and stays beside the M2 form rules. */
+.group-link-editor, .group-link-staff { min-width:0; font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; }
+.class-tools #materials-root :is(.group-link-editor,.group-link-staff) :is(p,th,td) { font:inherit; overflow-wrap:anywhere; }
+.group-link-field { display:flex; flex-direction:column; gap:6px; margin:14px 0 6px; color:#555; }
+.class-tools #materials-root .group-link-field input { box-sizing:border-box; min-width:0; width:100%; margin:0; padding:9px; font:inherit; border:1px solid #DDD; border-radius:4px; background:#FFF; color:#1A1A1A; }
+.group-link-field input:focus-visible { outline:2px solid #2F6FB8; outline-offset:2px; }
+.group-link-field input:disabled { opacity:1; background:#FAFAFA; -webkit-text-fill-color:#555; }
+.class-tools #materials-root .group-link-editor .materials-button { margin:10px 0; padding:8px 14px; border-radius:4px; font:500 14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif; background:#2F6FB8; color:#FFF; border:1px solid #2F6FB8; }
+.group-link-editor button:disabled { opacity:.5; cursor:default; }
+.group-link-editor [hidden] { display:none !important; }
+.group-link-hint { color:#6B6B6B; }
+.group-link-warning { color:#8C2F39; }
+.group-link-message:empty, .group-link-warning:empty, .group-link-hint:empty { display:none; }
+.group-link-submitted { padding-top:8px; border-top:1px solid #ECECEC; overflow-wrap:anywhere; }
+.group-link-table { width:100%; table-layout:fixed; border-collapse:collapse; margin-top:16px; }
+.class-tools #materials-root .group-link-table :is(th,td) { padding:8px 4px; text-align:left; vertical-align:top; border-bottom:1px solid #ECECEC; width:auto; }
+.class-tools #materials-root .group-link-table th { color:#555; font-weight:500; font-size:12px; text-transform:none; letter-spacing:0; }
+.group-link-status { min-width:0; }
+@media (max-width:600px) {
+  .group-link-table, .group-link-table tbody { display:block; }
+  .group-link-table thead { display:none; }
+  .group-link-table tr { display:block; border-top:1px solid #ECECEC; padding:10px 0; }
+  .class-tools #materials-root .group-link-table :is(th,td) { display:grid; grid-template-columns:85px minmax(0,1fr); gap:8px; width:auto; border:0; padding:4px 0; }
+  .group-link-table :is(th,td)::before { content:attr(data-label); color:#777; font-size:12px; }
+}
 /* Syllabus > Deliverables overview table */
 .deliverables-table col.dl-item { width:24%; } .deliverables-table col.dl-due { width:17%; } .deliverables-table col.dl-mode { width:12%; } .deliverables-table col.dl-pts { width:8%; }
 .deliverables-table td:first-child { font-weight:600; }

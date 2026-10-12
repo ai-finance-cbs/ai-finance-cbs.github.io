@@ -77,7 +77,9 @@ test('required questions, Q9 selection, Q10 bounds, optional fields, and Other n
   for(const box of await f.getByRole('checkbox').all())await box.uncheck();await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.survey-message')).toContainText('Q9');
   await f.getByRole('checkbox',{name:'I am not sure yet.',exact:true}).check();await f.getByLabel(QUESTIONS.q10,{exact:true}).fill('101');
   await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.survey-message')).toContainText('0 to 100');await f.getByLabel(QUESTIONS.q10,{exact:true}).fill('50.5');
-  await f.getByRole('radio',{name:'Other (name it): Weekly',exact:true}).check();await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.survey-message')).toContainText('other tool');
+  await f.getByRole('radio',{name:'Other (name it): Weekly',exact:true}).check();
+  // Finish the pending draft first: autosave can disable Submit during the click.
+  await saved(page);await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.survey-message')).toContainText('other tool');
   await f.getByLabel('Other (name it)',{exact:true}).fill('Synthetic tool');await f.getByRole('button',{name:'Submit',exact:true}).click();await expect(f.locator('.survey-message')).toHaveText('Survey submitted.');
 });
 test('individual Canvas cutoff locks both draft and submit; stale site dates cannot reopen it',async({page})=>{

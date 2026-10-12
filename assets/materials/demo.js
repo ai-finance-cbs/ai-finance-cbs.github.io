@@ -1,5 +1,6 @@
 import { extendAssignments } from './assignment-demo.js';
 import { extendTaskMaps } from './task-map-demo.js';
+import { extendGroupLinks } from './group-link-demo.js';
 import { extendSurveys } from './survey-demo.js';
 import { extendCanvas } from './canvas-demo.js';
 import { extendProfiles } from './profile-demo.js';
@@ -52,6 +53,7 @@ export function createDemo() {
   const canvas = extendCanvas({ readAll, saveAll, access });
   return {
     ...canvas,
+    ...extendGroupLinks({ readAll, saveAll, access, canvas }),
     ...extendSurveys({ readAll, saveAll, access, canvas }),
     ...extendTerms({ readAll, saveAll, access }),
     ...extendPrep({ readAll, saveAll, access }),

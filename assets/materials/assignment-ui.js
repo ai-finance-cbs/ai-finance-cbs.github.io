@@ -5,6 +5,7 @@ import { canvasSubmissionBlock, canvasDue } from './canvas-student-ui.js';
 import { canWrite } from './class-core.js';
 import { renderTaskMap } from './task-map-ui.js';
 import { renderSurvey } from './survey-ui.js';
+import { renderGroupLink } from './group-link-ui.js';
 
 const el = (tag, text, className = '') => {
   const node = document.createElement(tag); node.textContent = text; node.className = className; return node;
@@ -26,7 +27,7 @@ export async function renderAssignments(ctx, catalog, pages) {
       if (!option.classList.contains('is-active')) option.setAttribute('aria-hidden','true');
       mode.append(option);
     }
-    section.append(item.code === 'M1' && access.role !== 'auditor' ? canvasDue(canvasRow) : item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
+    section.append(['M1','M3'].includes(item.code) && access.role !== 'auditor' ? canvasDue(canvasRow) : item.code === 'M2' || access.role === 'auditor' || !canvasRow?.due_at ? dueLine(item.due_at) : canvasDue(canvasRow), mode);
     const row = pages.find(p => p.code === item.code) || { body_md:'',updated_at:null };
     // Share Your Setup is presented in class, so it has no submission form.
     const inClass = item.code === 'O4';
@@ -43,17 +44,18 @@ export async function renderAssignments(ctx, catalog, pages) {
     submission.dataset.assignmentSection = 'Submission';
     const head = el('div','','assignment-panel-head'); head.append(el('h2','Submission'));
     submission.append(head);
-    if (!['M1','M2'].includes(item.code)) {
+    if (!['M1','M2','M3'].includes(item.code)) {
       submission.append(el('p','The submission form will appear here.','assignment-panel-empty'));
       if (access.role !== 'auditor') submission.append(canvasSubmissionBlock(ctx,item.code,true));
     }
-    if (!inClass && (!['M1','M2'].includes(item.code) || ['student','instructor','grader'].includes(access.role))) {
+    if (!inClass && (!['M1','M2','M3'].includes(item.code) || ['student','instructor','grader'].includes(access.role))) {
       // Instruction saves replace their section container. Keep the form outside it.
       section.append(submission);
     }
     root.append(section);
     if (item.code === 'M2') await renderTaskMap(submission,ctx);
     if (item.code === 'M1') await renderSurvey(submission,ctx);
+    if (item.code === 'M3') await renderGroupLink(submission,ctx);
   }
   if (code === 'optional') optionalTabs(root, items);
 }
