@@ -42,12 +42,13 @@ for(const role of ['a','b','teacher','grader','auditor','outside','anon'])test(`
 });
 test('all required fields, text caps, grids, choices, Q9 and Q10 validate at the database boundary',async()=>{
   await h.as('a');await save(emptySurvey(),false);await deny(()=>save(emptySurvey()));
-  for(const key of ['full_name','preferred_name','job','career_examples','ai_use','wish','setup_version','setup_haiku','program','sector','setup_assistant']){
+  for(const key of ['full_name','preferred_name','job','career_examples','ai_use','wish','setup_version','setup_haiku','github_username','program','sector','setup_assistant']){
     const v=surveyFixture();v.answers[key]='';await deny(()=>save(v));}
   for(const [key,cap] of Object.entries(TEXT_LIMITS)){const v=surveyFixture();v.answers[key]='x'.repeat(cap+1);await deny(()=>save(v,false));}
   const changes=[v=>v.answers.program='Unknown',v=>v.answers.sector='Unknown',v=>v.answers.setup_assistant='Unknown',v=>v.answers.extra='secret',
     v=>v.answers.ai_frequency.chatgpt='Often',v=>delete v.answers.experience.excel,v=>v.answers.experience.extra='Never',v=>v.answers.ai_frequency.other='Weekly',
-    v=>v.q9=[],v=>v.q9=['augment','augment'],v=>v.q9=['wrong'],v=>v.q9=[1],v=>v.q10=null,v=>v.q10=-1,v=>v.q10=101,v=>v.q10='25',v=>delete v.q10];
+    v=>v.q9=[],v=>v.q9=['augment','augment'],v=>v.q9=['wrong'],v=>v.q9=[1],v=>v.q10=null,v=>v.q10=-1,v=>v.q10=101,v=>v.q10='25',v=>delete v.q10,
+    v=>v.answers.github_username='@octocat',v=>v.answers.github_username='octo--cat',v=>v.answers.github_username='-octocat'];
   for(const change of changes){const v=surveyFixture();change(v);await deny(()=>save(v));}
   await deny(()=>save(surveyFixture(),null));const v=surveyFixture();v.answers.full_name='😀'.repeat(120);v.q10=0;await save(v);v.q10=100;await save(v);v.q10=50.5;await save(v);
   await h.as('owner');await deny(()=>h.rows("update m1_survey_responses set q10=101"),/constraint/);

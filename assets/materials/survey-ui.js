@@ -5,7 +5,7 @@ const date=v=>v?new Date(v).toLocaleString('en-US',{timeZone:'America/New_York',
 const button=(text,fn,className='materials-button')=>{const n=el('button',text,className);n.type='button';n.addEventListener('click',fn);return n;};
 let formId=0;
 function editor(root,ctx,result) {
-  const row=result.submission,value=structuredClone(row?{answers:row.answers,q9:row.q9,q10:row.q10}:emptySurvey(result.roster_name || ''));
+  const row=result.submission,value=structuredClone(row?{answers:{...emptySurvey().answers,...row.answers},q9:row.q9,q10:row.q10}:emptySurvey(result.roster_name || ''));
   const a=value.answers,uni=result.uni || ctx.access.uni || ctx.access.email?.match(/^([a-z]{1,8}[0-9]{1,8})@columbia\.edu$/i)?.[1]?.toLowerCase() || '';
   const permanentLock=!!(result.read_only || ctx.access.view_as || ctx.access.read_only),prefix=`survey-${++formId}`;
   let stored=row,saved=JSON.stringify(value),busy=false,submitting=false,timer=null,savedTimer=null,justSaved=false;
@@ -65,6 +65,7 @@ function editor(root,ctx,result) {
   const setup=section('Setup check (M1 = survey + VS Code setup)'),guide=el('a','Setup Guide');guide.href='/syllabus/setup/';setup.append(guide);
   choices(question(setup,'s1'),'setup_assistant',ASSISTANTS);text(question(setup,'s2'),'setup_version');
   text(question(setup,'s3'),'setup_haiku',true);
+  text(question(setup,'s4','Without the @. If you do not have an account yet, see Step 7 of the Setup Guide.'),'github_username');
   const message=el('p','','survey-message');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
   const draftWarning=el('p','','survey-hint'),actions=el('div','','survey-actions');
   const submit=button('Submit',()=>persist(true),'materials-button survey-primary');

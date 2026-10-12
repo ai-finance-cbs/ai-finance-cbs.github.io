@@ -39,6 +39,7 @@ export const migrationFiles = [
   '024_task_map_single_look_ahead.sql',
   '025_m1_survey_no_skip.sql',
   '026_share_setup_page.sql',
+  '027_m1_survey_github.sql',
 ];
 export async function seedGoogleIdentity(db, userId, email) {
   await db.query(

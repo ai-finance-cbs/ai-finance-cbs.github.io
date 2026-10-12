@@ -10,7 +10,7 @@ const saved=page=>expect(status(page)).toContainText('Saved!');
 const enter=async(page,role='student')=>{await page.goto(`${url}?fakeauth=${role}`);await ready(page);};
 async function fill(page) {
   const f=form(page),v=surveyFixture();
-  for(const [label,key] of [['Full name','full_name'],[QUESTIONS.q2,'preferred_name'],[QUESTIONS.q4,'job'],['One or two example firms or roles','career_examples'],[QUESTIONS.q7,'ai_use'],[QUESTIONS.q8,'wish'],[QUESTIONS.s2,'setup_version'],[QUESTIONS.s3,'setup_haiku']])await f.getByLabel(label,{exact:true}).fill(v.answers[key]);
+  for(const [label,key] of [['Full name','full_name'],[QUESTIONS.q2,'preferred_name'],[QUESTIONS.q4,'job'],['One or two example firms or roles','career_examples'],[QUESTIONS.q7,'ai_use'],[QUESTIONS.q8,'wish'],[QUESTIONS.s2,'setup_version'],[QUESTIONS.s3,'setup_haiku'],[QUESTIONS.s4,'github_username']])await f.getByLabel(label,{exact:true}).fill(v.answers[key]);
   await f.getByRole('radio',{name:v.answers.program,exact:true}).check();await f.getByLabel(QUESTIONS.q5,{exact:true}).selectOption(v.answers.sector);
   for(const [id,name] of AI_TOOLS)await f.getByRole('radio',{name:`${name}: ${v.answers.ai_frequency[id]}`,exact:true}).check();
   for(const [id,name] of SETUP_TOOLS)await f.getByRole('radio',{name:`${name}: ${v.answers.experience[id]}`,exact:true}).check();

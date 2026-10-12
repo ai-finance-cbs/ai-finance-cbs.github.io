@@ -8,6 +8,10 @@ test('drafts accept blanks; submit requires every required question and preserve
   for(const key of ['full_name','preferred_name','job','career_examples','ai_use','wish','setup_version','setup_haiku','program','sector','setup_assistant']) {
     const value=surveyFixture();value.answers[key]='';assert.throws(()=>validateSurvey(value,true),/Complete/);
   }
+  for(const name of ['','@octocat','-octocat','octocat-','octo--cat','octo cat','octo_cat']){
+    const value=surveyFixture();value.answers.github_username=name;assert.throws(()=>validateSurvey(value,true),/S4/,name);validateSurvey(value);
+  }
+  for(const name of ['octocat','Octo-Cat9',' octocat ']){const value=surveyFixture();value.answers.github_username=name;validateSurvey(value,true);}
   v.answers.setup_assistant='Codex';v.answers.setup_version='codex-cli 1.0';v.answers.setup_haiku='Desktop of PDFs';validateSurvey(v,true);
   v.q9=[];assert.throws(()=>validateSurvey(v,true),/Q9/);v.q9=['unsure'];v.q10=null;assert.throws(()=>validateSurvey(v,true),/Q10/);
 });
