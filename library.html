@@ -2,6 +2,7 @@
 title: Library
 permalink: /library/
 ---
+<p class="nb-subtitle">A Reading List for AI</p>
 <ul class="library-index">
   {% for s in site.data.library %}
   <li><a href="{{ '/library/' | append: s.slug | append: '/' | relative_url }}">{{ s.title }}</a><span>{% if s.week > 0 and s.week < 99 %}{{ s.kicker }}{% endif %}</span></li>
