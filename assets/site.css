@@ -1298,6 +1298,8 @@ body.standalone-tool .content { max-width:none; }
 @media (min-width:820px) and (max-width:1050px) { .menu-row .topnav a { font-size:14px; line-height:19px; } .menu-row .topnav ul { gap:0 14px; } }
 /* Nota Bene: one note per item, with room between them. */
 .content .takes-list li { margin-bottom:30px; }
+.content .takes-list .takes-sublist { list-style:disc; padding-left:22px; margin-top:10px; }
+.content .takes-list .takes-sublist li { margin-bottom:10px; }
 /* Lock after links that need a Columbia sign-in (milestones, lecture notes); hidden once signed in. */
 [data-protected-link]::after { content:""; display:inline-block; width:.78em; height:.78em; margin-left:.35em; vertical-align:-.05em; background:var(--accent);
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7V5a3.5 3.5 0 0 1 7 0v2h.5A1 1 0 0 1 13 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h.5zm1.5 0h4V5a2 2 0 0 0-4 0v2z'/%3E%3C/svg%3E") center/contain no-repeat;
