@@ -3,6 +3,7 @@
 # "slug" is the web address: /library/<slug>/
 # "topics" are short names for the syllabus topics, in the same order as _data/weeks.yml.
 # In _data/materials.yml, "topic" must match one of these short names.
+# Optional "sections" add Library-only topic groups after the syllabus topics.
 - title: Prelude
   slug: prelude
   week: 0
@@ -13,6 +14,9 @@
   week: 1
   kicker: Week 1
   topics: [Economic Frameworks for AI, Bulls vs. Skeptics, Nature of Financial Work]
+  sections:
+    - title: Research
+      topics: [Macro Implications, Labor Markets, Financial Sector, Alignment and Governance]
 - title: AI Infrastructure
   slug: ai-infrastructure
   week: 2

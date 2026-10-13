@@ -1,0 +1,14 @@
+{% assign items = site.data.materials | where: 'week', include.week | where: 'topic', include.topic %}
+{% assign req = items | where: 'level', 'required' | sort_natural: 'year' %}{% assign rec = items | where: 'level', 'recommended' | sort_natural: 'year' %}
+{% comment %}Keep each priority oldest first, with undated entries last.{% endcomment %}{% assign opt = items | where: 'level', 'optional' | sort_natural: 'year' %}
+<section class="topic-block" aria-labelledby="{{ include.id }}">
+  <h{{ include.heading }} id="{{ include.id }}">{{ include.topic }}</h{{ include.heading }}>
+  {% if items.size > 0 %}
+  <ul class="material-list">
+    {% for m in req %}{% include material-item.html m=m %}{% endfor %}
+    {% for m in rec %}{% include material-item.html m=m %}{% endfor %}
+    {% for m in opt %}{% include material-item.html m=m %}{% endfor %}
+  </ul>
+  {% endif %}
+  <p class="material-empty"{% if req.size > 0 %} data-when-filtered{% endif %}{% if items.size > 0 %} hidden{% endif %}>{% if items.size == 0 %}To be posted.{% else %}No required readings in this section.{% endif %}</p>
+</section>

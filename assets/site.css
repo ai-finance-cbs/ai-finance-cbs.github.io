@@ -484,6 +484,9 @@ caption { margin-bottom:6px; }
 .badge-required { font-size:10.5px; padding:2px 5px; margin-right:7px; vertical-align:1px; }
 .topic-block h2 { font-size:18px; margin-bottom:8px; }
 .topic-block { padding:12px 0 4px; }
+.library-group { margin-top:32px; }
+.library-group > h2 { font-size:22px; margin:0 0 12px; }
+.library-group .topic-block > h3 { font-size:18px; line-height:1.35; margin:0 0 8px; }
 .content p.icon-key { margin:0 0 14px auto; margin-right:16px; font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:12.5px; color:var(--muted); }
 
 /* ---- 2026-09-30: thin grey line icons instead of emoji ---- */

@@ -13,7 +13,7 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     const pages = [
       ['economics-of-ai', 'Building Pro-Worker Artificial Intelligence', 'Daron Acemoglu, David Autor, and Simon Johnson (2026)'],
-      ['future-of-finance', 'Artificial Intelligence, Firm Growth, and Product Innovation', 'Tania Babina, Anastassia Fedyk, Alex X. He, and James Hodson (2024)'],
+      ['economics-of-ai', 'Artificial Intelligence, Firm Growth, and Product Innovation', 'Tania Babina, Anastassia Fedyk, Alex X. He, and James Hodson (2024)'],
       ['coda', 'AI in Finance: Syllabus and Lecture Notes', 'Arpit Gupta (2026)'],
     ];
     for (const [slug, title, author] of pages) {
@@ -36,8 +36,35 @@ for (const width of [1440, 390]) {
     await page.goto('/library/economics-of-ai/');
     await expect(page.getByRole('link', { name: 'Building Pro-Worker Artificial Intelligence', exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    mkdirSync('evidence/library-migrate', { recursive: true });
-    await page.screenshot({ path: `evidence/library-migrate/week-1-${width}.png`, fullPage: true });
+    mkdirSync('evidence/library-migrate/amendment-1', { recursive: true });
+    await page.screenshot({ path: `evidence/library-migrate/amendment-1/week-1-${width}.png`, fullPage: true });
+  });
+
+  test(`Research follows the three existing topics, with four complete sub-topics at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/library/economics-of-ai/');
+    const main = page.locator('.content');
+    await expect(main.locator('h2')).toHaveText(['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work', 'Research']);
+    const research = page.getByRole('region', { name: 'Research', exact: true });
+    await expect(research.getByRole('heading', { level: 3 })).toHaveText(['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance']);
+    await expect(research.locator('.material')).toHaveCount(46);
+    for (const [index, count] of [9, 23, 11, 3].entries()) {
+      await expect(research.locator('.topic-block').nth(index).locator('.material')).toHaveCount(count);
+    }
+    const ids = await main.locator('[id]').evaluateAll(nodes => nodes.map(node => node.id));
+    expect(new Set(ids).size).toBe(ids.length);
+    if (width >= 820) await expect(page.locator('#outline').getByRole('link', { name: 'Research', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Show only required' }).click();
+    await expect(research.locator('.material:visible')).toHaveCount(0);
+    await expect(research.getByText('No required readings in this section.', { exact: true })).toHaveCount(4);
+    for (const note of await research.locator('.material-empty').all()) await expect(note).toBeVisible();
+    await page.getByRole('button', { name: 'Show all materials' }).click();
+    await expect(research.getByRole('link', { name: 'Generative AI at Work', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await research.getByRole('heading', { name: 'Research', exact: true }).scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.fonts.ready);
+    mkdirSync('evidence/library-migrate/amendment-1', { recursive: true });
+    await page.screenshot({ path: `evidence/library-migrate/amendment-1/research-${width}.png` });
   });
 }
 

@@ -7,18 +7,16 @@
   <button class="required-toggle" type="button" aria-pressed="false">Show only required</button>
 </div>
 {% for topic in s.topics %}
-{% assign items = site.data.materials | where: 'week', s.week | where: 'topic', topic %}
-{% assign req = items | where: 'level', 'required' | sort_natural: 'year' %}{% assign rec = items | where: 'level', 'recommended' | sort_natural: 'year' %}{% assign core = req.size | plus: rec.size %}
-{% comment %}Each level (required, recommended, optional) is listed oldest first. sort_natural compares years as text, so undated (n.d.) items sort last instead of breaking the build{% endcomment %}{% assign opt = items | where: 'level', 'optional' | sort_natural: 'year' %}
-<section class="topic-block" aria-labelledby="topic-{{ forloop.index }}">
-  <h2 id="topic-{{ forloop.index }}">{{ topic }}</h2>
-  {% if items.size > 0 %}
-  <ul class="material-list">
-    {% for m in req %}{% include material-item.html m=m %}{% endfor %}
-    {% for m in rec %}{% include material-item.html m=m %}{% endfor %}
-    {% for m in opt %}{% include material-item.html m=m %}{% endfor %}
-  </ul>
-  {% endif %}
-  <p class="material-empty"{% if req.size > 0 %} data-when-filtered{% endif %}{% if items.size > 0 %} hidden{% endif %}>{% if items.size == 0 %}To be posted.{% else %}No required readings in this section.{% endif %}</p>
+{% capture topic_id %}topic-{{ forloop.index }}{% endcapture %}
+{% include library-topic.html week=s.week topic=topic id=topic_id heading=2 %}
+{% endfor %}
+{% for group in s.sections %}
+{% capture group_id %}library-section-{{ forloop.index }}{% endcapture %}
+<section class="library-group" aria-labelledby="{{ group_id }}">
+  <h2 id="{{ group_id }}">{{ group.title }}</h2>
+  {% for topic in group.topics %}
+  {% capture topic_id %}{{ group_id }}-topic-{{ forloop.index }}{% endcapture %}
+  {% include library-topic.html week=s.week topic=topic id=topic_id heading=3 %}
+  {% endfor %}
 </section>
 {% endfor %}
