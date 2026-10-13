@@ -44,8 +44,8 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/library/economics-of-ai/');
     const main = page.locator('.content');
-    await expect(main.locator('h2')).toHaveText(['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work', 'Research']);
-    const research = page.getByRole('region', { name: 'Research', exact: true });
+    await expect(main.locator('h2')).toHaveText(['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work', 'Academic Research']);
+    const research = page.getByRole('region', { name: 'Academic Research', exact: true });
     await expect(research.getByRole('heading', { level: 3 })).toHaveText(['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance']);
     await expect(research.locator('.material')).toHaveCount(40);
     for (const [index, count] of [6, 21, 10, 3].entries()) {
@@ -53,7 +53,7 @@ for (const width of [1440, 390]) {
     }
     const ids = await main.locator('[id]').evaluateAll(nodes => nodes.map(node => node.id));
     expect(new Set(ids).size).toBe(ids.length);
-    if (width >= 820) await expect(page.locator('#outline').getByRole('link', { name: 'Research', exact: true })).toBeVisible();
+    if (width >= 820) await expect(page.locator('#outline').getByRole('link', { name: 'Academic Research', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Show only required' }).click();
     await expect(research.locator('.material:visible')).toHaveCount(0);
     await expect(research.getByText('No required readings in this section.', { exact: true })).toHaveCount(4);
@@ -64,7 +64,7 @@ for (const width of [1440, 390]) {
     await expect(main.locator('.topic-block').filter({ has: page.getByRole('heading', { name: 'Economic Frameworks for AI', exact: true }) })
       .getByRole('link', { name: 'A.I. and Our Economic Future', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await research.getByRole('heading', { name: 'Research', exact: true }).scrollIntoViewIfNeeded();
+    await research.getByRole('heading', { name: 'Academic Research', exact: true }).scrollIntoViewIfNeeded();
     await page.evaluate(() => document.fonts.ready);
     mkdirSync('evidence/library-migrate/amendment-2', { recursive: true });
     await page.screenshot({ path: `evidence/library-migrate/amendment-2/research-${width}.png` });
@@ -79,7 +79,7 @@ test('classics retain the BCE display year and both beginner videos show their f
   await expect(firstOptional.locator('.material-source')).toHaveText('Plato (c. 370 BCE)');
   await expect(classics.getByRole('link', { name: 'On the Foolishness of “Natural Language Programming”', exact: true }))
     .toHaveAttribute('href', 'https://www.cs.utexas.edu/~EWD/transcriptions/EWD06xx/EWD667.html');
-  for (const [title, duration] of [['Getting Started with Claude Code', '184 min'], ['Getting Started with Codex', '243 min']]) {
+  for (const [title, duration] of [['Getting Started with Claude Code', '3 hr 4 min'], ['Getting Started with Codex', '4 hr 3 min']]) {
     const row = page.locator('.material').filter({ has: page.getByRole('link', { name: title, exact: true }) });
     await expect(row.locator('.material-length')).toContainText(duration);
     await expect(row.locator('.material-source')).toHaveText('Aniket Panjwani (2026)');

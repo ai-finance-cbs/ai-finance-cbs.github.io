@@ -8,14 +8,14 @@
   slug: prelude
   week: 0
   kicker: Before Week 1
-  topics: ["Where Do AI Answers Come From?", Best Practices, Prescient Reads]
+  topics: [Getting Started, "Where Do AI Answers Come From?", Best Practices, Prescient Reads]
 - title: AI Economics
   slug: economics-of-ai
   week: 1
   kicker: Week 1
   topics: [Economic Frameworks for AI, Bulls vs. Skeptics, Nature of Financial Work]
   sections:
-    - title: Research
+    - title: Academic Research
       topics: [Macro Implications, Labor Markets, Financial Sector, Alignment and Governance]
 - title: AI Infrastructure
   slug: ai-infrastructure

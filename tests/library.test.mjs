@@ -48,7 +48,7 @@ test('economics Research contains only new entries across four source groups', (
   const economics = library.find(page => page.slug === 'economics-of-ai');
   assert.deepEqual(economics.topics, ['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work']);
   const groups = ['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance'];
-  assert.deepEqual(economics.sections, [{ title: 'Research', topics: groups }]);
+  assert.deepEqual(economics.sections, [{ title: 'Academic Research', topics: groups }]);
   for (const [index, topic] of groups.entries()) {
     const papers = materials.filter(item => item.week === 1 && item.topic === topic);
     assert.equal(papers.length, [6, 21, 10, 3][index], topic);
