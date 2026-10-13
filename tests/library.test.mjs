@@ -57,10 +57,13 @@ test('economics Research contains only new entries across four source groups', (
       assert.equal(paper.level, 'optional', paper.title);
     }
   }
-  // The full reading list must still render everything it counts, including Research.
+  // The class week page lists only syllabus topics; Research stays on the Library page.
   const week = readFileSync(new URL('../_site/materials/week-1/index.html', import.meta.url), 'utf8');
   const readings = week.match(/<template data-week-readings>([\s\S]*?)<\/template>/)[1];
-  assert.equal([...readings.matchAll(/<li class="material"/g)].length, materials.filter(item => item.week === 1).length);
+  const syllabus = materials.filter(item => item.week === 1 && economics.topics.includes(item.topic)).length;
+  assert.equal([...readings.matchAll(/<li class="material"/g)].length, syllabus);
+  assert.match(readings, new RegExp(`${syllabus} items`));
+  assert.doesNotMatch(readings, /Macro Implications|Labor Markets/);
   for (const page of library.filter(page => page.week !== 1)) {
     assert.equal(page.sections, undefined);
     const html = readFileSync(new URL(`../_site/library/${page.slug}/index.html`, import.meta.url), 'utf8');
