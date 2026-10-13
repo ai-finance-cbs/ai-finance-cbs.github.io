@@ -36,19 +36,19 @@ for (const width of [1440, 390]) {
     await page.goto('/library/economics-of-ai/');
     await expect(page.getByRole('link', { name: 'Building Pro-Worker Artificial Intelligence', exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    mkdirSync('evidence/library-migrate/amendment-1', { recursive: true });
-    await page.screenshot({ path: `evidence/library-migrate/amendment-1/week-1-${width}.png`, fullPage: true });
+    mkdirSync('evidence/library-migrate/amendment-2', { recursive: true });
+    await page.screenshot({ path: `evidence/library-migrate/amendment-2/week-1-${width}.png`, fullPage: true });
   });
 
-  test(`Research follows the three existing topics, with four complete sub-topics at ${width}px`, async ({ page }) => {
+  test(`Research follows the three existing topics and contains only new entries at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/library/economics-of-ai/');
     const main = page.locator('.content');
     await expect(main.locator('h2')).toHaveText(['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work', 'Research']);
     const research = page.getByRole('region', { name: 'Research', exact: true });
     await expect(research.getByRole('heading', { level: 3 })).toHaveText(['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance']);
-    await expect(research.locator('.material')).toHaveCount(46);
-    for (const [index, count] of [9, 23, 11, 3].entries()) {
+    await expect(research.locator('.material')).toHaveCount(40);
+    for (const [index, count] of [6, 21, 10, 3].entries()) {
       await expect(research.locator('.topic-block').nth(index).locator('.material')).toHaveCount(count);
     }
     const ids = await main.locator('[id]').evaluateAll(nodes => nodes.map(node => node.id));
@@ -59,12 +59,15 @@ for (const width of [1440, 390]) {
     await expect(research.getByText('No required readings in this section.', { exact: true })).toHaveCount(4);
     for (const note of await research.locator('.material-empty').all()) await expect(note).toBeVisible();
     await page.getByRole('button', { name: 'Show all materials' }).click();
-    await expect(research.getByRole('link', { name: 'Generative AI at Work', exact: true })).toBeVisible();
+    await expect(research.getByRole('link', { name: 'Expertise', exact: true })).toBeVisible();
+    await expect(research.getByRole('link', { name: 'A.I. and Our Economic Future', exact: true })).toHaveCount(0);
+    await expect(main.locator('.topic-block').filter({ has: page.getByRole('heading', { name: 'Economic Frameworks for AI', exact: true }) })
+      .getByRole('link', { name: 'A.I. and Our Economic Future', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await research.getByRole('heading', { name: 'Research', exact: true }).scrollIntoViewIfNeeded();
     await page.evaluate(() => document.fonts.ready);
-    mkdirSync('evidence/library-migrate/amendment-1', { recursive: true });
-    await page.screenshot({ path: `evidence/library-migrate/amendment-1/research-${width}.png` });
+    mkdirSync('evidence/library-migrate/amendment-2', { recursive: true });
+    await page.screenshot({ path: `evidence/library-migrate/amendment-2/research-${width}.png` });
   });
 }
 

@@ -9,10 +9,14 @@
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "The Task Is Not the Job", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/why-desk-jobs-survive-and-amodei"}
 - {week: 1, topic: Economic Frameworks for AI, level: recommended, kind: Podcast, title: "Our AI Future: From Abundance to Apocalypse", length: "45 min", author: "Chad Jones", year: 2026, url: "https://www.gsb.stanford.edu/insights/ai-future-abundance-apocalypse"}
 - {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Video, title: "AI and Our Economic Future (lecture)", length: "1 hr", author: "Chad Jones", year: 2026, url: "https://www.youtube.com/watch?v=xBpGn3BDcOY"}
+- {week: 1, topic: Economic Frameworks for AI, level: optional, kind: Writing, title: "A.I. and Our Economic Future", author: "Charles I. Jones", year: 2026, url: "https://web.stanford.edu/~chadj/AIandEconomicFuture.pdf"}
 - {week: 1, topic: Economic Frameworks for AI, level: recommended, kind: Writing, title: "Has AI Impacted the Labor Market Yet?", length: "20 min", author: "Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/has-ai-impacted-the-labor-market"}
 - {week: 1, topic: Economic Frameworks for AI, level: required, kind: Writing, title: "Three Theses on AI Value Capture", length: "10 min", author: "Luis Garicano", year: 2026, url: "https://www.siliconcontinent.com/p/three-theses-on-ai-value-capture"}
 
+- {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 - {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "The Gentle Singularity", length: "8 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
+- {week: 1, topic: Bulls vs. Skeptics, level: recommended, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
+- {week: 1, topic: Bulls vs. Skeptics, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
 - {week: 1, topic: Bulls vs. Skeptics, level: optional, kind: Podcast, title: "Steven Pinker: Tech Billionaires Are Lying To Us About AI (Daniel Dushy Podcast)", length: "1 hr 17 min", author: "Daniel Dushy and Steven Pinker", year: 2026, url: "https://www.youtube.com/watch?v=eWC47agaKpk"}
 - {week: 1, topic: Bulls vs. Skeptics, level: optional, kind: Writing, title: "The Techno-Optimist Manifesto", length: "30 min", author: "Marc Andreessen", year: 2023, url: "https://a16z.com/the-techno-optimist-manifesto/"}
 - {week: 1, topic: "Economic Frameworks for AI", level: optional, kind: Podcast, title: "Bill Gates: A.I. ‘Makes Nuclear Weapons Look Like Nothing’ (The Ezra Klein Show)", length: "1 hr 14 min", author: "Ezra Klein and Bill Gates", year: 2026, url: "https://www.youtube.com/watch?v=A_156w0aYtU"}
@@ -29,18 +33,16 @@
 
 - {week: 0, topic: "Where Do AI Answers Come From?", level: recommended, kind: Writing, title: "Large Language Models, Explained with a Minimum of Math and Jargon", length: "30 min", author: "Timothy B. Lee and Sean Trott", year: 2023, url: "https://www.understandingai.org/p/large-language-models-explained-with"}
 - {week: 0, topic: "Best Practices", level: optional, kind: Video, title: "How I Use LLMs", length: "2 hr 11 min", author: "Andrej Karpathy", year: 2025, url: "https://www.youtube.com/watch?v=EWvNQjAaOHw"}
+- {week: 1, topic: "Economic Frameworks for AI", level: recommended, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", length: "12 min", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
 
 # ---- Week 1: Research ----
 # Research: Macro Implications
-- {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "The Simple Macroeconomics of AI", length: "paper", author: "Daron Acemoglu", year: 2024, url: "https://www.nber.org/papers/w32487"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "Building Pro-Worker Artificial Intelligence", length: "paper", author: "Daron Acemoglu, David Autor, and Simon Johnson", year: 2026, url: "https://www.nber.org/papers/w34854"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "Artificial Intelligence, Competition, and Welfare", length: "paper", author: "Susan Athey and Fiona Scott Morton", year: 2025, url: "https://www.nber.org/papers/w34444"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "Artificial Intelligence, Productivity, and the Workforce: Evidence from Corporate Executives", length: "paper", author: "Salomé Baslandze, Zachary Edwards, John Graham, Ty McClure, Brent H. Meyer, Michael Sparks, Sonya R. Waddell, and Daniel Weitz", year: 2026, url: "https://www.nber.org/papers/w34984"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "The Rapid Adoption of Generative AI", length: "paper", author: "Alexander Bick, Adam Blandin, and David J. Deming", year: 2025, url: "https://www.nber.org/papers/w32966"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "How Artificial Intelligence Shapes Science: Evidence from AlphaFold", length: "paper", author: "Ryan Hill and Carolyn Stein", year: 2026, url: "https://carolynstein.github.io/files/papers/alphafold.pdf"}
 - {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "The Shift to Agentic AI: Evidence from Codex", length: "paper", author: "Drew Johnston, David Holtz, Alex Martin Richmond, Christopher Ong, Prasanna Tambe, and Aaron Chatterji", year: 2026, url: "https://arxiv.org/abs/2606.26959"}
-- {week: 1, topic: "Macro Implications", level: optional, kind: Writing, title: "A.I. and Our Economic Future", author: "Charles I. Jones", year: 2026, url: "https://web.stanford.edu/~chadj/AIandEconomicFuture.pdf"}
-- {week: 1, topic: "Macro Implications", level: recommended, kind: Writing, title: "Will AI Soon Lead to Double-Digit Growth?", length: "30 min", author: "Ben Moll and Alex Imas", year: 2026, url: "https://aleximas.substack.com/p/will-ai-soon-lead-to-double-digit"}
 
 # Research: Labor Markets
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Expertise", length: "paper", author: "David Autor and Neil Thompson", year: 2025, url: "https://www.nber.org/papers/w33941"}
@@ -48,10 +50,8 @@
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Firm Investments in Artificial Intelligence Technologies and Changes in Workforce Composition", length: "paper", author: "Tania Babina, Anastassia Fedyk, Alex X. He, and James Hodson", year: 2023, url: "https://www.nber.org/papers/w31325"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Canaries in the Gold Mine: Early Productivity Gains from Artificial Intelligence Creating Organization Capital", length: "paper", author: "Tania Babina, Alex X. He, and Renhao Jiang", year: 2026, url: "https://www.nber.org/papers/w35684"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Prompted to Start: How Generative AI is Transforming Entrepreneurship", length: "paper", author: "Jan Bena, Bo Bian, and Mariassunta Giannetti", year: 2026, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5749564"}
-- {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Generative AI at Work", length: "paper", author: "Erik Brynjolfsson, Danielle Li, and Lindsey Raymond", year: 2023, url: "https://www.nber.org/papers/w31161"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Artificial Intelligence in the Firm", length: "paper", author: "Fiona Chen and James Stratton", year: 2026, url: "https://fion.ac/jellyfish.pdf"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Does Generative AI Narrow Education-Based Productivity Gaps?", length: "paper", author: "Guillermo Cruces, Diego Fernández Meijide, Sebastian Galiani, Ramiro H. Gálvez, and María Lombardi", year: 2026, url: "https://www.nber.org/papers/w34851"}
-- {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Navigating the Jagged Technological Frontier", length: "paper", author: "Fabrizio Dell’Acqua, Ethan Mollick, and others", year: 2023, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4573321"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Artificial Intelligence in the Office and the Factory: Evidence from Administrative Software Registry Data", length: "paper", author: "Gustavo de Souza", year: 2026, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5375463"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Shifting Work Patterns with Generative AI", length: "paper", author: "Eleanor W. Dillon, Sonia Jaffe, Nicole Immorlica, and Christopher T. Stanton", year: 2025, url: "https://www.nber.org/papers/w33795"}
 - {week: 1, topic: "Labor Markets", level: optional, kind: Writing, title: "Job Transformation, Specialization, and the Labor Market Effects of AI", length: "paper", author: "Lukas B. Freund and Lukas F. Mann", year: 2026, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6320018"}
@@ -71,7 +71,6 @@
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "Artificial Intelligence, Firm Growth, and Product Innovation", length: "paper", author: "Tania Babina, Anastassia Fedyk, Alex X. He, and James Hodson", year: 2024, url: "https://www.sciencedirect.com/science/article/pii/S0304405X2300185X"}
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "Consumer-Lending Discrimination in the FinTech Era", length: "paper", author: "Robert Bartlett, Adair Morse, Richard Stanton, and Nancy Wallace", year: 2022, url: "https://www.nber.org/papers/w25943"}
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "Artificial Intelligence and the Brave New World in Finance", length: "paper", author: "Markus K. Brunnermeier", year: 2026, url: "https://www.kansascityfed.org/documents/18595/brunnermeier.pdf"}
-- {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "From Man vs. Machine to Man + Machine: The Art and AI of Stock Analyses", length: "paper", author: "Sean Cao, Wei Jiang, Junbo Wang, and Baozhong Yang", year: 2024, url: "https://www.nber.org/papers/w28800"}
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "AI Financial Advice: Supply, Demand, and Life Cycle Implications", length: "paper", author: "Taha Choukhmane, Tim de Silva, Weidong Lin, and Matthew Akuzawa", year: 2026, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6446286"}
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "Financial Regulation and AI: A Faustian Bargain?", length: "paper", author: "Christopher Clayton and Antonio Coppola", year: 2026, url: "https://arxiv.org/abs/2507.18747"}
 - {week: 1, topic: "Financial Sector", level: optional, kind: Writing, title: "Generative AI and Firm Values", length: "paper", author: "Andrea L. Eisfeldt, Gregor Schubert, and Miao Ben Zhang", year: 2026, url: "https://www.nber.org/papers/w31222"}
@@ -124,10 +123,6 @@
 - {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "Automation and New Tasks: How Technology Displaces and Reinstates Labor", length: "paper", author: "Daron Acemoglu and Pascual Restrepo", year: 2019, url: "https://www.aeaweb.org/articles?id=10.1257/jep.33.2.3"}
 - {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "The Seven Deadly Sins of Predicting the Future of AI", length: "essay", author: "Rodney Brooks", year: 2017, url: "https://rodneybrooks.com/the-seven-deadly-sins-of-predicting-the-future-of-ai/"}
 - {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "ChatGPT Is a Blurry JPEG of the Web", length: "essay", author: "Ted Chiang", year: 2023, url: "https://www.newyorker.com/tech/annals-of-technology/chatgpt-is-a-blurry-jpeg-of-the-web"}
-- {week: 0, topic: "Prescient Reads", level: recommended, kind: Writing, title: "The Law of Leaky Abstractions", length: "10 min", author: "Joel Spolsky", year: 2002, url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/"}
-- {week: 0, topic: "Prescient Reads", level: recommended, kind: Writing, title: "Google: We Have No Moat, And Neither Does OpenAI", length: "12 min", author: "SemiAnalysis", year: 2023, url: "https://semianalysis.com/2023/05/04/google-we-have-no-moat-and-neither/"}
-- {week: 0, topic: "Prescient Reads", level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", length: "long essay", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
-- {week: 0, topic: "Prescient Reads", level: recommended, kind: Writing, title: "Machines of Loving Grace", length: "1 hr", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 
 # ---- Week 2: AI Infrastructure (Compute -> Models -> Data and Context -> Tools and Agents) ----
 - {week: 2, topic: Compute, level: required, kind: Writing, title: "The Plunging Price of Thought", length: "40 min", author: "Epoch AI", year: 2026, url: "https://epoch.ai/publications/the-plunging-price-of-thought"}
@@ -146,6 +141,7 @@
 - {week: 2, topic: Models, level: optional, kind: Writing, title: "Understanding the AI That Drives Robots", length: "24 min", author: "Brian Potter", year: 2026, url: "https://www.construction-physics.com/p/understanding-the-ai-that-drives"}
 - {week: 2, topic: "Models", level: optional, kind: Writing, title: "The Landscape of AI", length: "30 min", author: "Kevin Bryan", year: 2026, url: "https://kevinbryanecon.com/ModernSlides/?xml=RotmanAILandscape/RotmanAILandscape.txt"}
 
+- {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "The Law of Leaky Abstractions", length: "10 min", author: "Joel Spolsky", year: 2002, url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/"}
 - {week: 2, topic: Data and Context, level: recommended, kind: Writing, title: "Context Engineering", length: "2 min", author: "Simon Willison", year: 2025, url: "https://simonwillison.net/2025/Jun/27/context-engineering/"}
 - {week: 2, topic: Data and Context, level: required, kind: Writing, title: "Letter to Shareholders: “AI, Data and Technology Are Key to the Future”", length: "5 min", author: "Jamie Dimon", year: 2026, url: "https://www.jpmorganchase.com/content/dam/jpmc/jpmorgan-chase-and-co/investor-relations/documents/ceo-letter-to-shareholders-2025.pdf"}
 - {week: 2, topic: Data and Context, level: optional, kind: Writing, title: "Prompt Engineering", author: "Lee Boonstra, Google", year: 2024, url: "https://www.kaggle.com/whitepaper-prompt-engineering"}
@@ -183,6 +179,7 @@
 
 - {week: 4, topic: Predicting Fundamentals, level: recommended, kind: Writing, title: "How AI Is Helping to Explain Stock-Price Moves", length: "3 min", author: "Matt Robinson", year: 2026, url: "https://www.chicagobooth.edu/review/how-ai-is-helping-explain-stock-price-moves"}
 - {week: 4, topic: Predicting Fundamentals, level: recommended, kind: Writing, title: "Why Man + Machine Adds Up to Better Stock Picks", length: "4 min", author: "Greg Muraski", year: 2024, url: "https://www.rhsmith.umd.edu/research/why-man-machine-adds-better-stock-picks"}
+- {week: 4, topic: Predicting Fundamentals, level: optional, kind: Writing, title: "From Man vs. Machine to Man + Machine: The Art and AI of Stock Analyses", length: "paper", author: "Sean Cao, Wei Jiang, Junbo Wang, and Baozhong Yang", year: 2024, url: "https://www.nber.org/papers/w28800"}
 - {week: 4, topic: Predicting Fundamentals, level: optional, kind: Writing, title: "Assessing the Benefits of Optimized Agentic AI Systems for Asset Pricing", length: "paper", author: "Ralph Koijen and Bradford Levy", year: 2026, url: "https://www.nber.org/papers/w35431"}
 
 - {week: 4, topic: Predicting People, level: required, kind: Writing, title: "Can AI Stand In for Human Survey-Takers? Not Really", length: "10 min", author: "Pew Research Center", year: 2026, url: "https://www.pewresearch.org/data-labs/2026/09/30/can-ai-stand-in-for-human-survey-takers-not-really/"}
@@ -225,6 +222,7 @@
 
 - {week: 5, topic: Defending the Analysis, level: required, kind: Writing, title: "Centaurs and Cyborgs on the Jagged Frontier", length: "10 min", author: "Ethan Mollick", year: 2023, url: "https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged"}
 - {week: 5, topic: Defending the Analysis, level: recommended, kind: Writing, title: "Judge Sanctions Lawyers for Brief Written by A.I. with Fake Citations", length: "2 min", author: "Dan Mangan", year: 2023, url: "https://www.cnbc.com/2023/06/22/judge-sanctions-lawyers-whose-ai-written-filing-contained-fake-citations.html"}
+- {week: 5, topic: Defending the Analysis, level: optional, kind: Writing, title: "Navigating the Jagged Technological Frontier", length: "paper", author: "Fabrizio Dell’Acqua, Ethan Mollick, and others", year: 2023, url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4573321"}
 
 # ---- Week 6: Future of Finance ----
 - {week: 6, topic: Markets, level: recommended, kind: Writing, title: "AI, Finance, Movies, and the Law", length: "14 min", author: "Gary Gensler", year: 2024, url: "https://www.sec.gov/newsroom/speeches-statements/gensler-ai-021324"}
@@ -259,12 +257,15 @@
 - {week: 99, topic: "Future of Higher Education", level: optional, kind: Writing, title: "AI in Finance: Syllabus and Lecture Notes", length: "5 min", author: "Arpit Gupta", year: 2026, url: "https://github.com/arpitrage/ai-in-finance"}
 - {week: 99, topic: "Future of Higher Education", level: optional, kind: Writing, title: "Arpitrage", length: "5 min", author: "Arpit Gupta", year: "n.d.", url: "https://arpitrage.substack.com/"}
 
+- {week: 99, topic: What the AI Labs Believe, level: recommended, kind: Writing, title: "Machines of Loving Grace", length: "60 min", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 - {week: 99, topic: What the AI Labs Believe, level: recommended, kind: Writing, title: "The Gentle Singularity", length: "10 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
 - {week: 99, topic: What the AI Labs Believe, level: optional, kind: Writing, title: "The Adolescence of Technology", length: "90 min", author: "Dario Amodei", year: 2026, url: "https://www.darioamodei.com/essay/the-adolescence-of-technology"}
 - {week: 99, topic: What the AI Labs Believe, level: optional, kind: Podcast, title: "Demis Hassabis: Scaling, Superhuman AIs, AlphaZero atop LLMs, AlphaFold", length: "60 min", author: "Dwarkesh Patel", year: 2024, url: "https://www.dwarkesh.com/p/demis-hassabis"}
 
 - {week: 99, topic: AI and the Wider Economy, level: recommended, kind: Writing, title: "The Anthropic Economic Index", length: "15 min", author: "Anthropic", year: 2025, url: "https://www.anthropic.com/economic-index"}
 - {week: 99, topic: AI and the Wider Economy, level: recommended, kind: Podcast, title: "Tyler Cowen: The #1 Bottleneck to AI Progress Is Humans", length: "90 min", author: "Dwarkesh Patel", year: 2025, url: "https://www.dwarkesh.com/p/tyler-cowen-4"}
+- {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "The Simple Macroeconomics of AI", length: "paper", author: "Daron Acemoglu", year: 2024, url: "https://www.nber.org/papers/w32487"}
+- {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Generative AI at Work", length: "paper", author: "Erik Brynjolfsson, Danielle Li, and Lindsey Raymond", year: 2023, url: "https://www.nber.org/papers/w31161"}
 - {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Most AI Value Will Come from Broad Automation, Not from R&D", length: "15 min", author: "Ege Erdil and Matthew Barnett", year: 2025, url: "https://epoch.ai/gradient-updates/most-ai-value-will-come-from-broad-automation-not-from-r-d"}
 - {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Artificial Intelligence and the Economy: Implications for Central Banks", length: "35 min", author: "Bank for International Settlements", year: 2024, url: "https://www.bis.org/publ/arpdf/ar2024e3.htm"}
 
@@ -277,6 +278,7 @@
 
 - {week: 99, topic: Predictions and Scenarios, level: recommended, kind: Writing, title: "AI 2027", length: "60 min", author: "Daniel Kokotajlo et al.", year: 2025, url: "https://ai-2027.com/"}
 - {week: 99, topic: Predictions and Scenarios, level: recommended, kind: Writing, title: "The 2028 Global Intelligence Crisis", length: "25 min", author: "Citrini and Alap Shah", year: 2026, url: "https://www.citriniresearch.com/p/2028gic"}
+- {week: 99, topic: Predictions and Scenarios, level: optional, kind: Writing, title: "Situational Awareness: The Decade Ahead", length: "long essay", author: "Leopold Aschenbrenner", year: 2024, url: "https://situational-awareness.ai/"}
 - {week: 99, topic: Predictions and Scenarios, level: optional, kind: Writing, title: "Gradual Disempowerment", length: "paper", author: "Jan Kulveit et al.", year: 2025, url: "https://gradual-disempowerment.ai/"}
 - {week: 99, topic: Predictions and Scenarios, level: optional, kind: Writing, title: "The Intelligence Curse", length: "long essay", author: "Luke Drago and Rudolf Laine", year: 2025, url: "https://intelligence-curse.ai/"}
 - {week: 99, topic: Predictions and Scenarios, level: optional, kind: Writing, title: "If Anyone Builds It, Everyone Dies", length: "book", author: "Eliezer Yudkowsky and Nate Soares", year: 2025, url: "https://www.hachettebookgroup.com/titles/eliezer-yudkowsky/if-anyone-builds-it-everyone-dies/9780316595643/"}

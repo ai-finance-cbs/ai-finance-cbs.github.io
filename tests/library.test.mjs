@@ -44,27 +44,19 @@ test('built Library pages include every catalog row and keep optional items olde
   }
 });
 
-test('economics Research has the complete four source groups without duplicate entries elsewhere', () => {
+test('economics Research contains only new entries across four source groups', () => {
   const economics = library.find(page => page.slug === 'economics-of-ai');
   assert.deepEqual(economics.topics, ['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work']);
   const groups = ['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance'];
   assert.deepEqual(economics.sections, [{ title: 'Research', topics: groups }]);
   for (const [index, topic] of groups.entries()) {
     const papers = materials.filter(item => item.week === 1 && item.topic === topic);
-    assert.equal(papers.length, [9, 23, 11, 3][index], topic);
+    assert.equal(papers.length, [6, 21, 10, 3][index], topic);
     for (const paper of papers) {
       assert.equal(materials.filter(item => item.title === paper.title).length, 1, paper.title);
-      if (paper.length === 'paper') assert.equal(paper.level, 'optional', paper.title);
+      assert.equal(paper.level, 'optional', paper.title);
     }
   }
-  for (const [title, topic] of [
-    ['The Simple Macroeconomics of AI', 'Macro Implications'],
-    ['A.I. and Our Economic Future', 'Macro Implications'],
-    ['Will AI Soon Lead to Double-Digit Growth?', 'Macro Implications'],
-    ['Generative AI at Work', 'Labor Markets'],
-    ['Navigating the Jagged Technological Frontier', 'Labor Markets'],
-    ['From Man vs. Machine to Man + Machine: The Art and AI of Stock Analyses', 'Financial Sector'],
-  ]) assert.ok(materials.some(item => item.week === 1 && item.topic === topic && item.title === title), title);
   // The full reading list must still render everything it counts, including Research.
   const week = readFileSync(new URL('../_site/materials/week-1/index.html', import.meta.url), 'utf8');
   const readings = week.match(/<template data-week-readings>([\s\S]*?)<\/template>/)[1];
@@ -74,5 +66,24 @@ test('economics Research has the complete four source groups without duplicate e
     const html = readFileSync(new URL(`../_site/library/${page.slug}/index.html`, import.meta.url), 'utf8');
     assert.doesNotMatch(html, /class="library-group"/);
     assert.equal([...html.matchAll(/<h2 id="topic-/g)].length, page.topics.length, page.slug);
+  }
+});
+
+test('pre-existing resources keep their original syllabus locations, including repeated readings', () => {
+  // Amendment 2 preserves these student reading assignments instead of moving them into Research or Prelude.
+  const originals = [
+    ['The Simple Macroeconomics of AI', [[99, 'AI and the Wider Economy', 'paper']]],
+    ['A.I. and Our Economic Future', [[1, 'Economic Frameworks for AI', undefined]]],
+    ['Will AI Soon Lead to Double-Digit Growth?', [[1, 'Bulls vs. Skeptics', '30 min']]],
+    ['Generative AI at Work', [[99, 'AI and the Wider Economy', 'paper']]],
+    ['Navigating the Jagged Technological Frontier', [[5, 'Defending the Analysis', 'paper']]],
+    ['From Man vs. Machine to Man + Machine: The Art and AI of Stock Analyses', [[4, 'Predicting Fundamentals', 'paper']]],
+    ['The Law of Leaky Abstractions', [[2, 'Data and Context', '10 min']]],
+    ['Google: We Have No Moat, And Neither Does OpenAI', [[1, 'Economic Frameworks for AI', '12 min']]],
+    ['Machines of Loving Grace', [[1, 'Bulls vs. Skeptics', '1 hr'], [99, 'What the AI Labs Believe', '60 min']]],
+    ['Situational Awareness: The Decade Ahead', [[1, 'Bulls vs. Skeptics', undefined], [99, 'Predictions and Scenarios', 'long essay']]],
+  ];
+  for (const [title, locations] of originals) {
+    assert.deepEqual(materials.filter(item => item.title === title).map(item => [item.week, item.topic, item.length]), locations, title);
   }
 });
