@@ -257,6 +257,7 @@
 - {week: 99, topic: "Future of Higher Education", level: optional, kind: Writing, title: "Generative AI for Finance (MGMT 675)", length: "5 min", author: "Kerry Back", year: 2026, url: "https://mgmt675.kerryback.com/"}
 - {week: 99, topic: "Future of Higher Education", level: optional, kind: Writing, title: "AI in Finance: Syllabus and Lecture Notes", length: "5 min", author: "Arpit Gupta", year: 2026, url: "https://github.com/arpitrage/ai-in-finance"}
 - {week: 99, topic: "Future of Higher Education", level: optional, kind: Writing, title: "Arpitrage", length: "5 min", author: "Arpit Gupta", year: "n.d.", url: "https://arpitrage.substack.com/"}
+- {week: 99, topic: Future of Higher Education, level: optional, kind: Writing, title: "Eight Rules for Teaching in AI World", length: "12 min", author: "Kevin A. Bryan", year: 2026, url: "https://kevinbryanecon.com/teachwithai.html"}
 
 - {week: 99, topic: What the AI Labs Believe, level: recommended, kind: Writing, title: "Machines of Loving Grace", length: "60 min", author: "Dario Amodei", year: 2024, url: "https://www.darioamodei.com/essay/machines-of-loving-grace"}
 - {week: 99, topic: What the AI Labs Believe, level: recommended, kind: Writing, title: "The Gentle Singularity", length: "10 min", author: "Sam Altman", year: 2025, url: "https://blog.samaltman.com/the-gentle-singularity"}
