@@ -275,7 +275,8 @@ html { scroll-padding-top:calc(var(--topbar) + 24px); }
 main { padding-top:calc(var(--topbar) + 40px); }
 .page-heading { margin-bottom:18px; }
 h1 { margin:0 0 14px; }
-.content p, .content li { margin-bottom:12px; }
+.content p { margin-bottom:20px; }
+.content li { margin-bottom:12px; }
 .up-next { margin-top:18px; padding:16px 0 12px; }
 .announcements { padding-top:14px; }
 .announcements h2, .up-next h2 { margin-bottom:6px; }
