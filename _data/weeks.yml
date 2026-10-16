@@ -31,7 +31,7 @@
   title: Predicting Outcomes with AI
   goal: Understand what AI can and cannot predict and learn to evaluate AI predictions honestly.
   topics: ["Prediction Basics", "Predicting Fundamentals", "Predicting People", "Contamination and Cutoffs", "Confidence and Instability"]
-  exercises: ["Priced In", "The Mirror", "Rank Four"]
+  exercises: ["The Mirror", "Rank Four"]
   milestone: "Milestone #4: Personal Benchmark"
 - number: 5
   short_date: "Thu, Feb 25"
@@ -40,7 +40,7 @@
   goal: Produce written memos, slides, and presentations with AI, and defend them.
   topics: ["Choosing the Format", "Drafting with AI", "Spotting AI Writing", "Writing for Machine Readers", "Handing Over the Work", "Defending the Analysis"]
   exercises: ["Writing Pageant", "Pass It On"]
-  milestone: "Milestone #5: Pitch It"
+  milestone: "Milestone #5: Priced In"
 - number: 6
   short_date: "Thu, Mar 4"
   date: "Thursday, March 4, 2027 (Section 001: 9:00 AM–12:15 PM; Section 002: 2:20–5:35 PM)"
