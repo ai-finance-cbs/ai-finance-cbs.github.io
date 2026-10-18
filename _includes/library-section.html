@@ -10,7 +10,7 @@
 {% capture topic_id %}topic-{{ forloop.index }}{% endcapture %}
 {% include library-topic.html week=s.week topic=topic id=topic_id heading=2 %}
 {% endfor %}
-{% for group in s.sections %}
+{% for group in s.sections %}{% if group.hidden %}{% continue %}{% endif %}
 {% capture group_id %}library-section-{{ forloop.index }}{% endcapture %}
 <section class="library-group" aria-labelledby="{{ group_id }}">
   <h2 id="{{ group_id }}">{{ group.title }}</h2>

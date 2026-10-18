@@ -8,6 +8,8 @@ const { library, materials } = JSON.parse(execFileSync('ruby', ['-ryaml', '-rjso
   'puts %w[library materials].to_h { |name| [name, YAML.load_file("_data/#{name}.yml")] }.to_json'],
 { cwd: new URL('../', import.meta.url), encoding: 'utf8' }));
 const allTopics = page => [...page.topics, ...(page.sections || []).flatMap(section => section.topics)];
+// Hidden sections keep their catalog rows but are not built into the page.
+const shownTopics = page => [...page.topics, ...(page.sections || []).filter(section => !section.hidden).flatMap(section => section.topics)];
 
 test('every Library item has a declared topic, author, year, and public link', () => {
   const seen = new Set();
@@ -28,8 +30,8 @@ test('built Library pages include every catalog row and keep optional items olde
   for (const section of library) {
     const html = readFileSync(new URL(`../_site/library/${section.slug}/index.html`, import.meta.url), 'utf8');
     const blocks = [...html.matchAll(/<section class="topic-block"[\s\S]*?<\/section>/g)].map(match => match[0]);
-    assert.equal(blocks.length, allTopics(section).length, section.slug);
-    for (const [index, topic] of allTopics(section).entries()) {
+    assert.equal(blocks.length, shownTopics(section).length, section.slug);
+    for (const [index, topic] of shownTopics(section).entries()) {
       const expected = materials.filter(item => item.week === section.week && item.topic === topic);
       const rows = [...blocks[index].matchAll(/<li class="material" data-level="([^"]+)"[\s\S]*?<\/li>/g)];
       assert.equal(rows.length, expected.length, `${section.slug}: ${topic}`);
@@ -48,7 +50,7 @@ test('economics Research contains only new entries across four source groups', (
   const economics = library.find(page => page.slug === 'economics-of-ai');
   assert.deepEqual(economics.topics, ['Economic Frameworks for AI', 'Bulls vs. Skeptics', 'Nature of Financial Work']);
   const groups = ['Macro Implications', 'Labor Markets', 'Financial Sector', 'Alignment and Governance'];
-  assert.deepEqual(economics.sections, [{ title: 'Academic Research', topics: groups }]);
+  assert.deepEqual(economics.sections, [{ title: 'Academic Research', hidden: true, topics: groups }]);
   for (const [index, topic] of groups.entries()) {
     const papers = materials.filter(item => item.week === 1 && item.topic === topic);
     assert.equal(papers.length, [6, 21, 10, 3][index], topic);

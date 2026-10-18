@@ -15,7 +15,9 @@
   kicker: Week 1
   topics: [Economic Frameworks for AI, Bulls vs. Skeptics, Nature of Financial Work]
   sections:
+    # hidden: true keeps the papers in materials.yml but leaves the section off the page.
     - title: Academic Research
+      hidden: true
       topics: [Macro Implications, Labor Markets, Financial Sector, Alignment and Governance]
 - title: AI Infrastructure
   slug: ai-infrastructure
