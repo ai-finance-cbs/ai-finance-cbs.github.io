@@ -270,6 +270,7 @@
 - {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Generative AI at Work", length: "paper", author: "Erik Brynjolfsson, Danielle Li, and Lindsey Raymond", year: 2023, url: "https://www.nber.org/papers/w31161"}
 - {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Most AI Value Will Come from Broad Automation, Not from R&D", length: "15 min", author: "Ege Erdil and Matthew Barnett", year: 2025, url: "https://epoch.ai/gradient-updates/most-ai-value-will-come-from-broad-automation-not-from-r-d"}
 - {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Artificial Intelligence and the Economy: Implications for Central Banks", length: "35 min", author: "Bank for International Settlements", year: 2024, url: "https://www.bis.org/publ/arpdf/ar2024e3.htm"}
+- {week: 99, topic: AI and the Wider Economy, level: optional, kind: Writing, title: "Econvitals", length: "tracker", author: "Jason Furman", year: 2026, url: "https://econvitals.org/"}
 
 - {week: 99, topic: Keep Learning, level: recommended, kind: Writing, title: "One Useful Thing", length: "newsletter", author: "Ethan Mollick", year: 2023, url: "https://www.oneusefulthing.org/"}
 - {week: 99, topic: Keep Learning, level: recommended, kind: Podcast, title: "Dwarkesh Podcast", length: "podcast", author: "Dwarkesh Patel", year: 2023, url: "https://www.dwarkesh.com/podcast"}
