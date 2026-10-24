@@ -71,7 +71,7 @@ function outlineChanged() {
 function updateModal() {
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
   dialog.querySelector('[data-contact]').hidden = !state.rejected;
-  if (state.rejected) showMessage("You don't have authorization yet.");
+  dialog.querySelector('[data-denied]').hidden = !state.rejected;
 }
 
 // Google Identity Services: Google's own button opens a window that names this site, not the database.
