@@ -100,7 +100,7 @@ export async function createBackend(config) {
       const session = checked(await client.auth.getSession());
       if (!session.session) { access = null; return null; }
       const { user } = checked(await client.auth.getUser());
-      const refuse = async () => { await client.auth.signOut(); throw new Error('Use a Columbia Google account ending in @columbia.edu or @gsb.columbia.edu.'); };
+      const refuse = async () => { await client.auth.signOut(); throw Object.assign(new Error('Use a Columbia Google account ending in @columbia.edu or @gsb.columbia.edu.'), { code: 'not-columbia' }); };
       if (!user || !user.email_confirmed_at || user.app_metadata.provider !== 'google') await refuse();
       // The database decides who is allowed: Columbia accounts plus a short private list of test accounts.
       const result = await client.rpc('get_access');

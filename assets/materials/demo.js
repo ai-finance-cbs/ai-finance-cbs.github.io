@@ -77,9 +77,16 @@ export function createDemo() {
       save(d);
     },
     async deleteAnnouncement(id) { requireRole(true); const d = read(); d.announcements = (d.announcements || []).filter(a => a.id !== id); save(d); },
-    async getAccess() { return access(); },
+    async getAccess() {
+      const u = user();
+      if (u && !/@(gsb[.])?columbia[.]edu$/i.test(u.email) && !/@example[.]test$/i.test(u.email)) {
+        sessionStorage.removeItem(SESSION);
+        throw Object.assign(new Error('Use a Columbia Google account ending in @columbia.edu or @gsb.columbia.edu.'), { code: 'not-columbia' });
+      }
+      return access();
+    },
     async pickRole(role) {
-      const email = { instructor: OWNER, grader: 'grader@columbia.edu', student: 'ab1234@columbia.edu', auditor: 'auditor@columbia.edu', unlisted: 'zz9999@columbia.edu', gsb: 'demo@gsb.columbia.edu', test: 'teststudent@example.test' }[role];
+      const email = { instructor: OWNER, grader: 'grader@columbia.edu', student: 'ab1234@columbia.edu', auditor: 'auditor@columbia.edu', unlisted: 'zz9999@columbia.edu', gsb: 'demo@gsb.columbia.edu', test: 'teststudent@example.test', outsider: 'someone@gmail.com' }[role];
       if (!email) throw new Error('Choose a demo role.');
       sessionStorage.setItem(SESSION, JSON.stringify({ email, uni: role === 'test' ? 'test1' : extractUni(email) })); return access();
     },

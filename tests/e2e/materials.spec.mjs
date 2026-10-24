@@ -41,6 +41,13 @@ test('unlisted account is signed straight out and told it lacks authorization', 
   await expect(page.locator('.assignment-section')).toHaveCount(0);
   for (const url of ['/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.'); }
 });
+test('personal Google account is refused with the Columbia-account paperclip', async ({ page }) => {
+  await enter(page, 'outsider');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('[data-denied]')).toContainText('You need to sign in with your Columbia Google account to access the course materials.');
+  await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeHidden();
+  await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.');
+});
 test('student sees materials, linked milestones, empty weeks, and no admin controls', async ({ page }) => {
   await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(1);
   await expect(page.locator('[data-role]')).toHaveText('Student');

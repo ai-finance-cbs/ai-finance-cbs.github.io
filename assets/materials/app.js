@@ -72,6 +72,14 @@ function updateModal() {
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
   dialog.querySelector('[data-contact]').hidden = !state.rejected;
   dialog.querySelector('[data-denied]').hidden = !state.rejected;
+  dialog.querySelector('[data-denied-text]').textContent = state.rejected?.outsider
+    ? 'You need to sign in with your Columbia Google account to access the course materials.'
+    : 'You need to be registered for the course to access the course materials.';
+}
+// A personal (non-Columbia) Google account gets the same paperclip, with its own reason.
+function showSignInError(error) {
+  if (error?.code === 'not-columbia') { state.rejected = { outsider: true }; updateModal(); }
+  else showMessage(error.message);
 }
 
 // Google Identity Services: Google's own button opens a window that names this site, not the database.
@@ -100,7 +108,7 @@ async function setupGsi() {
         try {
           if (!sessionStorage.getItem('b8403-return')) sessionStorage.setItem('b8403-return', location.pathname + location.search + location.hash);
           await state.backend.signInWithGoogleToken(credential, raw); await finishSignIn();
-        } catch (error) { showMessage(error.message); }
+        } catch (error) { showSignInError(error); }
       },
     });
     window.google.accounts.id.renderButton(slot, { type: 'standard', theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'rectangular', width: 300 });
@@ -603,7 +611,7 @@ async function init() {
     else if (params.has('code') || sessionStorage.getItem('b8403-return')) {
       if (member()) await finishSignIn(); else if (state.access) openLogin();
     }
-  } catch (error) { state.access = null; showGate(); openLogin(); showMessage(error.message); }
+  } catch (error) { state.access = null; showGate(); openLogin(); showSignInError(error); }
   finally { if (!state.redirecting) document.documentElement.dataset.materialsReady = 'true'; }
 }
 init();
