@@ -32,10 +32,10 @@ test('signed-out syllabus links open one modal and retain their intended milesto
   await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await expect(page.getByRole('dialog')).toBeVisible();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/week-2/#lecture-notes');
 });
-test('unlisted account is signed straight out with the reason shown', async ({ page }) => {
+test('unlisted account is signed straight out and told it lacks authorization', async ({ page }) => {
   await enter(page, 'unlisted');
   const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('zz9999@columbia.edu is not on the class list, so you have been signed out.');
+  await expect(dialog).toContainText("You don't have authorization yet.");
   await expect(dialog).toContainText('oh@gsb.columbia.edu');
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeHidden();
   await expect(page.locator('.assignment-section')).toHaveCount(0);
@@ -85,7 +85,7 @@ test('auditor sees no milestones and only shared PDFs, including after a visibil
   await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
 test('CBS account cannot self-claim and can use an instructor-approved link', async ({page}) => {
-  await enter(page,'gsb'); await expect(page.getByRole('dialog')).toContainText('demo@gsb.columbia.edu is not on the class list, so you have been signed out.');
+  await enter(page,'gsb'); await expect(page.getByRole('dialog')).toContainText("You don't have authorization yet.");
   await expect(page.locator('[data-uni-form]')).toHaveCount(0);
   await page.getByLabel('Preview role').selectOption('instructor'); await page.getByRole('button', { name: 'Use demo role' }).click();
   await page.goto('/materials/settings/'); await ready(page);

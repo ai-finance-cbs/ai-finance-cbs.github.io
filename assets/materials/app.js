@@ -71,9 +71,7 @@ function outlineChanged() {
 function updateModal() {
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
   dialog.querySelector('[data-contact]').hidden = !state.rejected;
-  if (state.rejected) showMessage(state.rejected.needs_uni
-    ? `${state.rejected.email} is not linked to a roster UNI yet, so you have been signed out.`
-    : `${state.rejected.email} is not on the class list, so you have been signed out.`);
+  if (state.rejected) showMessage("You don't have authorization yet.");
 }
 
 // Google Identity Services: Google's own button opens a window that names this site, not the database.
