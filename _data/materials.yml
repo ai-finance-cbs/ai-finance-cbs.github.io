@@ -277,6 +277,7 @@
 - {week: 99, topic: Keep Learning, level: optional, kind: Writing, title: "Import AI", length: "newsletter", author: "Jack Clark", year: 2016, url: "https://importai.substack.com/"}
 - {week: 99, topic: Keep Learning, level: optional, kind: Writing, title: "Data on the Trajectory of AI", length: "tracker", author: "Epoch AI", year: 2025, url: "https://epoch.ai/data"}
 - {week: 99, topic: Keep Learning, level: optional, kind: Podcast, title: "Hard Fork", length: "podcast", author: "Kevin Roose and Casey Newton", year: 2022, url: "https://podcasts.apple.com/us/podcast/hard-fork/id1528594034"}
+- {week: 99, topic: Keep Learning, level: optional, kind: Writing, title: "AI Engineering from Scratch", length: "course", author: "Rohit Ghumare", year: 2026, url: "https://aiengineeringfromscratch.com/"}
 
 - {week: 99, topic: Predictions and Scenarios, level: recommended, kind: Writing, title: "AI 2027", length: "60 min", author: "Daniel Kokotajlo et al.", year: 2025, url: "https://ai-2027.com/"}
 - {week: 99, topic: Predictions and Scenarios, level: recommended, kind: Writing, title: "The 2028 Global Intelligence Crisis", length: "25 min", author: "Citrini and Alap Shah", year: 2026, url: "https://www.citriniresearch.com/p/2028gic"}
