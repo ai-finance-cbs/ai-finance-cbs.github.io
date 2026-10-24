@@ -9,7 +9,7 @@ test.beforeEach(async ({page}) => {
 });
 
 test('both tabs and all preparation weeks belong only to instructors; other roles cannot fetch demo data', async ({page}) => {
-  for (const role of ['instructor','grader','student','auditor','unlisted']) {
+  for (const role of ['unlisted','instructor','grader','student','auditor']) {
     await enter(page,role);
     for (const name of ['Preparation','Speakers']) await expect(page.locator('.staff-menu li:not([hidden])').getByRole('link',{name,exact:true,includeHidden:true})).toHaveCount(role === 'instructor' ? 1 : 0);
     if (role === 'instructor') {
@@ -18,7 +18,7 @@ test('both tabs and all preparation weeks belong only to instructors; other role
     }
     for (const slug of ['preparation/week-2','speakers']) {
       await page.goto(`/materials/${slug}/`); await ready(page);
-      if (role !== 'instructor') { await expect(root(page)).toContainText(role === 'unlisted' ? 'not on the class list' : 'for instructors'); await expect(page.locator('.preparation-section,.preparation-editor,.speaker-row')).toHaveCount(0); }
+      if (role !== 'instructor') { await expect(root(page)).toContainText(role === 'unlisted' ? 'Sign in to see course materials.' : 'for instructors'); await expect(page.locator('.preparation-section,.preparation-editor,.speaker-row')).toHaveCount(0); }
     }
     if (role !== 'instructor') expect(await page.evaluate(async () => {
       const b = (await import('/assets/materials/demo.js')).createDemo(), results = [];

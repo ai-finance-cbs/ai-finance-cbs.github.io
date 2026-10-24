@@ -32,12 +32,14 @@ test('signed-out syllabus links open one modal and retain their intended milesto
   await page.getByRole('link', { name: 'Lecture Notes: Week 2', exact: true }).click(); await expect(page.getByRole('dialog')).toBeVisible();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('b8403-return'))).toBe('/materials/week-2/#lecture-notes');
 });
-test('unlisted account is blocked on every materials page', async ({ page }) => {
+test('unlisted account is signed straight out with the reason shown', async ({ page }) => {
   await enter(page, 'unlisted');
-  await expect(page.locator('#materials-root')).toContainText('You are not on the class list');
-  await expect(page.locator('#materials-root')).toContainText('oh@gsb.columbia.edu');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('zz9999@columbia.edu is not on the class list, so you have been signed out.');
+  await expect(dialog).toContainText('oh@gsb.columbia.edu');
+  await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeHidden();
   await expect(page.locator('.assignment-section')).toHaveCount(0);
-  for (const url of ['/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('You are not on the class list'); }
+  for (const url of ['/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.'); }
 });
 test('student sees materials, linked milestones, empty weeks, and no admin controls', async ({ page }) => {
   await enter(page, 'student'); await expect(page.locator('.assignment-section')).toHaveCount(1);
@@ -83,9 +85,9 @@ test('auditor sees no milestones and only shared PDFs, including after a visibil
   await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
 test('CBS account cannot self-claim and can use an instructor-approved link', async ({page}) => {
-  await enter(page,'gsb'); await expect(page.locator('#materials-root')).toContainText('contact the instructor');
+  await enter(page,'gsb'); await expect(page.getByRole('dialog')).toContainText('demo@gsb.columbia.edu is not on the class list, so you have been signed out.');
   await expect(page.locator('[data-uni-form]')).toHaveCount(0);
-  await switchRole(page,'instructor');
+  await page.getByLabel('Preview role').selectOption('instructor'); await page.getByRole('button', { name: 'Use demo role' }).click();
   await page.goto('/materials/settings/'); await ready(page);
   await page.locator('#student-accounts > summary').click();
   await page.getByLabel('CBS student email').fill('demo@gsb.columbia.edu'); await page.getByLabel('Roster UNI',{exact:true}).fill('ab1234'); await page.getByRole('button',{name:'Link student account',exact:true}).click();

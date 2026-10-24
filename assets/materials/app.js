@@ -70,8 +70,10 @@ function outlineChanged() {
 }
 function updateModal() {
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
-  dialog.querySelector('[data-contact]').hidden = state.access?.role !== 'unlisted';
-  if (state.access?.role === 'unlisted') showMessage('You are not on the class list.');
+  dialog.querySelector('[data-contact]').hidden = !state.rejected;
+  if (state.rejected) showMessage(state.rejected.needs_uni
+    ? `${state.rejected.email} is not linked to a roster UNI yet, so you have been signed out.`
+    : `${state.rejected.email} is not on the class list, so you have been signed out.`);
 }
 
 // Google Identity Services: Google's own button opens a window that names this site, not the database.
@@ -163,6 +165,14 @@ async function refresh() {
 async function renderMaterials(version) {
   state.access = state.backend ? await state.backend.getAccess() : null;
   if (version !== state.version) return;
+  // An account that is not on the class list is signed straight back out; the sign-in window says why.
+  if (state.access?.role === 'unlisted') {
+    state.rejected = state.access; state.access = null;
+    try { localStorage.removeItem('b8403-menu'); } catch {}
+    openLogin();
+    try { await state.backend.signOut(); } catch { /* the local session is cleared even if the server call fails */ }
+    if (version !== state.version) return;
+  } else if (state.access) state.rejected = null;
   const visible = zones(state.access);
   const roleMenu = { materials: visible.materials, instructor: visible.instructor, grading: visible.grading,
     student: state.access?.role === 'student', klass: visible.class || visible.grading, ed: visible.class || visible.grading,
@@ -559,6 +569,7 @@ dialog.querySelector('[data-google-fallback]').addEventListener('click', () => d
 dialog.querySelector('[data-google]').addEventListener('click', async e => {
   e.target.disabled = true;
   try {
+    state.rejected = null;
     if (state.backend?.demo) { showMessage('Choose a local demo role below. Real Google sign-in is disabled in demo mode.'); return; }
     if (!state.backend) throw new Error('Course sign-in is not configured yet. Contact oh@gsb.columbia.edu.');
     const returnTo = location.pathname + location.search + location.hash;
@@ -580,7 +591,7 @@ async function init() {
         await state.backend.pickRole(requested);
         params.delete('fakeauth'); history.replaceState({}, '', location.pathname + (params.size ? `?${params}` : '') + location.hash);
       }
-      dialog.querySelector('[data-demo-enter]').addEventListener('click', async () => { await state.backend.pickRole(dialog.querySelector('#demo-role').value); await finishSignIn(); });
+      dialog.querySelector('[data-demo-enter]').addEventListener('click', async () => { state.rejected = null; await state.backend.pickRole(dialog.querySelector('#demo-role').value); await finishSignIn(); });
     } else if (config.url && config.key) {
       const { createBackend } = await import('./supabase.js'); state.backend = await createBackend(config);
     }
