@@ -562,9 +562,8 @@ caption { margin-bottom:6px; }
 .login-dialog.is-denied > h2, .login-dialog.is-denied [data-login-intro], .login-dialog.is-denied [data-login-step], .login-dialog.is-denied [data-login-message] { display:none; }
 .login-denied:not([hidden]) { display:flex; flex-direction:column; align-items:center; text-align:center; padding:28px 0 8px; }
 .login-denied img { image-rendering:pixelated; }
-.login-dialog .clip-bubble { position:relative; margin:18px 0 0; max-width:340px; padding:14px 18px; border:1px solid #D9D9D9; border-radius:12px; background:#fff; font-size:18px; line-height:1.45; }
+.login-dialog .clip-bubble { position:relative; margin:18px 0 22px; max-width:340px; padding:14px 18px; border:1px solid #D9D9D9; border-radius:12px; background:#fff; font-size:18px; line-height:1.45; }
 .clip-bubble::before { content:""; position:absolute; top:-7px; left:50%; width:12px; height:12px; background:#fff; border-left:1px solid #D9D9D9; border-top:1px solid #D9D9D9; transform:translateX(-50%) rotate(45deg); }
-.login-dialog .denied-contact { margin:20px 0 18px; font:14px/1.6 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#555; }
 .login-dialog [data-login-message]:not(:empty) { margin-top:20px; padding-top:16px; border-top:1px solid #ECECEC; }
 .login-dialog label, .admin-form label { display:block; font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; margin:14px 0 6px; }
 .login-dialog input, .login-dialog select, .admin-form input:not([type=checkbox]), .admin-form textarea, .admin-form select { width:100%; max-width:100%; min-width:0; box-sizing:border-box; border:1px solid #d8d8d8; border-radius:2px; padding:9px; font:15px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:#222; background:#fff; }

@@ -27,7 +27,7 @@ The original Admin page is archived under `__archive__/20261001/before-class-too
 | Auditor | Materials marked auditor-visible | None |
 | Unlisted / anonymous | Public site only | None |
 
-An unlisted account is signed straight back out. The sign-in window shows the course paperclip saying "You need to be registered for the course to access the course materials."
+An unlisted account is signed straight back out. The sign-in window shows the course paperclip saying "You need to be enrolled in the course to access the course materials."
 
 Owner `oh@gsb.columbia.edu` remains Instructor. The website cannot remove, rename, or downgrade this row.
 Auditors are excluded from gradebook rows, including auditors whose UNIs also appear in the uploaded roster.

@@ -76,7 +76,7 @@ function updateModal() {
   dialog.querySelector('[data-denied]').hidden = !state.rejected;
   dialog.querySelector('[data-denied-text]').textContent = state.rejected?.outsider
     ? 'You need to sign in with your Columbia Google account to access the course materials.'
-    : 'You need to be registered for the course to access the course materials.';
+    : 'You need to be enrolled in the course to access the course materials.';
 }
 // A personal (non-Columbia) Google account gets the same paperclip, with its own reason.
 function showSignInError(error) {

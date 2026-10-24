@@ -35,8 +35,8 @@ test('signed-out syllabus links open one modal and retain their intended milesto
 test('unlisted account is signed straight out and told it lacks authorization', async ({ page }) => {
   await enter(page, 'unlisted');
   const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('You need to be registered for the course to access the course materials.');
-  await expect(dialog).toContainText('oh@gsb.columbia.edu');
+  await expect(dialog).toContainText('You need to be enrolled in the course to access the course materials.');
+  await expect(dialog.getByRole('link', { name: 'oh@gsb.columbia.edu' })).toHaveCount(0);
   await expect(dialog.getByRole('heading', { name: 'Course Materials' })).toBeHidden();
   await expect(dialog.getByRole('button', { name: 'Continue with Columbia Google' })).toBeHidden();
   await dialog.getByRole('button', { name: 'Use a different account' }).click();
@@ -97,7 +97,7 @@ test('auditor sees no milestones and only shared PDFs, including after a visibil
   await switchRole(page, 'auditor'); await page.goto('/materials/week-1/'); await ready(page); await expect(page.getByRole('link', { name: 'Shared PDF', exact: true })).toHaveCount(0);
 });
 test('CBS account cannot self-claim and can use an instructor-approved link', async ({page}) => {
-  await enter(page,'gsb'); await expect(page.getByRole('dialog')).toContainText('You need to be registered for the course to access the course materials.');
+  await enter(page,'gsb'); await expect(page.getByRole('dialog')).toContainText('You need to be enrolled in the course to access the course materials.');
   await expect(page.locator('[data-uni-form]')).toHaveCount(0);
   await page.getByLabel('Preview role').selectOption('instructor'); await page.getByRole('button', { name: 'Use demo role' }).click();
   await page.goto('/materials/settings/'); await ready(page);
