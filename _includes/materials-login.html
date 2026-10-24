@@ -2,11 +2,7 @@
   <button class="dialog-close" type="button" data-close-login aria-label="Close sign-in">Close</button>
   <p class="login-course">B8403: Finance in the Age of AI · Spring 2027</p>
   <h2 id="login-title">Course Materials</h2>
-  <div class="login-denied" data-denied role="alert" hidden>
-    <img src="{{ '/assets/loader-clip.png' | relative_url }}" alt="" width="64" height="64">
-    <p class="clip-bubble" data-denied-text></p>
-  </div>
-  <p>Sign in with your Columbia Google account. Only @columbia.edu and @gsb.columbia.edu accounts are accepted.</p>
+  <p data-login-intro>Sign in with your Columbia Google account. Only @columbia.edu and @gsb.columbia.edu accounts are accepted.</p>
   <div data-login-step>
     <div class="gsi-slot" data-gsi hidden></div>
     <button class="materials-button primary" type="button" data-google>Continue with Columbia Google</button>
@@ -14,7 +10,13 @@
     <p class="uni-note">Using @gsb.columbia.edu? The instructor must link your email to your roster UNI.</p>
   </div>
   <p data-login-message role="status" aria-live="polite"></p>
-  <p data-contact hidden>For access or a CBS email link, contact <a href="mailto:oh@gsb.columbia.edu">oh@gsb.columbia.edu</a>.</p>
+  <!-- Shown instead of the sign-in screen when Google sign-in worked but the account has no course access. -->
+  <div class="login-denied" data-denied role="alert" hidden>
+    <img src="{{ '/assets/loader-clip.png' | relative_url }}" alt="" width="112" height="112">
+    <p class="clip-bubble" id="denied-text" data-denied-text></p>
+    <p class="denied-contact" data-contact>For access or a CBS email link, contact <a href="mailto:oh@gsb.columbia.edu">oh@gsb.columbia.edu</a>.</p>
+    <button class="materials-button" type="button" data-denied-retry>Use a different account</button>
+  </div>
   <fieldset class="demo-controls" data-demo-controls hidden>
     <legend>Local demo · synthetic data</legend>
     <label for="demo-role">Preview role</label>

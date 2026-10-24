@@ -70,7 +70,9 @@ function outlineChanged() {
 }
 function updateModal() {
   dialog.querySelector('[data-login-step]').hidden = !!state.access;
-  dialog.querySelector('[data-contact]').hidden = !state.rejected;
+  // Denied screen: the sign-in heading, text and buttons step aside for the paperclip.
+  dialog.classList.toggle('is-denied', !!state.rejected);
+  dialog.setAttribute('aria-labelledby', state.rejected ? 'denied-text' : 'login-title');
   dialog.querySelector('[data-denied]').hidden = !state.rejected;
   dialog.querySelector('[data-denied-text]').textContent = state.rejected?.outsider
     ? 'You need to sign in with your Columbia Google account to access the course materials.'
@@ -561,6 +563,7 @@ document.addEventListener('click', e => {
   if (link && !member()) { e.preventDefault(); openLogin(link.href); }
 });
 dialog.querySelector('[data-close-login]').addEventListener('click', () => dialog.close());
+dialog.querySelector('[data-denied-retry]').addEventListener('click', () => { state.rejected = null; showMessage(''); updateModal(); setupGsi(); });
 dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
 document.querySelector('[data-view-select]').addEventListener('change', e => { if (e.target.value) startPreview(e.target.value); });
 document.querySelector('[data-preview-exit]').addEventListener('click', () => startPreview(null));

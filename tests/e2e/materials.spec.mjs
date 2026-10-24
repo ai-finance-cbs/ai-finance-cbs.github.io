@@ -37,6 +37,11 @@ test('unlisted account is signed straight out and told it lacks authorization', 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('You need to be registered for the course to access the course materials.');
   await expect(dialog).toContainText('oh@gsb.columbia.edu');
+  await expect(dialog.getByRole('heading', { name: 'Course Materials' })).toBeHidden();
+  await expect(dialog.getByRole('button', { name: 'Continue with Columbia Google' })).toBeHidden();
+  await dialog.getByRole('button', { name: 'Use a different account' }).click();
+  await expect(dialog.locator('[data-denied]')).toBeHidden();
+  await expect(dialog.getByRole('button', { name: 'Continue with Columbia Google' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeHidden();
   await expect(page.locator('.assignment-section')).toHaveCount(0);
   for (const url of ['/materials/week-1/', '/materials/attendance/', '/materials/groups/', '/materials/gradebook/', '/materials/roster/', '/materials/files/', '/materials/settings/']) { await page.goto(url); await ready(page); await expect(page.locator('#materials-root')).toContainText('Sign in to see course materials.'); }
